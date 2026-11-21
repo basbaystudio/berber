@@ -106,6 +106,7 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
           <nav className="flex gap-4 overflow-x-auto border-b border-stone-200 text-sm" aria-label="Profil bölümleri">
             {[
               ["hizmetler", "Hizmetler"],
+              ...(p.shopPhotos.length ? [["dukkan", "Dükkan"]] : []),
               ...(p.photos.length ? [["galeri", "Galeri"]] : []),
               ...(p.staff.length ? [["ekip", "Ekip"]] : []),
               ["yorumlar", `Yorumlar (${p.ratingCount})`],
@@ -158,6 +159,18 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
               </>
             )}
           </Section>
+
+          {p.shopPhotos.length > 0 && (
+            <Section id="dukkan" title="Dükkan">
+              <Gallery
+                photos={p.shopPhotos}
+                categories={[
+                  { id: "EXTERIOR", name: "Dış cephe" },
+                  { id: "INTERIOR", name: "İç mekân" },
+                ].filter((c) => p.shopPhotos.some((x) => x.categoryId === c.id))}
+              />
+            </Section>
+          )}
 
           {p.photos.length > 0 && (
             <Section id="galeri" title="Galeri">

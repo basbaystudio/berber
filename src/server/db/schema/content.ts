@@ -140,3 +140,31 @@ export const monthlyAwards = pgTable(
   },
   (t) => [uniqueIndex("monthly_awards_month_uq").on(t.month), index("monthly_awards_business_idx").on(t.businessId)],
 );
+
+/** Dükkanın iç/dış fotoğrafları (profilde "Dükkan" bölümü). Yönetici ve işletme ekleyebilir. Kesim fotoğraflarından (portfolyo) ayrıdır. */
+export const MAX_SHOP_PHOTOS = 20;
+export const shopPhotos = pgTable(
+  "shop_photos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    businessId: uuid("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    /** INTERIOR: iç mekân · EXTERIOR: dış cephe */
+    kind: text("kind").notNull(),
+    storageKey: text("storage_key").notNull(),
+    url: text("url").notNull(),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    /** Kim yükledi: ADMIN ya da BUSINESS */
+    uploadedBy: text("uploaded_by").notNull(),
+    createdAt: ts("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("shop_photos_business_idx").on(t.businessId, t.sortOrder),
+    check("shop_photos_kind_ck", sql`${t.kind} IN ('INTERIOR', 'EXTERIOR')`),
+    check("shop_photos_by_ck", sql`${t.uploadedBy} IN ('ADMIN', 'BUSINESS')`),
+  ],
+);

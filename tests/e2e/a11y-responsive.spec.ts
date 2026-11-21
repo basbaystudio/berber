@@ -65,6 +65,7 @@ test("erişilebilirlik ve duyarlı yerleşim: herkese açık sayfalar, işletme 
     "/isletme/panel/calisma-saatleri",
     "/isletme/panel/hizmetler",
     "/isletme/panel/abonelik",
+    "/isletme/panel/dukkan-fotograflari",
     "/isletme/panel/belgeler",
   ]) {
     await check(bp, p);

@@ -27,6 +27,7 @@ const NAV: NavItem[] = [
   { href: "/isletme/panel/calisanlar", label: "Çalışanlar", icon: "users" },
   { href: "/isletme/panel/hizmetler", label: "Hizmetler", icon: "scissors" },
   { href: "/isletme/panel/paketler", label: "Paketler", icon: "package" },
+  { href: "/isletme/panel/dukkan-fotograflari", label: "Dükkan Fotoğrafları", icon: "camera" },
   { href: "/isletme/panel/portfolyo", label: "Portfolyo", icon: "images" },
   { href: "/isletme/panel/belgeler", label: "Belgelerim", icon: "documents" },
   { href: "/isletme/panel/sozlesmeler", label: "Sözleşmeler", icon: "contracts" },

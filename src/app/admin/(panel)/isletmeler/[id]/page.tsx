@@ -32,10 +32,18 @@ import {
   uploadBusinessImageAction,
   setFeaturedAction,
   setPublishedAction,
+  adminUploadShopPhotoAction,
+  adminDeleteShopPhotoAction,
+  adminSetShopPhotoKindAction,
+  adminMoveShopPhotoAction,
   setStatusAction,
   updateBusinessAction,
   updateOwnerAction,
 } from "../actions";
+
+import { MAX_SHOP_PHOTOS } from "@/server/db/schema";
+import { listShopPhotos } from "@/server/modules/shop-photos";
+import { ShopPhotosManager } from "@/components/panel/shop-photos-manager";
 
 export const metadata = { title: "İşletme Detayı" };
 
@@ -50,6 +58,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
   const [plans, payments] = [await listPlans(db), await listBusinessPayments(db, id)];
   const docs = await listDocuments(db, { businessId: id });
   const trust = await getTrust(db, id);
+  const shopPhotos = await listShopPhotos(db, id);
   const METHOD = { BANK_TRANSFER: "Havale/EFT", CARD: "Kart", CASH: "Nakit", OTHER: "Diğer" } as const;
   const canPublish = checklist.every((c) => c.ok || !c.required);
 
@@ -133,6 +142,22 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                   </ActionButton>
                 )}
               </div>
+            </div>
+          </Card>
+          <Card>
+            <CardHeader
+              title="Dükkan fotoğrafları"
+              description="Dış cephe ve iç mekân fotoğrafları profilde ayrı bir bölümde gösterilir. İşletme de kendi panelinden ekleyip silebilir."
+            />
+            <div className="p-6">
+              <ShopPhotosManager
+                photos={shopPhotos}
+                limit={MAX_SHOP_PHOTOS}
+                upload={adminUploadShopPhotoAction.bind(null, b.id)}
+                remove={adminDeleteShopPhotoAction.bind(null, b.id)}
+                setKind={adminSetShopPhotoKindAction.bind(null, b.id)}
+                move={adminMoveShopPhotoAction.bind(null, b.id)}
+              />
             </div>
           </Card>
           <Card>

@@ -99,6 +99,13 @@
       "when": 1795280015556,
       "tag": "0013_banner_placement",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795302635075,
+      "tag": "0014_shop_photos",
+      "breakpoints": true
     }
   ]
 }
