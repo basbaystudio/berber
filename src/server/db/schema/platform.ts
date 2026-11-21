@@ -66,6 +66,8 @@ export const subscriptionPlans = pgTable(
     name: text("name").notNull(),
     description: text("description"),
     monthlyPriceKurus: integer("monthly_price_kurus").notNull(),
+    /** Yıllık ödeme fiyatı (boşsa pakette yıllık seçenek yoktur). */
+    yearlyPriceKurus: integer("yearly_price_kurus"),
     highlights: jsonb("highlights").$type<string[]>().notNull().default([]),
     capabilities: jsonb("capabilities").$type<Record<string, unknown>>().notNull().default({}),
     isActive: boolean("is_active").notNull().default(true),
@@ -77,7 +79,7 @@ export const subscriptionPlans = pgTable(
   (t) => [
     uniqueIndex("subscription_plans_code_uq").on(t.code),
     uniqueIndex("subscription_plans_default_uq").on(t.isDefault).where(sql`${t.isDefault}`),
-    check("subscription_plans_price_ck", sql`${t.monthlyPriceKurus} >= 0`),
+    check("subscription_plans_price_ck", sql`${t.monthlyPriceKurus} >= 0 AND (${t.yearlyPriceKurus} IS NULL OR ${t.yearlyPriceKurus} >= 0)`),
   ],
 );
 
@@ -98,6 +100,10 @@ export const businessSubscriptions = pgTable(
       .references(() => subscriptionPlans.id),
     /** Aboneliğe kilitlenen aylık ücret (paket fiyatı sonradan değişse bile korunur). */
     monthlyFeeKurus: integer("monthly_fee_kurus").notNull(),
+    /** Yıllık ödemede kilitlenen ücret (paket yıllık sunmuyorsa boş). */
+    yearlyFeeKurus: integer("yearly_fee_kurus"),
+    /** Ödeme dönemi: MONTHLY (aylık) ya da YEARLY (yıllık). */
+    billingCycle: text("billing_cycle").notNull().default("MONTHLY"),
     trialMonths: integer("trial_months").notNull(),
     trialStartsOn: date("trial_starts_on"),
     trialEndsOn: date("trial_ends_on"),
@@ -124,6 +130,7 @@ export const businessSubscriptions = pgTable(
   (t) => [
     uniqueIndex("business_subscriptions_business_uq").on(t.businessId),
     uniqueIndex("business_subscriptions_provider_sub_uq").on(t.paymentProvider, t.providerSubscriptionRef).where(sql`${t.providerSubscriptionRef} IS NOT NULL`),
+    check("business_subscriptions_cycle_ck", sql`${t.billingCycle} IN ('MONTHLY', 'YEARLY') AND (${t.billingCycle} = 'MONTHLY' OR ${t.yearlyFeeKurus} IS NOT NULL)`),
     check("business_subscriptions_method_ck", sql`${t.preferredMethod} IN ('CARD', 'BANK_TRANSFER')`),
     check("business_subscriptions_last4_ck", sql`${t.cardLast4} IS NULL OR ${t.cardLast4} ~ '^[0-9]{4}$'`),
     check("business_subscriptions_fee_ck", sql`${t.monthlyFeeKurus} >= 0`),

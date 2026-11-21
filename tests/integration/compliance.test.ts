@@ -9,7 +9,7 @@ import { setSetting } from "@/server/modules/platform/settings";
 import { enableBilling, recordPayment } from "@/server/modules/billing/subscriptions";
 import { getInvoiceFile, listPendingInvoices, uploadInvoice } from "@/server/modules/billing/invoices";
 import { handleGatewayEvent, setPaymentGatewayForTests, type PaymentGateway } from "@/server/modules/billing/gateway";
-import { getMyBilling, setPaymentMethod, startCardSetup } from "@/server/modules/business/billing";
+import { getMyBilling, setBillingCycle, setPaymentMethod, startCardSetup } from "@/server/modules/business/billing";
 import { getDocumentFile, getMyDocuments, uploadDocument } from "@/server/modules/business/documents";
 import { reviewDocument } from "@/server/modules/admin/documents";
 import { createContract, publishVersion, versionAcceptance } from "@/server/modules/admin/contracts";
@@ -80,15 +80,20 @@ describe("ödeme yöntemi ve kart", () => {
     const calls: string[] = [];
     const gw: PaymentGateway = {
       name: "tp",
-      startCardSetup: async (i) => (calls.push(`setup:${i.businessId}`), { redirectUrl: "https://odeme.example/kart" }),
+      startCardSetup: async (i) => (calls.push(`setup:${i.businessId}:${i.billingCycle}:${i.feeKurus}`), { redirectUrl: "https://odeme.example/kart" }),
       cancelSubscription: async (ref) => void calls.push(`cancel:${ref}`),
+      updateSubscription: async (ref, i) => void calls.push(`update:${ref}:${i.billingCycle}:${i.feeKurus}`),
       parseWebhook: async () => {
         throw new Error("yok");
       },
     };
     setPaymentGatewayForTests(gw);
     expect(await startCardSetup(db, bizOf(a), "/geri")).toBe("https://odeme.example/kart");
+    expect(calls).toContain(`setup:${a.businessId}:MONTHLY:69990`);
     await handleGatewayEvent(db, "tp", { type: "SUBSCRIPTION_ACTIVATED", businessId: a.businessId, customerRef: "c", subscriptionRef: `s2_${a.businessId}`, cardLast4: "1111" });
+    // Yıllığa geçiş sağlayıcıdaki aboneliği günceller
+    await setBillingCycle(db, bizOf(a), "YEARLY");
+    expect(calls).toContain(`update:s2_${a.businessId}:YEARLY:699000`);
     await setPaymentMethod(db, bizOf(a), "BANK_TRANSFER");
     expect(calls).toContain(`cancel:s2_${a.businessId}`);
     const [sub] = await db.select().from(businessSubscriptions).where(eq(businessSubscriptions.businessId, a.businessId));

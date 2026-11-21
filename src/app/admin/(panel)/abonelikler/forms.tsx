@@ -19,6 +19,7 @@ export type PlanDefaults = {
   code: string;
   description: string | null;
   monthlyPriceKurus: number;
+  yearlyPriceKurus: number | null;
   highlights: string[];
   isActive: boolean;
   sortOrder: number;
@@ -30,7 +31,7 @@ export function PlanForm({ action, defaults }: { action: Action; defaults?: Plan
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
       <Result state={state} />
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="Paket adı" name={`name`} error={fe?.name} required>
           <Input name="name" id="name" defaultValue={defaults?.name} placeholder="Premium Plus" maxLength={60} />
         </Field>
@@ -38,7 +39,10 @@ export function PlanForm({ action, defaults }: { action: Action; defaults?: Plan
           <Input name="code" id="code" defaultValue={defaults?.code} placeholder="premium-plus" maxLength={40} />
         </Field>
         <Field label="Aylık ücret (TL)" name="monthlyPriceKurus" error={fe?.monthlyPriceKurus} required>
-          <Input name="monthlyPriceKurus" id="monthlyPriceKurus" inputMode="decimal" defaultValue={kurusToInput(defaults?.monthlyPriceKurus)} placeholder="900" />
+          <Input name="monthlyPriceKurus" id="monthlyPriceKurus" inputMode="decimal" defaultValue={kurusToInput(defaults?.monthlyPriceKurus)} placeholder="699,90" />
+        </Field>
+        <Field label="Yıllık ücret (TL)" name="yearlyPriceKurus" error={fe?.yearlyPriceKurus} hint="Boşsa yıllık seçenek sunulmaz.">
+          <Input name="yearlyPriceKurus" id="yearlyPriceKurus" inputMode="decimal" defaultValue={kurusToInput(defaults?.yearlyPriceKurus ?? undefined)} placeholder="6.990" />
         </Field>
       </div>
       <Field label="Açıklama" name="description" error={fe?.description}>
@@ -99,29 +103,34 @@ export function SubscriptionForm({
   defaults,
 }: {
   action: Action;
-  plans: { id: string; name: string; monthlyPriceKurus: number; isActive: boolean }[];
-  defaults: { planId: string; monthlyFeeKurus: number; trialMonths: number; note: string | null };
+  plans: { id: string; name: string; monthlyPriceKurus: number; yearlyPriceKurus: number | null; isActive: boolean }[];
+  defaults: { planId: string; monthlyFeeKurus: number; yearlyFeeKurus: number | null; trialMonths: number; note: string | null };
 }) {
   const { state, pending, onSubmit, fieldErrors: fe } = useFormAction(action);
   const currentPlan = plans.find((p) => p.id === defaults.planId);
   const customFee = currentPlan && currentPlan.monthlyPriceKurus !== defaults.monthlyFeeKurus ? kurusToInput(defaults.monthlyFeeKurus) : "";
+  const customYearlyFee =
+    currentPlan && defaults.yearlyFeeKurus != null && currentPlan.yearlyPriceKurus !== defaults.yearlyFeeKurus ? kurusToInput(defaults.yearlyFeeKurus) : "";
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
       <Result state={state} />
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="Paket" name="planId" error={fe?.planId}>
           <Select name="planId" id="planId" defaultValue={defaults.planId}>
             {plans
               .filter((p) => p.isActive || p.id === defaults.planId)
               .map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} ({kurusToInput(p.monthlyPriceKurus)} TL)
+                  {p.name} ({kurusToInput(p.monthlyPriceKurus)} TL/ay{p.yearlyPriceKurus != null ? ` · ${kurusToInput(p.yearlyPriceKurus)} TL/yıl` : ""})
                 </option>
               ))}
           </Select>
         </Field>
         <Field label="Özel aylık ücret (TL)" name="customFee" error={fe?.customFee} hint="Boş bırakılırsa paket fiyatı uygulanır.">
           <Input name="customFee" id="customFee" inputMode="decimal" defaultValue={customFee} placeholder="Paket fiyatı" />
+        </Field>
+        <Field label="Özel yıllık ücret (TL)" name="customYearlyFee" error={fe?.customYearlyFee} hint="Boşsa paketin yıllık fiyatı.">
+          <Input name="customYearlyFee" id="customYearlyFee" inputMode="decimal" defaultValue={customYearlyFee} placeholder="Paket fiyatı" />
         </Field>
         <Field label="Ücretsiz deneme (ay)" name="trialMonths" error={fe?.trialMonths}>
           <Input name="trialMonths" id="trialMonths" type="number" min={0} max={36} defaultValue={defaults.trialMonths} />
@@ -137,14 +146,14 @@ export function SubscriptionForm({
   );
 }
 
-export function PaymentForm({ action, feeKurus, today }: { action: Action; feeKurus: number; today: string }) {
+export function PaymentForm({ action, feeKurus, months = 1, today }: { action: Action; feeKurus: number; months?: number; today: string }) {
   const { state, pending, onSubmit, fieldErrors: fe } = useFormAction(action, { resetOnSuccess: true });
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
       <Result state={state} />
       <div className="grid gap-4 sm:grid-cols-4">
         <Field label="Ay" name="months" error={fe?.months}>
-          <Input name="months" id="months" type="number" min={1} max={36} defaultValue={1} />
+          <Input name="months" id="months" type="number" min={1} max={36} defaultValue={months} />
         </Field>
         <Field label="Tutar (TL)" name="amount" error={fe?.amount}>
           <Input name="amount" id="amount" inputMode="decimal" defaultValue={kurusToInput(feeKurus)} />

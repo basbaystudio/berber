@@ -45,3 +45,11 @@ export function needsPaymentSetup(
   if (sub.paidThrough && today <= sub.paidThrough) return false;
   return true;
 }
+
+/** Abonelik dönemine göre geçerli ücret. */
+export function currentFee(sub: { billingCycle: string; monthlyFeeKurus: number; yearlyFeeKurus: number | null }) {
+  const yearly = sub.billingCycle === "YEARLY" && sub.yearlyFeeKurus != null;
+  return yearly
+    ? { kurus: sub.yearlyFeeKurus!, months: 12, unit: "yıl", label: "Yıllık" as const }
+    : { kurus: sub.monthlyFeeKurus, months: 1, unit: "ay", label: "Aylık" as const };
+}

@@ -1,3 +1,4 @@
+import { currentFee } from "@/server/modules/billing/status";
 import Link from "next/link";
 import { requireAdminPage } from "@/server/auth/guards";
 import { db } from "@/server/db/client";
@@ -131,7 +132,7 @@ export default async function SubscriptionsPage() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-stone-900">{p.name}</p>
-                  <span className="text-sm text-stone-500">{formatTL(p.monthlyPriceKurus)} / ay</span>
+                  <span className="text-sm text-stone-500">{formatTL(p.monthlyPriceKurus)} / ay{p.yearlyPriceKurus != null ? ` · ${formatTL(p.yearlyPriceKurus)} / yıl` : ""}</span>
                   {p.isDefault && <Badge tone="blue">Varsayılan</Badge>}
                   {!p.isActive && <Badge>Pasif</Badge>}
                 </div>
@@ -149,6 +150,7 @@ export default async function SubscriptionsPage() {
                       code: p.code,
                       description: p.description,
                       monthlyPriceKurus: p.monthlyPriceKurus,
+                      yearlyPriceKurus: p.yearlyPriceKurus,
                       highlights: p.highlights,
                       isActive: p.isActive,
                       sortOrder: p.sortOrder,
@@ -177,7 +179,7 @@ export default async function SubscriptionsPage() {
                 <tr>
                   <th className="px-6 py-3 font-medium">İşletme</th>
                   <th className="px-6 py-3 font-medium">Paket</th>
-                  <th className="px-6 py-3 font-medium">Aylık</th>
+                  <th className="px-6 py-3 font-medium">Ücret</th>
                   <th className="px-6 py-3 font-medium">Durum</th>
                   <th className="px-6 py-3 font-medium">Kapsanan son gün</th>
                 </tr>
@@ -192,7 +194,7 @@ export default async function SubscriptionsPage() {
                       {s.sub.isEarlyAdopter && <span className="ml-2 text-xs text-accent-600">Kampanyalı</span>}
                     </td>
                     <td className="px-6 py-3 text-stone-600">{s.plan.name}</td>
-                    <td className="px-6 py-3 text-stone-600">{formatTL(s.sub.monthlyFeeKurus)}</td>
+                    <td className="px-6 py-3 text-stone-600">{formatTL(currentFee(s.sub).kurus)} / {currentFee(s.sub).unit}</td>
                     <td className="px-6 py-3">
                       <SubscriptionBadge status={s.status} />
                     </td>

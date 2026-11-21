@@ -85,6 +85,13 @@
       "when": 1795263748700,
       "tag": "0011_monthly_awards",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1795272820648,
+      "tag": "0012_yearly_billing",
+      "breakpoints": true
     }
   ]
 }

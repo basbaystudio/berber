@@ -14,6 +14,8 @@ import {
   updateBusinessSubscription,
 } from "@/server/modules/billing/subscriptions";
 import { addDaysStr, periodEnd, todayTR } from "@/lib/dates";
+import { setBillingCycle } from "@/server/modules/business/billing";
+import { currentFee } from "@/server/modules/billing/status";
 import { makeAdmin, makeBusiness, uid } from "../helpers/factory";
 
 const sub = async (businessId: string) => (await db.select().from(businessSubscriptions).where(eq(businessSubscriptions.businessId, businessId)))[0]!;
@@ -34,7 +36,7 @@ describe("kampanya: ilk N işletme", () => {
     expect(subs.filter((s) => s.isEarlyAdopter).every((s) => s.trialMonths === 3)).toBe(true);
     expect(subs.filter((s) => !s.isEarlyAdopter).every((s) => s.trialMonths === 1)).toBe(true);
     // Fiyat paketten kilitlenir
-    expect(subs.every((s) => s.monthlyFeeKurus === 90000)).toBe(true);
+    expect(subs.every((s) => s.monthlyFeeKurus === 69990 && s.yearlyFeeKurus === 699000)).toBe(true);
   });
 
   it("ücretlendirme kapalıyken deneme süresi başlamaz; açılınca bugün başlar", async () => {
@@ -100,12 +102,13 @@ describe("paketler", () => {
       code,
       description: "Öne çıkan listeleme",
       monthlyPriceKurus: 150000,
+      yearlyPriceKurus: null,
       highlights: ["Öne çıkan"],
       isActive: true,
       sortOrder: 1,
     });
     await expect(
-      createPlan(db, { adminId: admin.id }, { name: "X", code, description: undefined, monthlyPriceKurus: 1, highlights: [], isActive: true, sortOrder: 0 }),
+      createPlan(db, { adminId: admin.id }, { name: "X", code, description: undefined, monthlyPriceKurus: 1, yearlyPriceKurus: null, highlights: [], isActive: true, sortOrder: 0 }),
     ).rejects.toMatchObject({ code: "CONFLICT" });
 
     const b = await makeBusiness(admin.id);
@@ -123,5 +126,44 @@ describe("paketler", () => {
     await setDefaultPlan(db, { adminId: admin.id }, standart!.id);
     const defaults = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.isDefault, true));
     expect(defaults).toHaveLength(1);
+  });
+});
+
+describe("aylık / yıllık dönem", () => {
+  it("işletme yıllığa geçer; yıllık ödeme 12 ay kapsar; yıllık seçeneği olmayan pakette reddedilir", async () => {
+    const admin = await makeAdmin();
+    const b = await makeBusiness(admin.id);
+    const biz = { businessId: b.businessId, userId: b.userId };
+    expect(currentFee(await sub(b.businessId))).toMatchObject({ kurus: 69990, months: 1 });
+
+    await setBillingCycle(db, biz, "YEARLY");
+    const s1 = await sub(b.businessId);
+    expect(s1.billingCycle).toBe("YEARLY");
+    expect(currentFee(s1)).toMatchObject({ kurus: 699000, months: 12, unit: "yıl" });
+
+    await enableBilling(db, { adminId: admin.id });
+    const p = await recordPayment(db, { adminId: admin.id }, b.businessId, { months: 12, amount: "6.990", method: "BANK_TRANSFER", paidOn: todayTR() });
+    expect(p.amountKurus).toBe(699000);
+    expect(p.coversTo).toBe(periodEnd(p.coversFrom, 12));
+
+    // Yıllık fiyatı olmayan pakete geçince dönem aylığa döner ve yıllık seçilemez
+    const monthlyOnly = await createPlan(db, { adminId: admin.id }, {
+      name: "Sadece aylık",
+      code: `aylik-${uid()}`,
+      monthlyPriceKurus: 50000,
+      yearlyPriceKurus: null,
+      highlights: [],
+      isActive: true,
+      sortOrder: 9,
+    });
+    await updateBusinessSubscription(db, { adminId: admin.id }, b.businessId, { planId: monthlyOnly!.id, trialMonths: 1 });
+    const s2 = await sub(b.businessId);
+    expect(s2).toMatchObject({ billingCycle: "MONTHLY", yearlyFeeKurus: null, monthlyFeeKurus: 50000 });
+    await expect(setBillingCycle(db, biz, "YEARLY")).rejects.toMatchObject({ code: "VALIDATION" });
+
+    // Veritabanı da yıllık ücretsiz yıllık dönemi kabul etmez
+    await expect(
+      db.update(businessSubscriptions).set({ billingCycle: "YEARLY" }).where(eq(businessSubscriptions.businessId, b.businessId)),
+    ).rejects.toThrow();
   });
 });

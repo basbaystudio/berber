@@ -1,3 +1,4 @@
+import { currentFee } from "@/server/modules/billing/status";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Circle } from "lucide-react";
 import { requireBusinessPage } from "@/server/auth/guards";
@@ -154,8 +155,8 @@ export default async function BusinessHome({ searchParams }: { searchParams: Pro
                   : sub.status.kind === "TRIAL"
                     ? `Ücretsiz deneme · ${formatDateStr(sub.status.coveredUntil)} tarihine kadar`
                     : sub.status.kind === "PAID"
-                      ? `${formatTL(sub.sub.monthlyFeeKurus)} / ay · ${formatDateStr(sub.status.coveredUntil)} tarihine kadar ödendi`
-                      : `${formatTL(sub.sub.monthlyFeeKurus)} / ay · ödeme bekleniyor`}
+                      ? `${formatTL(currentFee(sub.sub).kurus)} / ${currentFee(sub.sub).unit} · ${formatDateStr(sub.status.coveredUntil)} tarihine kadar ödendi`
+                      : `${formatTL(currentFee(sub.sub).kurus)} / ${currentFee(sub.sub).unit} · ödeme bekleniyor`}
               </p>
             </>
           ) : (

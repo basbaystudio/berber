@@ -8,7 +8,7 @@ import { getSetting } from "@/server/modules/platform/settings";
 import { retryFailedEmails, sendEmail } from "@/server/notifications/mailer";
 import { pastDueForAdmin, pastDueForBusiness, suspendedForAdmin, suspendedForBusiness } from "@/server/notifications/templates";
 import { todayTR } from "@/lib/dates";
-import { computeSubscriptionStatus } from "./status";
+import { computeSubscriptionStatus, currentFee } from "./status";
 
 /** Yönetici bildirimlerinin gideceği adresler: ayarlardaki adres, yoksa tüm aktif yöneticiler. */
 export async function adminAlertRecipients(db: Executor): Promise<string[]> {
@@ -64,7 +64,7 @@ export async function runBillingEnforcement(db: DB, now = new Date()) {
   for (const { sub, b } of rows) {
     const st = computeSubscriptionStatus(sub, true, today);
     if (st.kind !== "PAST_DUE" || !st.coveredUntil) continue;
-    const ctx = { businessName: b.name, coveredUntil: st.coveredUntil, feeKurus: sub.monthlyFeeKurus, graceDays, contactLine: line };
+    const ctx = { businessName: b.name, coveredUntil: st.coveredUntil, feeKurus: currentFee(sub).kurus, feeUnit: currentFee(sub).unit, graceDays, contactLine: line };
     const recipients = [
       ...(b.email ? [{ to: b.email, kind: "business" as const }] : []),
       ...admins.map((to) => ({ to, kind: "admin" as const })),

@@ -29,6 +29,7 @@ export const planSchema = z.object({
     .regex(/^[a-z0-9-]{2,40}$/, "Kod yalnızca küçük harf, rakam ve tire içerebilir (örn. premium-plus)."),
   description: optionalText(500, "Açıklama"),
   monthlyPriceKurus: priceField,
+  yearlyPriceKurus: z.preprocess((v) => (v === "" || v == null ? null : typeof v === "string" ? parseTLToKurus(v) : v), z.number({ error: "Geçerli bir yıllık fiyat girin." }).int().min(0).max(1_000_000_00).nullable()),
   highlights: z.preprocess(
     (v) => (typeof v === "string" ? v.split("\n").map((x) => x.trim()).filter(Boolean) : v),
     z.array(z.string().max(120, "Her madde en fazla 120 karakter olabilir.")).max(12, "En fazla 12 madde."),
@@ -109,6 +110,7 @@ export async function assignInitialSubscription(tx: Executor, businessId: string
       businessId,
       planId: plan.id,
       monthlyFeeKurus: plan.monthlyPriceKurus,
+      yearlyFeeKurus: plan.yearlyPriceKurus,
       trialMonths,
       isEarlyAdopter,
       // Ücretlendirme kapalıyken deneme süresi başlamaz; açıldığı gün başlar.
@@ -195,6 +197,7 @@ export async function listBusinessPayments(db: Executor, businessId: string) {
 export const changePlanSchema = z.object({
   planId: z.string().uuid("Paket seçin."),
   customFee: z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? undefined : v), z.string().optional()),
+  customYearlyFee: z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? undefined : v), z.string().optional()),
   trialMonths: z.coerce.number().int().min(0).max(36, "En fazla 36 ay."),
   note: optionalText(500, "Not"),
 });
@@ -213,6 +216,12 @@ export async function updateBusinessSubscription(db: DB, actor: Actor, businessI
       if (k === null || k < 0) throw new AppError("VALIDATION", "Geçerli bir ücret girin.", { customFee: "Geçerli bir ücret girin." });
       fee = k;
     }
+    let yearlyFee = plan.yearlyPriceKurus;
+    if (input.customYearlyFee !== undefined) {
+      const k = parseTLToKurus(input.customYearlyFee);
+      if (k === null || k < 0) throw new AppError("VALIDATION", "Geçerli bir yıllık ücret girin.", { customYearlyFee: "Geçerli bir ücret girin." });
+      yearlyFee = k;
+    }
     const trialEndsOn = sub.trialStartsOn
       ? input.trialMonths > 0
         ? periodEnd(sub.trialStartsOn, input.trialMonths)
@@ -220,7 +229,17 @@ export async function updateBusinessSubscription(db: DB, actor: Actor, businessI
       : null;
     await tx
       .update(businessSubscriptions)
-      .set({ planId: plan.id, monthlyFeeKurus: fee, trialMonths: input.trialMonths, trialEndsOn, note: input.note ?? null, updatedAt: new Date() })
+      .set({
+        planId: plan.id,
+        monthlyFeeKurus: fee,
+        yearlyFeeKurus: yearlyFee,
+        // Paket yıllık sunmuyorsa aylığa döner
+        billingCycle: yearlyFee == null ? "MONTHLY" : sub.billingCycle,
+        trialMonths: input.trialMonths,
+        trialEndsOn,
+        note: input.note ?? null,
+        updatedAt: new Date(),
+      })
       .where(eq(businessSubscriptions.id, sub.id));
     await audit(tx, {
       actorRealm: "ADMIN",

@@ -7,8 +7,9 @@ import { ActionButton } from "@/components/ui/action-button";
 import { formatTL } from "@/lib/money";
 import { formatDateStr } from "@/lib/dates";
 import { formatDateTime } from "@/lib/time";
-import { MethodForm } from "./forms";
-import { cardSetupAction, setMethodAction } from "./actions";
+import { CycleForm, MethodForm } from "./forms";
+import { cardSetupAction, setCycleAction, setMethodAction } from "./actions";
+import { currentFee } from "@/server/modules/billing/status";
 
 export const metadata = { title: "Abonelik" };
 
@@ -19,6 +20,7 @@ export default async function BillingPage() {
   const b = await getMyBilling(db, ctx.businessId);
   const st = b.status;
   const method = b.sub.preferredMethod as "CARD" | "BANK_TRANSFER";
+  const fee = currentFee(b.sub);
   return (
     <>
       <PageHeader title="Abonelik" description="Paketiniz, ödeme yönteminiz ve faturalarınız." />
@@ -29,7 +31,7 @@ export default async function BillingPage() {
       )}
       <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Card>
-          <CardHeader title={b.plan.name} description={`${formatTL(b.sub.monthlyFeeKurus)} / ay`} actions={<Badge tone={st.kind === "PAST_DUE" ? "red" : st.kind === "PAID" ? "green" : "gray"}>{st.label}</Badge>} />
+          <CardHeader title={b.plan.name} description={`${fee.label} ödeme · ${formatTL(fee.kurus)} / ${fee.unit}`} actions={<Badge tone={st.kind === "PAST_DUE" ? "red" : st.kind === "PAID" ? "green" : "gray"}>{st.label}</Badge>} />
           <div className="space-y-2 p-6 text-sm text-stone-600">
             {st.kind === "FREE_PERIOD" && <p>Şu an ücretsiz dönemdesiniz; ödeme alınmıyor. {b.sub.trialMonths} aylık ücretsiz deneme süreniz, ücretlendirme başladığında işlemeye başlayacak.</p>}
             {st.kind === "TRIAL" && <p>Ücretsiz deneme süreniz {formatDateStr(st.coveredUntil)} tarihinde bitiyor ({st.days} gün kaldı).</p>}
@@ -66,6 +68,20 @@ export default async function BillingPage() {
           </div>
         </Card>
       </div>
+
+      {b.sub.yearlyFeeKurus != null && (
+        <Card className="mb-6">
+          <CardHeader title="Ödeme dönemi" description="Aylık ya da yıllık ödeyebilirsiniz." />
+          <div className="p-6">
+            <CycleForm
+              action={setCycleAction}
+              current={b.sub.billingCycle === "YEARLY" ? "YEARLY" : "MONTHLY"}
+              monthlyKurus={b.sub.monthlyFeeKurus}
+              yearlyKurus={b.sub.yearlyFeeKurus}
+            />
+          </div>
+        </Card>
+      )}
 
       <Card className="mb-6">
         <CardHeader title="Ödeme yöntemi" />

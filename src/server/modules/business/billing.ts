@@ -7,7 +7,7 @@ import { AppError, notFound } from "@/server/lib/errors";
 import { audit } from "@/server/lib/audit";
 import { getSetting } from "@/server/modules/platform/settings";
 import { getPaymentGateway } from "@/server/modules/billing/gateway";
-import { computeSubscriptionStatus } from "@/server/modules/billing/status";
+import { computeSubscriptionStatus, currentFee } from "@/server/modules/billing/status";
 import { todayTR } from "@/lib/dates";
 import { bizAudit, type Biz } from "./context";
 
@@ -83,9 +83,26 @@ export async function startCardSetup(db: DB, biz: Biz, returnUrl: string) {
     businessId: biz.businessId,
     email: row.email,
     planCode: row.plan.code,
-    monthlyFeeKurus: row.sub.monthlyFeeKurus,
+    billingCycle: row.sub.billingCycle === "YEARLY" ? "YEARLY" : "MONTHLY",
+    feeKurus: currentFee(row.sub).kurus,
     returnUrl,
   });
   await audit(db, { ...bizAudit(biz), action: "subscription.card_setup_started", meta: { provider: gw.name } });
   return redirectUrl;
+}
+
+export const cycleSchema = z.object({ cycle: z.enum(["MONTHLY", "YEARLY"], { error: "Ödeme dönemi seçin." }) });
+
+/** Aylık ↔ yıllık ödeme dönemi değişikliği (bir sonraki ödemeden itibaren geçerli). */
+export async function setBillingCycle(db: DB, biz: Biz, cycle: "MONTHLY" | "YEARLY") {
+  const [sub] = await db.select().from(businessSubscriptions).where(eq(businessSubscriptions.businessId, biz.businessId));
+  if (!sub) throw notFound("Abonelik");
+  if (cycle === "YEARLY" && sub.yearlyFeeKurus == null) throw new AppError("VALIDATION", "Paketinizde yıllık ödeme seçeneği yok.");
+  if (sub.billingCycle === cycle) return;
+  const gw = getPaymentGateway();
+  if (gw && sub.providerSubscriptionRef && sub.autoRenew) {
+    await gw.updateSubscription(sub.providerSubscriptionRef, { billingCycle: cycle, feeKurus: currentFee({ ...sub, billingCycle: cycle }).kurus });
+  }
+  await db.update(businessSubscriptions).set({ billingCycle: cycle, updatedAt: new Date() }).where(eq(businessSubscriptions.id, sub.id));
+  await audit(db, { ...bizAudit(biz), action: "subscription.cycle_change", meta: { cycle } });
 }

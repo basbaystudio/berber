@@ -1,3 +1,4 @@
+import { currentFee } from "@/server/modules/billing/status";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Bell, LogOut, Store } from "lucide-react";
@@ -84,7 +85,11 @@ export default async function BusinessPanelLayout({ children }: { children: Reac
           {mustPay && sub && (
             <PaymentRequiredModal
               title={sub.sub.isEarlyAdopter || sub.sub.trialMonths > 0 ? "Ücretsiz deneme süreniz sona erdi" : "Ücretsiz kullanım süreniz sona erdi"}
-              feeText={`Bu aydan itibaren aylık ödemeniz: ${formatTL(sub.sub.monthlyFeeKurus)}`}
+              feeText={
+                currentFee(sub.sub).months === 12
+                  ? `Bu aydan itibaren yıllık ödemeniz: ${formatTL(currentFee(sub.sub).kurus)}`
+                  : `Bu aydan itibaren aylık ödemeniz: ${formatTL(currentFee(sub.sub).kurus)}`
+              }
               logoutAction={businessLogoutAction}
             />
           )}

@@ -1,3 +1,4 @@
+import { currentFee } from "@/server/modules/billing/status";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Circle } from "lucide-react";
@@ -166,6 +167,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                   defaults={{
                     planId: subscription.sub.planId,
                     monthlyFeeKurus: subscription.sub.monthlyFeeKurus,
+                    yearlyFeeKurus: subscription.sub.yearlyFeeKurus,
                     trialMonths: subscription.sub.trialMonths,
                     note: subscription.sub.note,
                   }}
@@ -185,7 +187,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
               />
               {subscription.billingEnabled && (
                 <div className="border-b border-stone-100 p-6">
-                  <PaymentForm action={recordPaymentAction.bind(null, b.id)} feeKurus={subscription.sub.monthlyFeeKurus} today={todayTR()} />
+                  <PaymentForm action={recordPaymentAction.bind(null, b.id)} feeKurus={currentFee(subscription.sub).kurus} months={currentFee(subscription.sub).months} today={todayTR()} />
                 </div>
               )}
               {payments.length === 0 ? (
@@ -225,7 +227,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
             <Card>
               <CardHeader
                 title="Abonelik"
-                description={`${subscription.plan.name} · ${formatTL(subscription.sub.monthlyFeeKurus)} / ay${subscription.sub.isEarlyAdopter ? " · Kampanyalı" : ""}`}
+                description={`${subscription.plan.name} · ${formatTL(currentFee(subscription.sub).kurus)} / ${currentFee(subscription.sub).unit}${subscription.sub.isEarlyAdopter ? " · Kampanyalı" : ""}`}
                 actions={<SubscriptionBadge status={subscription.status} />}
               />
               <div className="space-y-1 px-6 py-4 text-sm text-stone-600">
