@@ -23,7 +23,7 @@ function Recenter({ center, zoom }: { center: LatLng; zoom: number }) {
 export default function LocationPickerMap({ value, onPick }: { value: LatLng | null; onPick: (p: LatLng) => void }) {
   const center = value ?? { lat: 39.0, lng: 35.2 }; // Türkiye ortası
   return (
-    <MapContainer center={center} zoom={value ? 16 : 5} scrollWheelZoom className="h-72 w-full rounded-lg border border-slate-300" style={{ zIndex: 0 }}>
+    <MapContainer center={center} zoom={value ? 16 : 5} scrollWheelZoom className="h-72 w-full rounded-lg border border-stone-300" style={{ zIndex: 0 }}>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> katkıcıları'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

@@ -15,8 +15,7 @@ export async function getPlatformStats(db: Executor): Promise<PlatformStats> {
   const r = await db.execute<Record<string, number>>(sql`
     WITH bounds AS (
       SELECT (date_trunc('day', now() AT TIME ZONE ${TZ}) AT TIME ZONE ${TZ}) AS day_start,
-             (date_trunc('month', now() AT TIME ZONE ${TZ}) AT TIME ZONE ${TZ}) AS month_start,
-             date_trunc('month', (now() AT TIME ZONE ${TZ}))::date AS month_date
+             (date_trunc('month', now() AT TIME ZONE ${TZ}) AT TIME ZONE ${TZ}) AS month_start
     )
     SELECT
       (SELECT count(*) FROM businesses)::int AS b_total,
@@ -32,7 +31,7 @@ export async function getPlatformStats(db: Executor): Promise<PlatformStats> {
       (SELECT coalesce(sum(total_kurus), 0) FROM appointments, bounds
          WHERE status = 'COMPLETED' AND starts_at >= month_start AND starts_at < month_start + interval '1 month')::bigint AS rev_completed,
       (SELECT coalesce(sum(amount_kurus), 0) FROM subscription_payments, bounds
-         WHERE paid_on >= month_date AND paid_on < month_date + interval '1 month')::bigint AS rev_subs
+         WHERE status = 'SUCCEEDED' AND paid_at >= month_start AND paid_at < month_start + interval '1 month')::bigint AS rev_subs
   `);
   const x = r.rows[0]!;
   const n = (k: string) => Number(x[k] ?? 0);

@@ -1,5 +1,6 @@
-import { date, index, integer, jsonb, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { notificationStatusEnum, paymentMethodEnum, realmEnum, subscriptionStatusEnum } from "./enums";
+import { boolean, check, date, index, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { notificationStatusEnum, paymentMethodEnum, paymentStatusEnum, realmEnum } from "./enums";
 import { businesses } from "./business";
 import { platformAdmins } from "./identity";
 import { appointments } from "./booking";
@@ -50,7 +51,38 @@ export const notifications = pgTable(
   (t) => [index("notifications_status_idx").on(t.status, t.createdAt)],
 );
 
-/** Platformun işletmeden aldığı abonelik (online tahsilat yok; admin manuel kaydeder). */
+/**
+ * Abonelik paketleri (ör. Standart, Premium Plus). Admin yönetir; kodda sabit değildir.
+ * `capabilities`: ileride pakete özel yetkiler (ör. öne çıkma, ek fotoğraf hakkı) için ayrılmış alan.
+ */
+export const subscriptionPlans = pgTable(
+  "subscription_plans",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    code: text("code").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    monthlyPriceKurus: integer("monthly_price_kurus").notNull(),
+    highlights: jsonb("highlights").$type<string[]>().notNull().default([]),
+    capabilities: jsonb("capabilities").$type<Record<string, unknown>>().notNull().default({}),
+    isActive: boolean("is_active").notNull().default(true),
+    isDefault: boolean("is_default").notNull().default(false),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: ts("created_at").notNull().defaultNow(),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("subscription_plans_code_uq").on(t.code),
+    uniqueIndex("subscription_plans_default_uq").on(t.isDefault).where(sql`${t.isDefault}`),
+    check("subscription_plans_price_ck", sql`${t.monthlyPriceKurus} >= 0`),
+  ],
+);
+
+/**
+ * İşletmenin aboneliği (işletme başına bir satır). Durum saklanmaz, tarihlerden hesaplanır:
+ * ücretlendirme kapalı → ücretsiz dönem; trial_ends_on ≥ bugün → deneme; paid_through ≥ bugün → ödendi; aksi halde gecikmiş.
+ * Deneme süresi (ay) işletme oluşturulurken belirlenir; başlangıcı ücretlendirme açıldığında (ya da sonrasında oluşturulmada) atanır.
+ */
 export const businessSubscriptions = pgTable(
   "business_subscriptions",
   {
@@ -58,17 +90,32 @@ export const businessSubscriptions = pgTable(
     businessId: uuid("business_id")
       .notNull()
       .references(() => businesses.id, { onDelete: "cascade" }),
-    planName: text("plan_name").notNull(),
+    planId: uuid("plan_id")
+      .notNull()
+      .references(() => subscriptionPlans.id),
+    /** Aboneliğe kilitlenen aylık ücret (paket fiyatı sonradan değişse bile korunur). */
     monthlyFeeKurus: integer("monthly_fee_kurus").notNull(),
-    startsOn: date("starts_on").notNull(),
-    endsOn: date("ends_on"),
-    status: subscriptionStatusEnum("status").notNull().default("ACTIVE"),
+    trialMonths: integer("trial_months").notNull(),
+    trialStartsOn: date("trial_starts_on"),
+    trialEndsOn: date("trial_ends_on"),
+    paidThrough: date("paid_through"),
+    isEarlyAdopter: boolean("is_early_adopter").notNull().default(false),
+    cancelledAt: ts("cancelled_at"),
     note: text("note"),
     createdAt: ts("created_at").notNull().defaultNow(),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
   },
-  (t) => [index("business_subscriptions_business_idx").on(t.businessId)],
+  (t) => [
+    uniqueIndex("business_subscriptions_business_uq").on(t.businessId),
+    check("business_subscriptions_fee_ck", sql`${t.monthlyFeeKurus} >= 0`),
+    check("business_subscriptions_trial_ck", sql`${t.trialMonths} BETWEEN 0 AND 36`),
+  ],
 );
 
+/**
+ * Abonelik ödemeleri. Kartla online ödeme (ileride iyzico/PayTR vb.) ve admin'in elle kaydettiği ödemeler aynı tabloda.
+ * provider_ref: ödeme sağlayıcısının işlem numarası (aynı işlem iki kez kaydedilemez).
+ */
 export const subscriptionPayments = pgTable(
   "subscription_payments",
   {
@@ -76,16 +123,56 @@ export const subscriptionPayments = pgTable(
     businessId: uuid("business_id")
       .notNull()
       .references(() => businesses.id, { onDelete: "cascade" }),
-    subscriptionId: uuid("subscription_id").references(() => businessSubscriptions.id, { onDelete: "set null" }),
+    subscriptionId: uuid("subscription_id")
+      .notNull()
+      .references(() => businessSubscriptions.id, { onDelete: "cascade" }),
+    planId: uuid("plan_id").references(() => subscriptionPlans.id),
     amountKurus: integer("amount_kurus").notNull(),
-    paidOn: date("paid_on").notNull(),
+    months: integer("months").notNull(),
+    coversFrom: date("covers_from").notNull(),
+    coversTo: date("covers_to").notNull(),
     method: paymentMethodEnum("method").notNull(),
-    periodLabel: text("period_label"),
+    status: paymentStatusEnum("status").notNull().default("SUCCEEDED"),
+    provider: text("provider"),
+    providerRef: text("provider_ref"),
+    paidAt: ts("paid_at").notNull().defaultNow(),
     note: text("note"),
     recordedByAdminId: uuid("recorded_by_admin_id").references(() => platformAdmins.id),
     createdAt: ts("created_at").notNull().defaultNow(),
   },
-  (t) => [index("subscription_payments_business_idx").on(t.businessId, t.paidOn)],
+  (t) => [
+    index("subscription_payments_business_idx").on(t.businessId, t.paidAt),
+    uniqueIndex("subscription_payments_provider_ref_uq").on(t.provider, t.providerRef).where(sql`${t.providerRef} IS NOT NULL`),
+    check("subscription_payments_amount_ck", sql`${t.amountKurus} >= 0`),
+    check("subscription_payments_months_ck", sql`${t.months} BETWEEN 1 AND 36`),
+    check("subscription_payments_range_ck", sql`${t.coversFrom} < ${t.coversTo}`),
+  ],
+);
+
+/** Ana sayfa bannerları (admin yönetir). */
+export const banners = pgTable(
+  "banners",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    title: text("title").notNull(),
+    subtitle: text("subtitle"),
+    imageKey: text("image_key").notNull(),
+    imageUrl: text("image_url").notNull(),
+    imageWidth: integer("image_width").notNull(),
+    imageHeight: integer("image_height").notNull(),
+    linkUrl: text("link_url"),
+    buttonText: text("button_text"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    isActive: boolean("is_active").notNull().default(true),
+    startsAt: ts("starts_at"),
+    endsAt: ts("ends_at"),
+    createdAt: ts("created_at").notNull().defaultNow(),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("banners_active_idx").on(t.isActive, t.sortOrder),
+    check("banners_range_ck", sql`${t.startsAt} IS NULL OR ${t.endsAt} IS NULL OR ${t.startsAt} < ${t.endsAt}`),
+  ],
 );
 
 /** İşletme güven puanı (anlık) ve günlük geçmişi. */

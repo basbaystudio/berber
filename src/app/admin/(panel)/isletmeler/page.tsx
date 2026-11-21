@@ -33,20 +33,20 @@ export default async function BusinessesPage({ searchParams }: { searchParams: P
     <>
       <PageHeader title="İşletmeler" description="Platformdaki tüm berber işletmeleri" actions={<ButtonLink href="/admin/isletmeler/yeni">Yeni işletme</ButtonLink>} />
       <Card>
-        <form className="flex flex-wrap gap-2 border-b border-slate-100 p-4" role="search">
+        <form className="flex flex-wrap gap-2 border-b border-stone-100 p-4" role="search">
           <label className="relative min-w-0 flex-1 basis-60">
             <span className="sr-only">Ara</span>
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -transtone-y-1/2 text-stone-400" aria-hidden />
             <input
               name="q"
               defaultValue={q}
               placeholder="İşletme adı, bağlantı adı veya kullanıcı adı"
-              className="h-10 w-full rounded-lg border border-slate-300 pl-9 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              className="h-10 w-full rounded-xl border border-stone-200 bg-white pl-9 pr-3 text-sm focus:border-stone-400 focus:outline-none focus:ring-4 focus:ring-stone-200/60"
             />
           </label>
           <label>
             <span className="sr-only">Durum</span>
-            <select name="durum" defaultValue={status ?? ""} className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm">
+            <select name="durum" defaultValue={status ?? ""} className="h-10 rounded-xl border border-stone-200 bg-white px-3 text-sm">
               <option value="">Tüm durumlar</option>
               {Object.entries(STATUSES).map(([v, l]) => (
                 <option key={v} value={v}>
@@ -79,7 +79,7 @@ export default async function BusinessesPage({ searchParams }: { searchParams: P
           <>
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <thead className="bg-stone-50 text-xs uppercase tracking-wide text-stone-500">
                   <tr>
                     <th className="px-4 py-3 font-medium">İşletme</th>
                     <th className="px-4 py-3 font-medium">Konum</th>
@@ -88,34 +88,34 @@ export default async function BusinessesPage({ searchParams }: { searchParams: P
                     <th className="px-4 py-3 font-medium">Son giriş</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-stone-100">
                   {rows.map((b) => (
-                    <tr key={b.id} className="hover:bg-slate-50">
+                    <tr key={b.id} className="hover:bg-stone-50">
                       <td className="px-4 py-3">
-                        <Link href={`/admin/isletmeler/${b.id}`} className="font-medium text-slate-900 hover:text-brand-600">
+                        <Link href={`/admin/isletmeler/${b.id}`} className="font-medium text-stone-900 hover:text-accent-600">
                           {b.name}
                         </Link>
-                        <p className="text-xs text-slate-500">/berber/{b.slug}</p>
+                        <p className="text-xs text-stone-500">/berber/{b.slug}</p>
                       </td>
-                      <td className="px-4 py-3 text-slate-600">
+                      <td className="px-4 py-3 text-stone-600">
                         {b.district}, {b.province}
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-slate-600">{b.login ?? "—"}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-stone-600">{b.login ?? "—"}</td>
                       <td className="px-4 py-3">
                         <StatusBadge status={b.status} published={b.isPublished} />
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{b.lastLoginAt ? formatDateTime(b.lastLoginAt) : "Hiç giriş yapmadı"}</td>
+                      <td className="px-4 py-3 text-stone-600">{b.lastLoginAt ? formatDateTime(b.lastLoginAt) : "Hiç giriş yapmadı"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <ul className="divide-y divide-slate-100 md:hidden">
+            <ul className="divide-y divide-stone-100 md:hidden">
               {rows.map((b) => (
                 <li key={b.id}>
-                  <Link href={`/admin/isletmeler/${b.id}`} className="block space-y-1 px-4 py-3 hover:bg-slate-50">
-                    <p className="font-medium text-slate-900">{b.name}</p>
-                    <p className="text-sm text-slate-500">
+                  <Link href={`/admin/isletmeler/${b.id}`} className="block space-y-1 px-4 py-3 hover:bg-stone-50">
+                    <p className="font-medium text-stone-900">{b.name}</p>
+                    <p className="text-sm text-stone-500">
                       {b.district}, {b.province}
                     </p>
                     <StatusBadge status={b.status} published={b.isPublished} />

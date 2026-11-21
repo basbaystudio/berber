@@ -37,8 +37,8 @@ export function OwnerPanel({
           <SubmitButton pending={pending}>Hesabı kaydet</SubmitButton>
         </div>
       </form>
-      <div className="border-t border-slate-100 pt-5">
-        <p className="mb-2 text-sm text-slate-600">
+      <div className="border-t border-stone-100 pt-5">
+        <p className="mb-2 text-sm text-stone-600">
           Şifresini unutan işletme için yeni geçici şifre üretin. Mevcut şifre ve açık oturumlar geçersiz olur.
         </p>
         <ActionButton

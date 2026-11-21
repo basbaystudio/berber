@@ -34,7 +34,7 @@ export async function businessLogoutAction() {
   if (token) await invalidateSession(db, token);
   if (ctx) await audit(db, { actorRealm: "BUSINESS", actorId: ctx.user.id, businessId: ctx.businessId, action: "auth.logout" });
   await clearSessionCookie("BUSINESS");
-  redirect("/isletme/giris");
+  redirect("/isletme");
 }
 
 const changeSchema = z

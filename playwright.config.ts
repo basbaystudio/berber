@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 const PORT = Number(process.env.E2E_PORT ?? 3100);
 const DATABASE_URL = process.env.E2E_DATABASE_URL ?? "postgres://berber:berber@localhost:5432/berber_e2e";
-// Ortamda önceden kurulu Chromium varsa onu kullan
+// İsteğe bağlı: farklı bir Chromium kullanmak için
 const executablePath = process.env.PW_CHROMIUM_PATH || undefined;
 
 export default defineConfig({

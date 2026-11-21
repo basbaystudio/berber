@@ -4,6 +4,7 @@ import { checkbox, optionalCoord, optionalText, intFromForm, trimmed, trPhone, e
 const RESERVED_SLUGS = new Set([
   "admin", "isletme", "giris", "kayit", "hesabim", "api", "ara", "berber", "panel", "yardim", "iletisim", "hakkimizda",
   "kvkk", "gizlilik", "kosullar", "randevu", "sifre", "cikis", "static", "public", "assets",
+  "sifre-degistir", "media", "isletmeler", "abonelik", "uploads",
 ]);
 
 export const slugSchema = z

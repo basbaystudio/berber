@@ -17,6 +17,7 @@ export const staff = pgTable(
     name: text("name").notNull(),
     title: text("title"),
     photoKey: text("photo_key"),
+    photoUrl: text("photo_url"),
     bio: text("bio"),
     isActive: boolean("is_active").notNull().default(true),
     sortOrder: integer("sort_order").notNull().default(0),

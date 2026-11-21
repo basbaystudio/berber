@@ -8,6 +8,7 @@ import { generateTempPassword, hashPassword } from "@/server/auth/password";
 import { invalidateAllSessions } from "@/server/auth/session";
 import { slugify } from "@/lib/slug";
 import { getPublishChecklist } from "@/server/modules/business/publish";
+import { assignInitialSubscription } from "@/server/modules/billing/subscriptions";
 export { getPublishChecklist };
 import type { BusinessProfileInput, CreateBusinessInput } from "@/lib/validation/business";
 
@@ -67,6 +68,7 @@ export async function createBusiness(db: DB, actor: AdminActor, input: CreateBus
         })
         .returning({ id: businesses.id, slug: businesses.slug });
       await tx.insert(businessSettings).values({ businessId: b!.id });
+      const sub = await assignInitialSubscription(tx, b!.id);
       const [u] = await tx
         .insert(businessUsers)
         .values({ businessId: b!.id, login: input.login, name: input.ownerName, passwordHash, mustChangePassword: true })
@@ -78,7 +80,7 @@ export async function createBusiness(db: DB, actor: AdminActor, input: CreateBus
         action: "business.create",
         entity: "business",
         entityId: b!.id,
-        meta: { name: input.name, slug, login: input.login },
+        meta: { name: input.name, slug, login: input.login, trialMonths: sub.trialMonths, earlyAdopter: sub.isEarlyAdopter },
         ip: actor.ip,
       });
       return { businessId: b!.id, slug: b!.slug, userId: u!.id, login: input.login, tempPassword };

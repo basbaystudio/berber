@@ -57,6 +57,57 @@ await db.transaction(async (tx) => {
   for (const [key, value] of Object.entries(DEFAULT_PLATFORM_SETTINGS)) {
     await tx.insert(schema.platformSettings).values({ key, value }).onConflictDoNothing();
   }
+
+  // Sabit tarihli resmî tatiller (dini bayramlar her yıl değiştiği için admin panelinden eklenir)
+  const FIXED = [
+    ["01-01", "Yılbaşı", false],
+    ["04-23", "Ulusal Egemenlik ve Çocuk Bayramı", false],
+    ["05-01", "Emek ve Dayanışma Günü", false],
+    ["05-19", "Atatürk'ü Anma, Gençlik ve Spor Bayramı", false],
+    ["07-15", "Demokrasi ve Millî Birlik Günü", false],
+    ["08-30", "Zafer Bayramı", false],
+    ["10-28", "Cumhuriyet Bayramı Arifesi", true],
+    ["10-29", "Cumhuriyet Bayramı", false],
+  ] as const;
+  const year = new Date().getFullYear();
+  for (const y of [year, year + 1, year + 2]) {
+    await tx
+      .insert(schema.publicHolidays)
+      .values(FIXED.map(([md, name, half]) => ({ date: `${y}-${md}`, name, isHalfDay: half })))
+      .onConflictDoNothing();
+  }
+
+  // Varsayılan abonelik paketi (yalnızca hiç paket yoksa)
+  const plans = await tx.select({ id: schema.subscriptionPlans.id }).from(schema.subscriptionPlans).limit(1);
+  if (!plans.length) {
+    await tx.insert(schema.subscriptionPlans).values({
+      code: "standart",
+      name: "Standart",
+      description: "Online randevu, işletme paneli ve pazaryeri profili.",
+      monthlyPriceKurus: 90000,
+      highlights: ["Pazaryerinde işletme profili", "Online randevu ve takvim", "Çalışan ve hizmet yönetimi", "30 fotoğraflık portfolyo"],
+      isDefault: true,
+    });
+  }
+
+  // Aboneliği olmayan eski işletmelere oluşturulma sırasıyla abonelik ata (kampanya kuralı korunur)
+  await tx.execute(sql`
+    WITH cfg AS (
+      SELECT coalesce((SELECT (value->>'limit')::int FROM platform_settings WHERE key = 'billing.earlyAdopter'), 20) AS lim,
+             coalesce((SELECT (value->>'trialMonths')::int FROM platform_settings WHERE key = 'billing.earlyAdopter'), 3) AS early_m,
+             coalesce((SELECT value::text::int FROM platform_settings WHERE key = 'billing.defaultTrialMonths'), 1) AS def_m,
+             (SELECT count(*) FROM business_subscriptions WHERE is_early_adopter) AS used
+    ), todo AS (
+      SELECT b.id, row_number() OVER (ORDER BY b.created_at) AS rn
+        FROM businesses b LEFT JOIN business_subscriptions s ON s.business_id = b.id
+       WHERE s.id IS NULL
+    )
+    INSERT INTO business_subscriptions (business_id, plan_id, monthly_fee_kurus, trial_months, is_early_adopter)
+    SELECT t.id, p.id, p.monthly_price_kurus,
+           CASE WHEN cfg.used + t.rn <= cfg.lim THEN cfg.early_m ELSE cfg.def_m END,
+           cfg.used + t.rn <= cfg.lim
+      FROM todo t, cfg, subscription_plans p
+     WHERE p.is_default`);
 });
 
 const count = async (table: string) =>

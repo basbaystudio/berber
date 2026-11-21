@@ -8,7 +8,7 @@ import { Field, Input } from "@/components/ui/form";
 
 const MapView = dynamic(() => import("./location-picker-map"), {
   ssr: false,
-  loading: () => <div className="grid h-72 place-items-center rounded-lg border border-slate-200 bg-slate-100 text-sm text-slate-500">Harita yükleniyor…</div>,
+  loading: () => <div className="grid h-72 place-items-center rounded-lg border border-stone-200 bg-stone-100 text-sm text-stone-500">Harita yükleniyor…</div>,
 });
 
 /** Haritaya tıklayarak ya da elle enlem/boylam girerek konum seçimi. Değerler form alanı olarak gönderilir. */
@@ -46,7 +46,7 @@ export function LocationPicker({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-slate-600">İşletmenin yerini haritada işaretlemek için haritaya tıklayın.</p>
+        <p className="text-sm text-stone-600">İşletmenin yerini haritada işaretlemek için haritaya tıklayın.</p>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={useMyLocation}>
             <LocateFixed className="size-4" aria-hidden /> Bulunduğum konum

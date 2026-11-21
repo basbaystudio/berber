@@ -24,5 +24,5 @@ export const reportReasonEnum = pgEnum("report_reason", ["SPAM", "INSULT", "MISL
 export const reportStatusEnum = pgEnum("report_status", ["OPEN", "REJECTED", "REMOVED"]);
 export const authTokenPurposeEnum = pgEnum("auth_token_purpose", ["EMAIL_VERIFY", "PASSWORD_RESET"]);
 export const notificationStatusEnum = pgEnum("notification_status", ["QUEUED", "SENT", "FAILED"]);
-export const subscriptionStatusEnum = pgEnum("subscription_status", ["ACTIVE", "ENDED"]);
-export const paymentMethodEnum = pgEnum("payment_method", ["BANK_TRANSFER", "CASH", "OTHER"]);
+export const paymentMethodEnum = pgEnum("payment_method", ["CARD", "BANK_TRANSFER", "CASH", "OTHER"]);
+export const paymentStatusEnum = pgEnum("payment_status", ["SUCCEEDED", "REFUNDED"]);

@@ -1,6 +1,6 @@
 # Berber Pazaryeri ve Randevu Platformu — Mimari Doküman (Aşama 1)
 
-> Durum: **Taslak — kararlar işlendi, son sorular bekleniyor.** (Bkz. §8 Kararlar)
+> Durum: Aşama 1–3 tamamlandı. Kararlar için bkz. §8.
 > Dil: Türkçe · Para birimi: TL (veritabanında kuruş, tam sayı) · Saat dilimi: Europe/Istanbul
 
 ---
@@ -453,4 +453,8 @@ Her aşamanın sonunda: yapılanlar, eksikler ve test sonuçları raporlanır, o
 | 5 | Gelir takibi | **İkisi de:** işletmelerin tamamlanan randevu cirosu + platformun işletmelerden aldığı abonelik ücretlerinin admin tarafından manuel kaydı. |
 | 9 | Bildirim | **Ekran + e-posta.** WhatsApp/SMS bildirimi yok. |
 | 15 | Onaylanmayan talep | **6 saat** içinde onaylanmazsa (ya da randevu saati daha yakınsa o saate kadar) otomatik iptal. |
+| 17 | Giriş adresleri | Yönetici: **/admin** (oturum yoksa giriş ekranı). İşletme: **/isletme**, işletmeye özel: **/isletme/<isletme-adi>**. Eski /admin/giris ve /isletme/giris yönlendirilir. Alan adı henüz yok; tüm adresler göreli. |
+| 18 | Ana sayfa bannerı | Admin panelinden yönetilir: görsel, başlık, alt başlık, buton/bağlantı, sıra, aktiflik, yayın başlangıç/bitiş. |
+| 19 | Abonelik | Paketler veritabanında (bugün: Standart 900 TL/ay; Premium Plus vb. panelden eklenir, `capabilities` alanı pakete özel yetkiler için ayrılmıştır). Kampanya: ilk 20 işletme 3 ay, sonrakiler 1 ay ücretsiz (değerler ayar). **Ücretlendirme anahtarı** kapalıyken herkes ücretsiz, kart bilgisi istenmez; açıldığı gün deneme süreleri başlar. Ödeme kaydı kartla online ödemeye hazır (method CARD, provider, provider_ref); sağlayıcı şirket kurulunca bağlanacak. Gecikmede otomatik askıya alma yok. |
+| 20 | Tasarım dili | Göz yormayan, minimalist: sıcak nötr (stone) zemin, mürekkep ana renk, ölçülü pirinç vurgu, açık kenar çubuğu. |
 | 16 | Güven puanı | İşletmenin onaylama, yanıt hızı, iptal ve panel aktivitesi davranışından hesaplanır; pazaryeri sıralamasını etkiler (§3.11.1). |

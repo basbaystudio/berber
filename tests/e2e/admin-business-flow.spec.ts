@@ -5,25 +5,34 @@ test.describe.configure({ mode: "serial" });
 
 const suffix = Date.now().toString(36);
 
-test("korumalı sayfalar oturumsuz açılamaz", async ({ page }) => {
+test("korumalı sayfalar oturumsuz açılamaz; giriş adresleri /admin ve /isletme", async ({ page }) => {
   await page.goto("/admin");
-  await expect(page).toHaveURL(/\/admin\/giris$/);
+  await expect(page).toHaveURL(/\/admin$/);
+  await expect(page.getByRole("heading", { name: "Platform Yönetimi" })).toBeVisible();
   await page.goto("/admin/isletmeler");
-  await expect(page).toHaveURL(/\/admin\/giris$/);
+  await expect(page).toHaveURL(/\/admin$/);
   await page.goto("/isletme/panel");
-  await expect(page).toHaveURL(/\/isletme\/giris$/);
+  await expect(page).toHaveURL(/\/isletme$/);
+  await expect(page.getByRole("button", { name: "Giriş yap" })).toBeVisible();
+  // Eski adresler yeni adreslere yönlenir
+  await page.goto("/admin");
+  await expect(page).toHaveURL(/\/admin$/);
+  await page.goto("/isletme/giris");
+  await expect(page).toHaveURL(/\/isletme$/);
 });
 
 test("sahte oturum çerezi reddedilir", async ({ page, context }) => {
-  await page.goto("/admin/giris");
+  await page.goto("/admin");
   await page.evaluate(() => (document.cookie = `__Host-bp_a=${"x".repeat(43)}; Secure; Path=/`));
   expect((await context.cookies()).some((c) => c.name === "__Host-bp_a")).toBe(true);
-  await page.goto("/admin");
-  await expect(page).toHaveURL(/\/admin\/giris$/);
+  // Sahte çerezle korumalı sayfada veri değil, giriş ekranı görünür
+  await page.goto("/admin/isletmeler");
+  await expect(page.getByRole("heading", { name: "Platform Yönetimi" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "İşletmeler" })).toHaveCount(0);
 });
 
 test("yanlış şifre hata mesajı gösterir ve e-posta alanı korunur", async ({ page }) => {
-  await page.goto("/admin/giris");
+  await page.goto("/admin");
   await page.getByLabel("E-posta").fill(E2E_ADMIN.email);
   await page.getByLabel("Şifre").fill("YanlisSifre123");
   await page.getByRole("button", { name: "Giriş yap" }).click();
@@ -36,7 +45,7 @@ test("admin işletme oluşturur, işletme ilk girişte şifresini değiştirir",
   const login = `e2e-${testInfo.project.name}-${suffix}`;
 
   // Admin girişi
-  await page.goto("/admin/giris");
+  await page.goto("/admin");
   await page.getByLabel("E-posta").fill(E2E_ADMIN.email);
   await page.getByLabel("Şifre").fill(E2E_ADMIN.password);
   await page.getByRole("button", { name: "Giriş yap" }).click();
@@ -82,7 +91,7 @@ test("admin işletme oluşturur, işletme ilk girişte şifresini değiştirir",
   // İşletme girişi (ayrı tarayıcı bağlamı)
   const biz = await browser.newContext({ ...testInfo.project.use });
   const bp = await biz.newPage();
-  await bp.goto("/isletme/giris");
+  await bp.goto("/isletme");
   await bp.getByLabel("Kullanıcı adı").fill(login.toUpperCase());
   await bp.getByLabel("Şifre").fill(tempPassword);
   await bp.getByRole("button", { name: "Giriş yap" }).click();
@@ -104,8 +113,9 @@ test("admin işletme oluşturur, işletme ilk girişte şifresini değiştirir",
   await bp.screenshot({ path: testInfo.outputPath("05-isletme-panel.png"), fullPage: true });
 
   // İşletme oturumu admin paneline erişemez
-  await bp.goto("/admin");
-  await expect(bp).toHaveURL(/\/admin\/giris$/);
+  await bp.goto("/admin/isletmeler");
+  await expect(bp).toHaveURL(/\/admin$/);
+  await expect(bp.getByRole("heading", { name: "Platform Yönetimi" })).toBeVisible();
 
   await biz.close();
 
@@ -118,7 +128,7 @@ test("admin işletme oluşturur, işletme ilk girişte şifresini değiştirir",
 
   const biz2 = await browser.newContext({ ...testInfo.project.use });
   const bp2 = await biz2.newPage();
-  await bp2.goto("/isletme/giris");
+  await bp2.goto("/isletme");
   await bp2.getByLabel("Kullanıcı adı").fill(login);
   await bp2.getByLabel("Şifre").fill("Makas2026kesim");
   await bp2.getByRole("button", { name: "Giriş yap" }).click();
@@ -128,5 +138,5 @@ test("admin işletme oluşturur, işletme ilk girişte şifresini değiştirir",
   // Çıkış
   if (testInfo.project.name === "mobil") await page.getByRole("button", { name: "Menüyü aç" }).click();
   await page.getByRole("button", { name: "Çıkış yap" }).click();
-  await expect(page).toHaveURL(/\/admin\/giris$/);
+  await expect(page.getByRole("heading", { name: "Platform Yönetimi" })).toBeVisible();
 });

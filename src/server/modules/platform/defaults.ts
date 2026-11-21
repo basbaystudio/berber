@@ -13,6 +13,15 @@ export const DEFAULT_PLATFORM_SETTINGS = {
   "trust.prior": { score: 70, fullConfidenceSamples: 10 },
   /** Bu puanın altındaki işletmeler vitrinlere (öne çıkanlar / bugün müsait) giremez. */
   "trust.showcaseThreshold": 40,
+  /**
+   * Ücretlendirme: kapalıyken (deneme/lansman öncesi) tüm işletmeler ücretsizdir, gecikme uyarısı çıkmaz.
+   * Açıldığı gün (liveSince) mevcut işletmelerin ücretsiz deneme süresi başlar.
+   */
+  "billing.status": { enabled: false, liveSince: null as string | null },
+  /** İlk N işletmeye uzun ücretsiz deneme (kampanya). */
+  "billing.earlyAdopter": { limit: 20, trialMonths: 3 },
+  /** Kampanya dışındaki işletmelerin ücretsiz deneme süresi (ay). */
+  "billing.defaultTrialMonths": 1,
 } as const satisfies Record<string, unknown>;
 
 export type PlatformSettingKey = keyof typeof DEFAULT_PLATFORM_SETTINGS;

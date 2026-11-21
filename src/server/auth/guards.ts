@@ -58,6 +58,10 @@ export const getBusiness = cache(async (): Promise<BusinessContext | null> => {
     .where(eq(businessUsers.id, session.principalId))
     .limit(1);
   if (!row || !row.u.isActive || row.b.status === "SUSPENDED") return null;
+  const last = row.b.lastPanelActivityAt?.getTime() ?? 0;
+  if (Date.now() - last > 10 * 60_000) {
+    await db.update(businesses).set({ lastPanelActivityAt: new Date() }).where(eq(businesses.id, row.b.id));
+  }
   return {
     realm: "BUSINESS",
     session,

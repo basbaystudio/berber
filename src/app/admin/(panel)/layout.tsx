@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LogOut, ShieldCheck } from "lucide-react";
-import { requireAdminPage } from "@/server/auth/guards";
+import { getAdmin } from "@/server/auth/guards";
+import { AdminLoginScreen } from "@/components/auth/admin-login-screen";
 import { SidebarNav, type NavItem } from "@/components/shell/sidebar-nav";
 import { adminLogoutAction } from "../auth-actions";
 
@@ -9,30 +10,36 @@ export const metadata: Metadata = { title: { default: "Yönetim", template: "%s 
 const NAV: NavItem[] = [
   { href: "/admin", label: "Gösterge Paneli", icon: "dashboard", exact: true },
   { href: "/admin/isletmeler", label: "İşletmeler", icon: "businesses" },
+  { href: "/admin/abonelikler", label: "Abonelikler", icon: "billing" },
+  { href: "/admin/bannerlar", label: "Bannerlar", icon: "banners" },
   { href: "/admin/hizmet-turleri", label: "Hizmet Türleri", icon: "tags" },
+  { href: "/admin/tatiller", label: "Resmî Tatiller", icon: "holidays" },
   { href: "/admin/kayitlar", label: "Denetim Kayıtları", icon: "logs" },
 ];
 
 export default async function AdminPanelLayout({ children }: { children: React.ReactNode }) {
-  const { admin } = await requireAdminPage();
+  const ctx = await getAdmin();
+  // Oturum yoksa /admin adresinde doğrudan giriş ekranı gösterilir; alt sayfalar /admin'e yönlendirir.
+  if (!ctx) return <AdminLoginScreen />;
+  const { admin } = ctx;
   return (
     <div className="lg:flex lg:min-h-dvh">
       <SidebarNav
         items={NAV}
         brand={
-          <span className="flex items-center gap-2 font-semibold text-white">
-            <ShieldCheck className="size-5 text-accent-500" aria-hidden />
+          <span className="flex items-center gap-2 font-semibold text-stone-900">
+            <ShieldCheck className="size-5 text-accent-600" aria-hidden />
             Platform Yönetimi
           </span>
         }
         footer={
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-white">{admin.name}</p>
-              <p className="truncate text-xs text-slate-400">{admin.email}</p>
+              <p className="truncate text-sm font-medium text-stone-900">{admin.name}</p>
+              <p className="truncate text-xs text-stone-500">{admin.email}</p>
             </div>
             <form action={adminLogoutAction}>
-              <button type="submit" className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white" title="Çıkış yap" aria-label="Çıkış yap">
+              <button type="submit" className="rounded-xl p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-900" title="Çıkış yap" aria-label="Çıkış yap">
                 <LogOut className="size-4" />
               </button>
             </form>

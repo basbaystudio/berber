@@ -31,5 +31,5 @@ export async function adminLogoutAction() {
   if (token) await invalidateSession(db, token);
   if (ctx) await audit(db, { actorRealm: "ADMIN", actorId: ctx.admin.id, action: "auth.logout", ip: (await getRequestMeta()).ip });
   await clearSessionCookie("ADMIN");
-  redirect("/admin/giris");
+  redirect("/admin");
 }

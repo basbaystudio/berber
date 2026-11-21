@@ -6,8 +6,16 @@ import { businessLogoutAction } from "../auth-actions";
 
 export const metadata: Metadata = { title: { default: "İşletme Paneli", template: "%s · İşletme Paneli" }, robots: { index: false, follow: false } };
 
-// Diğer menüler (takvim, çalışanlar, hizmetler, çalışma saatleri, portfolyo...) Aşama 3-4'te eklenecek.
-const NAV: NavItem[] = [{ href: "/isletme/panel", label: "Genel Bakış", icon: "dashboard", exact: true }];
+// Takvim ve randevular Aşama 4'te eklenecek.
+const NAV: NavItem[] = [
+  { href: "/isletme/panel", label: "Genel Bakış", icon: "dashboard", exact: true },
+  { href: "/isletme/panel/calisma-saatleri", label: "Çalışma Saatleri", icon: "clock" },
+  { href: "/isletme/panel/calisanlar", label: "Çalışanlar", icon: "users" },
+  { href: "/isletme/panel/hizmetler", label: "Hizmetler", icon: "scissors" },
+  { href: "/isletme/panel/paketler", label: "Paketler", icon: "package" },
+  { href: "/isletme/panel/portfolyo", label: "Portfolyo", icon: "images" },
+  { href: "/isletme/panel/profil", label: "İşletme Profili", icon: "store" },
+];
 
 export default async function BusinessPanelLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireBusinessPage();
@@ -16,21 +24,21 @@ export default async function BusinessPanelLayout({ children }: { children: Reac
       <SidebarNav
         items={NAV}
         brand={
-          <span className="flex min-w-0 items-center gap-2 font-semibold text-white">
-            <Store className="size-5 shrink-0 text-accent-500" aria-hidden />
+          <span className="flex min-w-0 items-center gap-2 font-semibold text-stone-900">
+            <Store className="size-5 shrink-0 text-accent-600" aria-hidden />
             <span className="truncate">{ctx.business.name}</span>
           </span>
         }
         footer={
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-white">{ctx.user.name}</p>
-              <a href="/isletme/sifre-degistir" className="text-xs text-slate-400 hover:text-white">
+              <p className="truncate text-sm font-medium text-stone-900">{ctx.user.name}</p>
+              <a href="/isletme/sifre-degistir" className="text-xs text-stone-500 hover:text-stone-900">
                 Şifre değiştir
               </a>
             </div>
             <form action={businessLogoutAction}>
-              <button type="submit" className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white" title="Çıkış yap" aria-label="Çıkış yap">
+              <button type="submit" className="rounded-xl p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-900" title="Çıkış yap" aria-label="Çıkış yap">
                 <LogOut className="size-4" />
               </button>
             </form>

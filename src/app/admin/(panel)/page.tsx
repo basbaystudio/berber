@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireAdminPage } from "@/server/auth/guards";
+import { getAdmin } from "@/server/auth/guards";
 import { db } from "@/server/db/client";
 import { getPlatformStats } from "@/server/modules/admin/stats";
 import { listBusinesses } from "@/server/modules/admin/businesses";
@@ -14,15 +14,16 @@ export const metadata = { title: "Gösterge Paneli" };
 function Stat({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
     <Card className="p-5">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">{value}</p>
-      {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
+      <p className="text-sm text-stone-500">{label}</p>
+      <p className="mt-1 text-2xl font-semibold tabular-nums text-stone-900">{value}</p>
+      {hint && <p className="mt-1 text-xs text-stone-500">{hint}</p>}
     </Card>
   );
 }
 
 export default async function AdminDashboard() {
-  await requireAdminPage();
+  // Oturum yoksa layout giriş ekranını gösterir; burada yönlendirme yapılmaz (döngü olmasın).
+  if (!(await getAdmin())) return null;
   const [s, recent] = await Promise.all([getPlatformStats(db), listBusinesses(db, { page: 1 })]);
   return (
     <>
@@ -45,7 +46,7 @@ export default async function AdminDashboard() {
       </section>
 
       <Card className="mt-6">
-        <CardHeader title="Son eklenen işletmeler" actions={<Link href="/admin/isletmeler" className="text-sm font-medium text-brand-600 hover:underline">Tümünü gör</Link>} />
+        <CardHeader title="Son eklenen işletmeler" actions={<Link href="/admin/isletmeler" className="text-sm font-medium text-stone-900 underline-offset-4 hover:underline">Tümünü gör</Link>} />
         {recent.rows.length === 0 ? (
           <EmptyState
             title="Henüz işletme yok"
@@ -53,13 +54,13 @@ export default async function AdminDashboard() {
             action={<ButtonLink href="/admin/isletmeler/yeni">İşletme oluştur</ButtonLink>}
           />
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-stone-100">
             {recent.rows.slice(0, 5).map((b) => (
               <li key={b.id}>
-                <Link href={`/admin/isletmeler/${b.id}`} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 hover:bg-slate-50">
+                <Link href={`/admin/isletmeler/${b.id}`} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 hover:bg-stone-50">
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-slate-900">{b.name}</p>
-                    <p className="text-sm text-slate-500">
+                    <p className="truncate font-medium text-stone-900">{b.name}</p>
+                    <p className="text-sm text-stone-500">
                       {b.district}, {b.province} · {formatDateTime(b.createdAt)}
                     </p>
                   </div>

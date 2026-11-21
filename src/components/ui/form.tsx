@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 import { Button, type ButtonVariant } from "./button";
 
 const control =
-  "block w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:bg-slate-100 aria-[invalid=true]:border-red-500";
+  "block w-full rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:border-stone-400 focus:outline-none focus:ring-4 focus:ring-stone-200/60 disabled:bg-stone-50 disabled:text-stone-500 aria-[invalid=true]:border-red-400";
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
   return <input className={cn(control, "h-10", className)} {...props} />;
@@ -21,9 +21,15 @@ export function Select({ className, ...props }: ComponentProps<"select">) {
   return <select className={cn(control, "h-10 pr-8", className)} {...props} />;
 }
 
+/**
+ * Etiketli form alanı. `id` verilmezse alanın id'si `name` kabul edilir (etiket ile alan eşleşmeli).
+ * `group`: birden çok kontrolden oluşan alanlar (işaret kutusu listesi vb.) için role="group" + aria-labelledby.
+ */
 export function Field({
   label,
   name,
+  id,
+  group,
   error,
   hint,
   required,
@@ -32,29 +38,42 @@ export function Field({
 }: {
   label: string;
   name: string;
+  id?: string;
+  group?: boolean;
   error?: string;
   hint?: ReactNode;
   required?: boolean;
   children: ReactNode;
   className?: string;
 }) {
+  const labelContent = (
+    <>
+      {label}
+      {required && (
+        <span className="text-stone-400" aria-hidden>
+          {" "}*
+        </span>
+      )}
+    </>
+  );
   return (
-    <div className={cn("space-y-1.5", className)}>
-      <label htmlFor={name} className="block text-sm font-medium text-slate-700">
-        {label}
-        {required && (
-          <span className="text-red-600" aria-hidden>
-            {" "}*
-          </span>
-        )}
-      </label>
+    <div className={cn("space-y-1.5", className)} {...(group ? { role: "group", "aria-labelledby": `${name}-label` } : {})}>
+      {group ? (
+        <span id={`${name}-label`} className="block text-sm font-medium text-stone-700">
+          {labelContent}
+        </span>
+      ) : (
+        <label htmlFor={id ?? name} className="block text-sm font-medium text-stone-700">
+          {labelContent}
+        </label>
+      )}
       {children}
       {error ? (
         <p id={`${name}-error`} className="text-sm text-red-600">
           {error}
         </p>
       ) : hint ? (
-        <p className="text-xs text-slate-500">{hint}</p>
+        <p className="text-xs text-stone-500">{hint}</p>
       ) : null}
     </div>
   );
@@ -62,8 +81,8 @@ export function Field({
 
 export function Checkbox({ label, className, ...props }: ComponentProps<"input"> & { label: ReactNode }) {
   return (
-    <label className={cn("inline-flex cursor-pointer items-center gap-2 text-sm text-slate-700", className)}>
-      <input type="checkbox" className="size-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" {...props} />
+    <label className={cn("inline-flex cursor-pointer items-center gap-2 text-sm text-stone-700", className)}>
+      <input type="checkbox" className="size-4 rounded border-stone-300 accent-stone-900" {...props} />
       {label}
     </label>
   );

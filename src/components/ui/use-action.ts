@@ -23,7 +23,14 @@ export function useFormAction<T>(
     startTransition(() => dispatch(fd));
   };
   const fieldErrors = state.status === "error" ? state.fieldErrors : undefined;
-  return { state, pending, onSubmit, fieldErrors };
+  // Her başarılı gönderimde artar: yeni kayıt formlarını `key={version}` ile tamamen sıfırlamak için
+  const versionRef = useRef(0);
+  const lastState = useRef(state);
+  if (state !== lastState.current) {
+    lastState.current = state;
+    if (state.status === "success") versionRef.current += 1;
+  }
+  return { state, pending, onSubmit, fieldErrors, version: versionRef.current };
 }
 
 /** Parametresiz bir server action'ı (buton) çalıştırır. */

@@ -22,6 +22,7 @@
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
     "@node-rs/argon2": "^2.2.2",
+    "@vercel/blob": "^2.9.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "drizzle-orm": "^0.45.4",
@@ -33,11 +34,12 @@
     "react-dom": "^19.3.1",
     "react-leaflet": "^5.0.0",
     "server-only": "^0.0.1",
+    "sharp": "^0.35.5",
     "tailwind-merge": "^3.7.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@playwright/test": "^1.65.1",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.3.5",
     "@types/leaflet": "^1.9.22",
     "@types/node": "^22.20.5",

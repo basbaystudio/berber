@@ -27,7 +27,7 @@ export default async function ServiceTypesPage() {
         {types.length === 0 ? (
           <EmptyState title="Henüz hizmet türü yok" />
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-stone-100">
             {types.map((t) => (
               <li key={t.id} className="px-5 py-3">
                 <ServiceTypeRowForm action={updateServiceTypeAction.bind(null, t.id)} defaults={{ name: t.name, sortOrder: t.sortOrder, isActive: t.isActive }} />

@@ -9,8 +9,23 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["@node-rs/argon2", "pg"],
+  serverExternalPackages: ["@node-rs/argon2", "pg", "sharp"],
   poweredByHeader: false,
+  experimental: {
+    // Görseller istemcide küçültülüp gönderilir; Vercel istek sınırı 4,5 MB
+    serverActions: { bodySizeLimit: "4.5mb" },
+  },
+  images: {
+    remotePatterns: [{ protocol: "https", hostname: "*.public.blob.vercel-storage.com" }],
+  },
+  async redirects() {
+    // Eski giriş adresleri → yeni sade adresler
+    return [
+      { source: "/admin/giris", destination: "/admin", permanent: true },
+      { source: "/isletme/giris", destination: "/isletme", permanent: true },
+      { source: "/isletme/giris/:slug", destination: "/isletme/:slug", permanent: true },
+    ];
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

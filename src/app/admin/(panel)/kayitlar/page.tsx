@@ -21,20 +21,20 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
         {rows.length === 0 ? (
           <EmptyState title="Kayıt yok" />
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-stone-100">
             {rows.map((r) => (
               <li key={r.id} className="flex flex-wrap items-start justify-between gap-2 px-5 py-3 text-sm">
                 <div className="min-w-0 space-y-0.5">
-                  <p className="font-medium text-slate-900">
+                  <p className="font-medium text-stone-900">
                     {AUDIT_LABELS[r.action] ?? r.action}
                     {r.action === "auth.login_failed" && <span className="ml-2"><Badge tone="amber">Uyarı</Badge></span>}
                   </p>
-                  <p className="text-slate-500">
+                  <p className="text-stone-500">
                     {r.actorRealm ? REALM_LABEL[r.actorRealm] : "Sistem"}
                     {r.businessId && r.businessName && (
                       <>
                         {" · "}
-                        <Link href={`/admin/isletmeler/${r.businessId}`} className="text-brand-600 hover:underline">
+                        <Link href={`/admin/isletmeler/${r.businessId}`} className="text-stone-900 underline-offset-4 hover:underline">
                           {r.businessName}
                         </Link>
                       </>
@@ -42,7 +42,7 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
                     {r.ip && <> · IP {r.ip}</>}
                   </p>
                 </div>
-                <time className="shrink-0 text-slate-500" dateTime={r.createdAt.toISOString()}>
+                <time className="shrink-0 text-stone-500" dateTime={r.createdAt.toISOString()}>
                   {formatDateTime(r.createdAt)}
                 </time>
               </li>

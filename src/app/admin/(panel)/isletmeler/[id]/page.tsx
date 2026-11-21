@@ -13,6 +13,12 @@ import { formatTrPhone } from "@/lib/phone";
 import { StatusBadge } from "../status-badge";
 import { EditBusinessForm } from "../business-form";
 import { OwnerPanel } from "./owner-panel";
+import { getBusinessSubscription, listBusinessPayments, listPlans } from "@/server/modules/billing/subscriptions";
+import { PaymentForm, SubscriptionForm } from "../../abonelikler/forms";
+import { SubscriptionBadge } from "../../abonelikler/status-badge";
+import { recordPaymentAction, updateSubscriptionAction } from "../../abonelikler/actions";
+import { formatTL } from "@/lib/money";
+import { formatDateStr, todayTR } from "@/lib/dates";
 import {
   resetPasswordAction,
   setFeaturedAction,
@@ -31,11 +37,14 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
   const b = await getBusinessDetail(db, id);
   if (!b) notFound();
   const [checklist, locations] = await Promise.all([getPublishChecklist(db, id), getLocations()]);
+  const subscription = await getBusinessSubscription(db, id);
+  const [plans, payments] = [await listPlans(db), await listBusinessPayments(db, id)];
+  const METHOD = { BANK_TRANSFER: "Havale/EFT", CARD: "Kart", CASH: "Nakit", OTHER: "Diğer" } as const;
   const canPublish = checklist.every((c) => c.ok);
 
   return (
     <>
-      <Link href="/admin/isletmeler" className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
+      <Link href="/admin/isletmeler" className="mb-4 inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800">
         <ArrowLeft className="size-4" aria-hidden /> İşletmeler
       </Link>
       <PageHeader
@@ -90,9 +99,82 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
               </div>
             )}
           </Card>
+          {subscription && (
+            <Card>
+              <CardHeader title="Abonelik ayarları" description="Paket, özel ücret ve ücretsiz deneme süresi" />
+              <div className="p-6">
+                <SubscriptionForm
+                  action={updateSubscriptionAction.bind(null, b.id)}
+                  plans={plans}
+                  defaults={{
+                    planId: subscription.sub.planId,
+                    monthlyFeeKurus: subscription.sub.monthlyFeeKurus,
+                    trialMonths: subscription.sub.trialMonths,
+                    note: subscription.sub.note,
+                  }}
+                />
+              </div>
+            </Card>
+          )}
+          {subscription && (
+            <Card>
+              <CardHeader
+                title="Ödemeler"
+                description={
+                  subscription.billingEnabled
+                    ? "Havale veya elden alınan ödemeleri kaydedin. Kapsanan dönem otomatik hesaplanır."
+                    : "Ücretlendirme kapalıyken ödeme kaydedilmez."
+                }
+              />
+              {subscription.billingEnabled && (
+                <div className="border-b border-stone-100 p-6">
+                  <PaymentForm action={recordPaymentAction.bind(null, b.id)} feeKurus={subscription.sub.monthlyFeeKurus} today={todayTR()} />
+                </div>
+              )}
+              {payments.length === 0 ? (
+                <p className="px-6 py-5 text-sm text-stone-500">Henüz ödeme kaydı yok.</p>
+              ) : (
+                <ul className="divide-y divide-stone-100">
+                  {payments.map(({ p, planName }) => (
+                    <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 px-6 py-3 text-sm">
+                      <div>
+                        <p className="font-medium text-stone-900">
+                          {formatTL(p.amountKurus)} · {p.months} ay {planName ? `· ${planName}` : ""}
+                        </p>
+                        <p className="text-stone-500">
+                          {formatDateStr(p.coversFrom)} – {formatDateStr(p.coversTo)} · {METHOD[p.method]}
+                          {p.note ? ` · ${p.note}` : ""}
+                        </p>
+                      </div>
+                      <span className="text-stone-500">{formatDateTime(p.paidAt)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+          )}
         </div>
 
         <div className="space-y-6">
+          {subscription && (
+            <Card>
+              <CardHeader
+                title="Abonelik"
+                description={`${subscription.plan.name} · ${formatTL(subscription.sub.monthlyFeeKurus)} / ay${subscription.sub.isEarlyAdopter ? " · Kampanyalı" : ""}`}
+                actions={<SubscriptionBadge status={subscription.status} />}
+              />
+              <div className="space-y-1 px-6 py-4 text-sm text-stone-600">
+                {subscription.billingEnabled ? (
+                  <>
+                    <p>Deneme: {formatDateStr(subscription.sub.trialStartsOn)} – {formatDateStr(subscription.sub.trialEndsOn)}</p>
+                    <p>Ödenen son gün: {formatDateStr(subscription.sub.paidThrough)}</p>
+                  </>
+                ) : (
+                  <p>Ücretlendirme kapalı. {subscription.sub.trialMonths} aylık deneme, ücretlendirme başladığında işlemeye başlar.</p>
+                )}
+              </div>
+            </Card>
+          )}
           <Card>
             <CardHeader title="Durum" description="Askıya alınan işletme panele giremez ve yayından kalkar." />
             <div className="space-y-3 p-5">
@@ -121,14 +203,14 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                     {c.ok ? (
                       <CheckCircle2 className="size-4 text-emerald-600" aria-label="Tamam" />
                     ) : (
-                      <Circle className="size-4 text-slate-300" aria-label="Eksik" />
+                      <Circle className="size-4 text-stone-300" aria-label="Eksik" />
                     )}
-                    <span className={c.ok ? "text-slate-700" : "text-slate-500"}>{c.label}</span>
+                    <span className={c.ok ? "text-stone-700" : "text-stone-500"}>{c.label}</span>
                   </li>
                 ))}
               </ul>
               {!canPublish && !b.isPublished && (
-                <p className="text-xs text-slate-500">Çalışan, hizmet ve çalışma saatlerini işletme kendi panelinden tanımlar.</p>
+                <p className="text-xs text-stone-500">Çalışan, hizmet ve çalışma saatlerini işletme kendi panelinden tanımlar.</p>
               )}
               {b.isPublished ? (
                 <ActionButton action={setPublishedAction.bind(null, b.id, false)} variant="dangerOutline" confirm="İşletme pazaryerinden kaldırılacak. Emin misiniz?">
@@ -153,7 +235,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
             </div>
           </Card>
 
-          <Card className="p-5 text-sm text-slate-600">
+          <Card className="p-5 text-sm text-stone-600">
             <p>Oluşturulma: {formatDateTime(b.createdAt)}</p>
             <p>Son güncelleme: {formatDateTime(b.updatedAt)}</p>
             {b.publishedAt && <p>İlk yayın: {formatDateTime(b.publishedAt)}</p>}

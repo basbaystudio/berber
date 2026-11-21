@@ -38,15 +38,15 @@ function ProfileFields({ d, fe, locations, isEdit }: { d: BusinessFormDefaults; 
           error={fe?.slug}
           hint={isEdit ? "Değiştirirseniz eski profil bağlantısı çalışmaz." : "Boş bırakırsanız işletme adından otomatik oluşturulur."}
         >
-          <div className="flex items-center rounded-lg border border-slate-300 bg-slate-50 focus-within:border-brand-500">
-            <span className="pl-3 text-sm text-slate-500">/berber/</span>
+          <div className="flex items-center rounded-xl border border-stone-200 bg-stone-50 focus-within:border-stone-400">
+            <span className="pl-3 text-sm text-stone-500">/berber/</span>
             <input
               id="slug"
               name="slug"
               defaultValue={d.slug}
               maxLength={80}
               placeholder="ornek-berber"
-              className="h-10 min-w-0 flex-1 rounded-r-lg bg-white px-2 text-sm focus:outline-none"
+              className="h-10 min-w-0 flex-1 rounded-r-xl bg-white px-2 text-sm focus:outline-none"
               aria-invalid={!!fe?.slug}
             />
           </div>
@@ -87,17 +87,17 @@ function CopyButton({ text }: { text: string }) {
 /** Geçici giriş bilgisi yalnızca bir kez gösterilir. */
 export function CredentialsBox({ login, tempPassword, slug }: { login: string; tempPassword: string; slug?: string }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const loginUrl = slug ? `${origin}/isletme/giris/${slug}` : `${origin}/isletme/giris`;
+  const loginUrl = slug ? `${origin}/isletme/${slug}` : `${origin}/isletme`;
   const all = `Giriş adresi: ${loginUrl}\nKullanıcı adı: ${login}\nGeçici şifre: ${tempPassword}`;
   return (
     <Alert tone="warning" title="Giriş bilgilerini şimdi kaydedin">
       <p>Bu geçici şifre güvenlik nedeniyle yalnızca bir kez gösterilir. İşletme ilk girişte şifresini değiştirmek zorundadır.</p>
-      <dl className="mt-3 grid gap-1 rounded-lg bg-white/70 p-3 font-mono text-xs text-slate-800 sm:grid-cols-[auto_1fr] sm:gap-x-4">
-        <dt className="font-sans text-slate-500">Giriş adresi</dt>
+      <dl className="mt-3 grid gap-1 rounded-lg bg-white/70 p-3 font-mono text-xs text-stone-800 sm:grid-cols-[auto_1fr] sm:gap-x-4">
+        <dt className="font-sans text-stone-500">Giriş adresi</dt>
         <dd className="break-all">{loginUrl}</dd>
-        <dt className="font-sans text-slate-500">Kullanıcı adı</dt>
+        <dt className="font-sans text-stone-500">Kullanıcı adı</dt>
         <dd>{login}</dd>
-        <dt className="font-sans text-slate-500">Geçici şifre</dt>
+        <dt className="font-sans text-stone-500">Geçici şifre</dt>
         <dd data-testid="temp-password">{tempPassword}</dd>
       </dl>
       <div className="mt-3">
@@ -156,7 +156,7 @@ export function CreateBusinessForm({
         </div>
       </Card>
       <div className="flex justify-end gap-2">
-        <Link href="/admin/isletmeler" className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-slate-700 hover:bg-slate-100">
+        <Link href="/admin/isletmeler" className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-stone-700 hover:bg-stone-100">
           Vazgeç
         </Link>
         <SubmitButton pending={pending} pendingText="Oluşturuluyor…">
