@@ -46,6 +46,10 @@ Adım adım kontrol listesi: [`docs/CANLIYA-CIKIS.md`](docs/CANLIYA-CIKIS.md).
 4. Ortam değişkenleri: `CRON_SECRET` (günlük görev için zorunlu), `RESEND_API_KEY` + `EMAIL_FROM` (e-posta), `BLOB_READ_WRITE_TOKEN` (görseller). Ayrıntılar `.env.example` dosyasında.
 5. Günlük bakım görevi (`/api/cron/daily`, her gün 09:00 TR): abonelik gecikme kontrolü, e-postalar, otomatik askıya alma, eski oturum temizliği.
 
+## Yeni berberlere ulaşma
+
+Google Haritalar'dan berber bulup her biri için mesajı hazır yazılmış WhatsApp bağlantısı üretir (gönderimi siz yaparsınız): `npm run isletme:bul -- --sorgu "Kadıköy berber"`. Kurulum ve kullanım: [`docs/ISLETME-BULMA.md`](docs/ISLETME-BULMA.md).
+
 ## Klasör yapısı
 
 - `src/app` — sayfalar (pazaryeri, `/isletme`, `/admin`) ve server action'lar (ince katman)
