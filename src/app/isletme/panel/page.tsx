@@ -16,6 +16,8 @@ const LINKS: Record<string, string> = {
   hours: "/isletme/panel/calisma-saatleri",
   staff: "/isletme/panel/calisanlar",
   services: "/isletme/panel/hizmetler",
+  documents: "/isletme/panel/belgeler",
+  contracts: "/isletme/panel/sozlesmeler",
 };
 
 export default async function BusinessHome({ searchParams }: { searchParams: Promise<{ sifre?: string }> }) {

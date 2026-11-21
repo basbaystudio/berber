@@ -6,13 +6,15 @@ import { Alert, Badge, Card, CardHeader, EmptyState, PageHeader } from "@/compon
 import { ActionButton } from "@/components/ui/action-button";
 import { formatTL } from "@/lib/money";
 import { formatDateStr } from "@/lib/dates";
-import { CampaignForm, PlanForm } from "./forms";
+import { CampaignForm, InvoiceUploadForm, PlanForm } from "./forms";
+import { listPendingInvoices } from "@/server/modules/billing/invoices";
 import { SubscriptionBadge } from "./status-badge";
 import {
   createPlanAction,
   disableBillingAction,
   enableBillingAction,
   runEnforcementAction,
+  uploadInvoiceAction,
   setDefaultPlanAction,
   updateCampaignAction,
   updatePlanAction,
@@ -24,6 +26,7 @@ export default async function SubscriptionsPage() {
   await requireAdminPage();
   const [overview, plans, subs] = [await getBillingOverview(db), await listPlans(db), await listSubscriptions(db)];
   const pastDue = subs.filter((s) => s.status.kind === "PAST_DUE").length;
+  const pendingInvoices = await listPendingInvoices(db);
 
   return (
     <>
@@ -72,6 +75,27 @@ export default async function SubscriptionsPage() {
           )}
         </div>
       </Card>
+
+      {pendingInvoices.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader title="Faturası bekleyen ödemeler" description="Yüklediğiniz PDF fatura işletmenin Abonelik sayfasında görünür." actions={<Badge tone="amber">{pendingInvoices.length}</Badge>} />
+          <ul className="divide-y divide-stone-100">
+            {pendingInvoices.map(({ p, businessName }) => (
+              <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-3 text-sm">
+                <div>
+                  <Link href={`/admin/isletmeler/${p.businessId}`} className="font-medium text-stone-900 hover:text-accent-600">
+                    {businessName}
+                  </Link>
+                  <p className="text-stone-500">
+                    {formatTL(p.amountKurus)} · {formatDateStr(p.coversFrom)} – {formatDateStr(p.coversTo)}
+                  </p>
+                </div>
+                <InvoiceUploadForm action={uploadInvoiceAction.bind(null, p.id)} hasInvoice={false} />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
         <Card>

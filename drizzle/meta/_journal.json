@@ -50,6 +50,27 @@
       "when": 1795259353489,
       "tag": "0006_card_subscription_refs",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795260094338,
+      "tag": "0007_payment_method_preference",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795260169850,
+      "tag": "0008_payment_invoices",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795260232360,
+      "tag": "0009_compliance_inbox",
+      "breakpoints": true
     }
   ]
 }

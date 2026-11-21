@@ -27,3 +27,23 @@ export async function saveContactAction(_p: ActionState, fd: FormData): Promise<
     return { status: "success", message: "Kaydedildi." };
   });
 }
+
+const bankSchema = z.object({
+  bankName: z.preprocess(emptyToUndefined, z.string().trim().max(80).optional()),
+  accountName: z.preprocess(emptyToUndefined, z.string().trim().max(120).optional()),
+  iban: z.preprocess(
+    (v) => (typeof v === "string" ? v.replace(/\s/g, "").toUpperCase() || undefined : v),
+    z.string().regex(/^TR\d{24}$/, "Geçerli bir TR IBAN girin (TR + 24 rakam).").optional(),
+  ),
+});
+
+export async function saveBankAction(_p: ActionState, fd: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const ctx = await requireAdmin();
+    const input = parseInput(bankSchema, formToObject(fd));
+    await setSetting(db, "billing.bankTransfer", { bankName: input.bankName ?? "", accountName: input.accountName ?? "", iban: input.iban ?? "" }, ctx.admin.id);
+    await audit(db, { actorRealm: "ADMIN", actorId: ctx.admin.id, action: "settings.bank_update", ip: (await getRequestMeta()).ip });
+    revalidatePath("/admin/ayarlar");
+    return { status: "success", message: "Banka bilgileri kaydedildi." };
+  });
+}

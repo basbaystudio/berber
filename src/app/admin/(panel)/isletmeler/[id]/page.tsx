@@ -14,10 +14,13 @@ import { StatusBadge } from "../status-badge";
 import { EditBusinessForm } from "../business-form";
 import { OwnerPanel } from "./owner-panel";
 import { ImageUploadForm } from "@/components/panel/image-upload-form";
+import { listDocuments } from "@/server/modules/admin/documents";
+import { ReviewForm } from "../../belgeler/forms";
+import { reviewDocumentAction } from "../../belgeler/actions";
 import { getBusinessSubscription, listBusinessPayments, listPlans } from "@/server/modules/billing/subscriptions";
-import { PaymentForm, SubscriptionForm } from "../../abonelikler/forms";
+import { InvoiceUploadForm, PaymentForm, SubscriptionForm } from "../../abonelikler/forms";
 import { SubscriptionBadge } from "../../abonelikler/status-badge";
-import { recordPaymentAction, updateSubscriptionAction } from "../../abonelikler/actions";
+import { recordPaymentAction, updateSubscriptionAction, uploadInvoiceAction } from "../../abonelikler/actions";
 import { formatTL } from "@/lib/money";
 import { formatDateStr, todayTR } from "@/lib/dates";
 import {
@@ -42,6 +45,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
   const [checklist, locations] = await Promise.all([getPublishChecklist(db, id), getLocations()]);
   const subscription = await getBusinessSubscription(db, id);
   const [plans, payments] = [await listPlans(db), await listBusinessPayments(db, id)];
+  const docs = await listDocuments(db, { businessId: id });
   const METHOD = { BANK_TRANSFER: "Havale/EFT", CARD: "Kart", CASH: "Nakit", OTHER: "Diğer" } as const;
   const canPublish = checklist.every((c) => c.ok);
 
@@ -80,6 +84,29 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                 longitude: b.longitude,
               }}
             />
+          </Card>
+          <Card>
+            <CardHeader title="Belgeler" description="İşletmenin yüklediği yasal belgeler" />
+            {docs.length === 0 ? (
+              <p className="px-6 py-5 text-sm text-stone-500">Henüz belge yüklenmedi.</p>
+            ) : (
+              <ul className="divide-y divide-stone-100">
+                {docs.map(({ d, typeName }) => (
+                  <li key={d.id} className="grid gap-3 px-6 py-4 text-sm sm:grid-cols-[1fr_minmax(0,20rem)]">
+                    <div>
+                      <p className="font-medium text-stone-900">{typeName}</p>
+                      <a href={`/admin/dosya/belge/${d.id}`} target="_blank" rel="noopener" className="text-stone-700 underline underline-offset-4">
+                        {d.fileName}
+                      </a>
+                      <p className="text-xs text-stone-500">
+                        {d.status === "APPROVED" ? "Onaylandı" : d.status === "REJECTED" ? `Reddedildi: ${d.reviewNote ?? ""}` : "İnceleme bekliyor"} · {formatDateTime(d.uploadedAt)}
+                      </p>
+                    </div>
+                    {d.status === "PENDING" && <ReviewForm action={reviewDocumentAction.bind(null, d.id)} />}
+                  </li>
+                ))}
+              </ul>
+            )}
           </Card>
           <Card>
             <CardHeader title="Görseller" description="Logo ve kapak görselini yalnızca platform yönetimi değiştirir." />
@@ -173,7 +200,15 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                           {p.note ? ` · ${p.note}` : ""}
                         </p>
                       </div>
-                      <span className="text-stone-500">{formatDateTime(p.paidAt)}</span>
+                      <div className="flex flex-col items-end gap-1.5">
+                        <span className="text-stone-500">{formatDateTime(p.paidAt)}</span>
+                        {p.invoiceKey && (
+                          <a href={`/admin/dosya/fatura/${p.id}`} target="_blank" rel="noopener" className="text-xs text-stone-700 underline underline-offset-4">
+                            Faturayı görüntüle (PDF)
+                          </a>
+                        )}
+                        <InvoiceUploadForm action={uploadInvoiceAction.bind(null, p.id)} hasInvoice={!!p.invoiceKey} />
+                      </div>
                     </li>
                   ))}
                 </ul>

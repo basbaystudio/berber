@@ -170,3 +170,24 @@ export function PaymentForm({ action, feeKurus, today }: { action: Action; feeKu
     </form>
   );
 }
+
+/** Ödemeye PDF fatura yükleme (küçük satır içi form). */
+export function InvoiceUploadForm({ action, hasInvoice }: { action: Action; hasInvoice: boolean }) {
+  const { state, pending, onSubmit, version } = useFormAction(action);
+  return (
+    <form onSubmit={onSubmit} className="flex flex-wrap items-center gap-2" key={version}>
+      <input
+        type="file"
+        name="file"
+        accept="application/pdf"
+        aria-label="Fatura PDF dosyası"
+        className="max-w-56 text-xs text-stone-600 file:mr-2 file:rounded-lg file:border-0 file:bg-stone-100 file:px-3 file:py-1.5 file:text-xs file:text-stone-700"
+      />
+      <SubmitButton pending={pending} size="sm" variant="outline" pendingText="Yükleniyor…">
+        {hasInvoice ? "Faturayı değiştir" : "Fatura yükle"}
+      </SubmitButton>
+      {state.status === "error" && <span className="text-xs text-red-600">{state.message}</span>}
+      {state.status === "success" && <span className="text-xs text-emerald-700">{state.message}</span>}
+    </form>
+  );
+}

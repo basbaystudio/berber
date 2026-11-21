@@ -114,6 +114,8 @@ export const businessSubscriptions = pgTable(
     cardBrand: text("card_brand"),
     cardLast4: text("card_last4"),
     autoRenew: boolean("auto_renew").notNull().default(false),
+    /** İşletmenin seçtiği ödeme yöntemi: CARD (otomatik kart çekimi) ya da BANK_TRANSFER (havale/EFT, admin kaydeder). */
+    preferredMethod: text("preferred_method").notNull().default("CARD"),
     cancelledAt: ts("cancelled_at"),
     note: text("note"),
     createdAt: ts("created_at").notNull().defaultNow(),
@@ -122,6 +124,7 @@ export const businessSubscriptions = pgTable(
   (t) => [
     uniqueIndex("business_subscriptions_business_uq").on(t.businessId),
     uniqueIndex("business_subscriptions_provider_sub_uq").on(t.paymentProvider, t.providerSubscriptionRef).where(sql`${t.providerSubscriptionRef} IS NOT NULL`),
+    check("business_subscriptions_method_ck", sql`${t.preferredMethod} IN ('CARD', 'BANK_TRANSFER')`),
     check("business_subscriptions_last4_ck", sql`${t.cardLast4} IS NULL OR ${t.cardLast4} ~ '^[0-9]{4}$'`),
     check("business_subscriptions_fee_ck", sql`${t.monthlyFeeKurus} >= 0`),
     check("business_subscriptions_trial_ck", sql`${t.trialMonths} BETWEEN 0 AND 36`),
@@ -154,10 +157,16 @@ export const subscriptionPayments = pgTable(
     paidAt: ts("paid_at").notNull().defaultNow(),
     note: text("note"),
     recordedByAdminId: uuid("recorded_by_admin_id").references(() => platformAdmins.id),
+    /** Admin'in yüklediği PDF fatura. Herkese açık bağlantı verilmez; yalnızca yetkili oturumla indirilir. */
+    invoiceKey: text("invoice_key"),
+    invoiceUrl: text("invoice_url"),
+    invoiceFileName: text("invoice_file_name"),
+    invoiceUploadedAt: ts("invoice_uploaded_at"),
     createdAt: ts("created_at").notNull().defaultNow(),
   },
   (t) => [
     index("subscription_payments_business_idx").on(t.businessId, t.paidAt),
+    index("subscription_payments_invoice_pending_idx").on(t.paidAt).where(sql`${t.invoiceKey} IS NULL`),
     uniqueIndex("subscription_payments_provider_ref_uq").on(t.provider, t.providerRef).where(sql`${t.providerRef} IS NOT NULL`),
     check("subscription_payments_amount_ck", sql`${t.amountKurus} >= 0`),
     check("subscription_payments_months_ck", sql`${t.months} BETWEEN 1 AND 36`),

@@ -16,6 +16,8 @@ test("işletme profilini hazırlar, admin yayına alır; banner ana sayfada gör
   // Not: dosya yolu ASCII olmalı (Türkçe karakterli yollarda tarayıcıya dosya aktarılamıyor)
   fs.mkdirSync("test-results", { recursive: true });
   const img = path.resolve("test-results", `ornek-${testInfo.project.name}.png`);
+  const pdf = path.resolve("test-results", `belge-${testInfo.project.name}.pdf`);
+  fs.writeFileSync(pdf, "%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF");
   await sharp({ create: { width: 900, height: 700, channels: 3, background: { r: 140, g: 110, b: 80 } } }).png().toFile(img);
 
   await adminLogin(page);
@@ -81,6 +83,25 @@ test("işletme profilini hazırlar, admin yayına alır; banner ana sayfada gör
   await expect(bp.getByText("1/30 fotoğraf kullanılıyor")).toBeVisible();
   await bp.screenshot(shot(testInfo, "12-portfolyo.png"));
 
+  // Belgelerim: zorunlu belgeleri yükle
+  await bp.goto("/isletme/panel/belgeler");
+  await bp.waitForLoadState("networkidle");
+  for (const docName of ["Vergi levhası", "İşyeri açma ve çalışma ruhsatı"]) {
+    await bp.getByLabel(`${docName} dosyası`).setInputFiles(pdf);
+    await bp.getByLabel(`${docName} dosyası`).locator("xpath=ancestor::form").getByRole("button", { name: "Yükle" }).click();
+    await expect(bp.getByText("Belge yüklendi, incelemeye gönderildi.")).toBeVisible();
+  }
+  await bp.screenshot(shot(testInfo, "17-belgelerim.png"));
+
+  // Bekleyen sözleşme varsa onayla (yayın için gerekli)
+  await bp.goto("/isletme/panel/sozlesmeler");
+  while ((await bp.getByLabel(/metnini okudum, kabul ediyorum/).count()) > 0) {
+    const before = await bp.getByLabel(/metnini okudum, kabul ediyorum/).count();
+    await bp.getByLabel(/metnini okudum, kabul ediyorum/).first().check();
+    await bp.getByRole("button", { name: "Onayla" }).first().click();
+    await expect(bp.getByLabel(/metnini okudum, kabul ediyorum/)).toHaveCount(before - 1);
+  }
+
   // Profil salt okunur: işletme bilgileri değiştiremez
   await bp.goto("/isletme/panel/profil");
   await expect(bp.getByText("Bilgileri değiştirmek mi istiyorsunuz?")).toBeVisible();
@@ -92,8 +113,17 @@ test("işletme profilini hazırlar, admin yayına alır; banner ana sayfada gör
   await bp.screenshot(shot(testInfo, "13-isletme-genel-bakis.png"));
   await ctx.close();
 
-  // Admin: aktifleştir ve yayına al
+  // Admin: belgeleri onayla
   await page.goto(detailUrl);
+  const approveButtons = page.getByRole("button", { name: "Onayla", exact: true });
+  await expect(approveButtons).toHaveCount(2);
+  await approveButtons.first().click();
+  await expect(approveButtons).toHaveCount(1);
+  await approveButtons.first().click();
+  await expect(approveButtons).toHaveCount(0);
+  await expect(page.getByText(/^Onaylandı ·/)).toHaveCount(2);
+
+  // Admin: aktifleştir ve yayına al
   await page.getByRole("button", { name: "Aktifleştir" }).click();
   await expect(page.getByText("İşletme aktifleştirildi.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Yayına al" })).toBeEnabled();

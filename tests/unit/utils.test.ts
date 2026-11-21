@@ -60,3 +60,24 @@ describe("işletme doğrulaması", () => {
     expect(r.provinceId).toBe(34);
   });
 });
+
+import { isPdf } from "@/server/modules/billing/invoices";
+import { sniffDocument } from "@/server/modules/business/documents";
+import { reviewSchema } from "@/server/modules/admin/documents";
+
+describe("dosya türü tespiti", () => {
+  it("PDF içerikten tanınır, uzantıya bakılmaz", () => {
+    expect(isPdf(Buffer.from("%PDF-1.7\n..."))).toBe(true);
+    expect(isPdf(Buffer.from("<html>%PDF-"))).toBe(false);
+  });
+  it("belge: PDF/JPEG/PNG kabul, diğerleri red", () => {
+    expect(sniffDocument(Buffer.from("%PDF-1.4 xxxx"))?.mime).toBe("application/pdf");
+    expect(sniffDocument(Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0]))?.mime).toBe("image/jpeg");
+    expect(sniffDocument(Buffer.from("GIF89a......"))).toBeNull();
+  });
+  it("ret için gerekçe zorunlu", () => {
+    expect(reviewSchema.safeParse({ decision: "REJECTED" }).success).toBe(false);
+    expect(reviewSchema.safeParse({ decision: "REJECTED", note: "Okunmuyor" }).success).toBe(true);
+    expect(reviewSchema.safeParse({ decision: "APPROVED" }).success).toBe(true);
+  });
+});

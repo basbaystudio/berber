@@ -25,6 +25,8 @@ export const DEFAULT_PLATFORM_SETTINGS = {
   /** Ödeme gecikmesinin kaçıncı gününde işletme otomatik askıya alınır. */
   "billing.graceDays": 7,
   /** İşletmelerin ve müşterilerin platforma ulaşacağı iletişim bilgileri; alertEmail: yönetici bildirimlerinin gideceği adres (boşsa tüm yöneticiler). */
+  /** Havale/EFT ile ödeme seçen işletmelere gösterilecek banka bilgileri. */
+  "billing.bankTransfer": { bankName: "" as string, accountName: "" as string, iban: "" as string },
   "platform.contact": { email: "" as string, phone: "" as string, alertEmail: "" as string },
 } as const satisfies Record<string, unknown>;
 

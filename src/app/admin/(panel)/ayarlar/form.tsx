@@ -34,3 +34,33 @@ export function ContactForm({
     </form>
   );
 }
+
+export function BankForm({
+  action,
+  defaults,
+}: {
+  action: (p: ActionState, fd: FormData) => Promise<ActionState>;
+  defaults: { bankName: string; accountName: string; iban: string };
+}) {
+  const { state, pending, onSubmit, fieldErrors: fe } = useFormAction(action);
+  return (
+    <form onSubmit={onSubmit} noValidate className="space-y-4">
+      {state.status === "error" && <Alert tone="error">{state.message}</Alert>}
+      {state.status === "success" && <Alert tone="success">{state.message}</Alert>}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Banka" name="bankName" error={fe?.bankName}>
+          <Input id="bankName" name="bankName" defaultValue={defaults.bankName} />
+        </Field>
+        <Field label="Hesap sahibi" name="accountName" error={fe?.accountName}>
+          <Input id="accountName" name="accountName" defaultValue={defaults.accountName} />
+        </Field>
+      </div>
+      <Field label="IBAN" name="iban" error={fe?.iban}>
+        <Input id="iban" name="iban" defaultValue={defaults.iban} placeholder="TR00 0000 0000 0000 0000 0000 00" />
+      </Field>
+      <div className="flex justify-end">
+        <SubmitButton pending={pending}>Kaydet</SubmitButton>
+      </div>
+    </form>
+  );
+}

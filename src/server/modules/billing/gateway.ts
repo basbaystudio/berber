@@ -5,6 +5,7 @@ import { businessSubscriptions } from "@/server/db/schema";
 import { audit } from "@/server/lib/audit";
 import { logger } from "@/server/lib/logger";
 import { recordPayment } from "./subscriptions";
+import { notifyAdminPaymentReceived } from "./invoices";
 
 /**
  * Otomatik yenilenen kart aboneliği için ödeme sağlayıcısı arayüzü (iyzico, PayTR vb.).
@@ -22,6 +23,20 @@ export interface PaymentGateway {
   cancelSubscription(providerSubscriptionRef: string): Promise<void>;
   /** İmza doğrulaması yapmalı; doğrulanamayan istek için hata fırlatmalı. */
   parseWebhook(req: Request): Promise<GatewayEvent>;
+}
+
+/**
+ * Etkin ödeme sağlayıcısı. Şirket kurulup sağlayıcı seçildiğinde burada döndürülür (ör. ortam değişkenine göre).
+ * Şu an bağlı sağlayıcı yok: kartla ödeme arayüzde pasif görünür.
+ */
+let gatewayOverride: PaymentGateway | null | undefined;
+export function getPaymentGateway(): PaymentGateway | null {
+  if (gatewayOverride !== undefined) return gatewayOverride;
+  return null;
+}
+/** Yalnızca testler için. */
+export function setPaymentGatewayForTests(g: PaymentGateway | null | undefined) {
+  gatewayOverride = g;
 }
 
 export type GatewayEvent =
@@ -58,7 +73,7 @@ export async function handleGatewayEvent(db: DB, provider: string, ev: GatewayEv
   }
   if (ev.type === "CHARGE_SUCCEEDED") {
     try {
-      await recordPayment(db, null, sub.businessId, {
+      const payment = await recordPayment(db, null, sub.businessId, {
         months: ev.months,
         amount: (ev.amountKurus / 100).toFixed(2).replace(".", ","),
         method: "CARD",
@@ -67,6 +82,8 @@ export async function handleGatewayEvent(db: DB, provider: string, ev: GatewayEv
         provider,
         providerRef: ev.chargeRef,
       });
+      // Her otomatik ödemede yöneticiye bilgi + fatura yükleme hatırlatması
+      await notifyAdminPaymentReceived(db, payment.id);
     } catch (e) {
       // Aynı çekim daha önce kaydedildiyse (provider_ref benzersiz) sessizce geç
       if ((e as { code?: string }).code === "CONFLICT") return;

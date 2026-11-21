@@ -7,6 +7,7 @@ import { requireAdmin } from "@/server/auth/guards";
 import { formToObject, parseInput, runAction, type ActionState } from "@/server/lib/action";
 import { getRequestMeta } from "@/server/lib/request";
 import { runBillingEnforcement } from "@/server/modules/billing/enforcement";
+import { readInvoiceUpload, uploadInvoice } from "@/server/modules/billing/invoices";
 import {
   campaignSchema,
   changePlanSchema,
@@ -105,5 +106,14 @@ export async function runEnforcementAction(): Promise<ActionState> {
       status: "success",
       message: `Kontrol tamamlandı: ${r.pastDueNotified} işletmeye gecikme bildirimi gönderildi, ${r.suspended} işletme askıya alındı${r.emailsFailed ? `, ${r.emailsFailed} e-posta gönderilemedi` : ""}.`,
     };
+  });
+}
+
+export async function uploadInvoiceAction(paymentId: string, _p: ActionState, fd: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const a = await actor();
+    await uploadInvoice(db, a, id.parse(paymentId), await readInvoiceUpload(fd.get("file")));
+    revalidatePath("/admin", "layout");
+    return { status: "success", message: "Fatura yüklendi; işletme panelinde görünür." };
   });
 }

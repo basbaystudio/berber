@@ -7,3 +7,4 @@ export * from "./catalog";
 export * from "./booking";
 export * from "./content";
 export * from "./platform";
+export * from "./compliance";

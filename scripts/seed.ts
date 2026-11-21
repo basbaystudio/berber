@@ -77,6 +77,15 @@ await db.transaction(async (tx) => {
       .onConflictDoNothing();
   }
 
+  // İşletmelerden istenen yasal belgeler (admin panelinden değiştirilebilir)
+  await tx
+    .insert(schema.documentTypes)
+    .values([
+      { name: "Vergi levhası", description: "Güncel yıla ait vergi levhası", isRequired: true, sortOrder: 0 },
+      { name: "İşyeri açma ve çalışma ruhsatı", description: "Belediyeden alınan ruhsat", isRequired: true, sortOrder: 1 },
+    ])
+    .onConflictDoNothing();
+
   // Varsayılan abonelik paketi (yalnızca hiç paket yoksa)
   const plans = await tx.select({ id: schema.subscriptionPlans.id }).from(schema.subscriptionPlans).limit(1);
   if (!plans.length) {

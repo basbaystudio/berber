@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
-import { LogOut, Store } from "lucide-react";
+import Link from "next/link";
+import { Bell, LogOut, Store } from "lucide-react";
+import { db } from "@/server/db/client";
+import { unreadCount } from "@/server/modules/business/inbox";
+import { pendingContractVersions } from "@/server/modules/business/contracts";
+import { Alert } from "@/components/ui/feedback";
 import { requireBusinessPage } from "@/server/auth/guards";
 import { SidebarNav, type NavItem } from "@/components/shell/sidebar-nav";
 import { businessLogoutAction } from "../auth-actions";
@@ -14,11 +19,15 @@ const NAV: NavItem[] = [
   { href: "/isletme/panel/hizmetler", label: "Hizmetler", icon: "scissors" },
   { href: "/isletme/panel/paketler", label: "Paketler", icon: "package" },
   { href: "/isletme/panel/portfolyo", label: "Portfolyo", icon: "images" },
+  { href: "/isletme/panel/belgeler", label: "Belgelerim", icon: "documents" },
+  { href: "/isletme/panel/sozlesmeler", label: "Sözleşmeler", icon: "contracts" },
+  { href: "/isletme/panel/abonelik", label: "Abonelik", icon: "billing" },
   { href: "/isletme/panel/profil", label: "İşletme Profili", icon: "store" },
 ];
 
 export default async function BusinessPanelLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireBusinessPage();
+  const [unread, pendingContracts] = [await unreadCount(db, ctx.businessId), await pendingContractVersions(db, ctx.businessId)];
   return (
     <div className="lg:flex lg:min-h-dvh">
       <SidebarNav
@@ -46,7 +55,28 @@ export default async function BusinessPanelLayout({ children }: { children: Reac
         }
       />
       <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-        <div className="mx-auto max-w-5xl">{children}</div>
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-4 flex justify-end">
+            <Link
+              href="/isletme/panel/bildirimler"
+              className="relative inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+              aria-label={unread ? `Bildirimler, ${unread} okunmamış` : "Bildirimler"}
+            >
+              <Bell className="size-4" aria-hidden />
+              Bildirimler
+              {unread > 0 && <span className="rounded-full bg-stone-900 px-1.5 text-xs font-medium text-white tabular-nums">{unread}</span>}
+            </Link>
+          </div>
+          {pendingContracts.length > 0 && (
+            <Alert tone="warning" className="mb-6" title="Onayınızı bekleyen sözleşme var">
+              {pendingContracts.map((c) => c.title).join(", ")} güncellendi.{" "}
+              <Link href="/isletme/panel/sozlesmeler" className="font-medium underline underline-offset-4">
+                Göz atıp onaylayın
+              </Link>
+            </Alert>
+          )}
+          {children}
+        </div>
       </main>
     </div>
   );
