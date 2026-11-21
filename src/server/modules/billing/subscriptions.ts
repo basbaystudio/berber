@@ -147,24 +147,27 @@ export const campaignSchema = z.object({
   earlyLimit: z.coerce.number({ error: "Sayı girin." }).int().min(0, "0 veya daha büyük olmalı.").max(10000),
   earlyTrialMonths: z.coerce.number({ error: "Sayı girin." }).int().min(0).max(36, "En fazla 36 ay."),
   defaultTrialMonths: z.coerce.number({ error: "Sayı girin." }).int().min(0).max(36, "En fazla 36 ay."),
+  graceDays: z.coerce.number({ error: "Sayı girin." }).int().min(1, "En az 1 gün.").max(60, "En fazla 60 gün."),
 });
 
 export async function updateCampaign(db: DB, actor: Actor, input: z.infer<typeof campaignSchema>) {
   await db.transaction(async (tx) => {
     await setSetting(tx, "billing.earlyAdopter", { limit: input.earlyLimit, trialMonths: input.earlyTrialMonths }, actor.adminId);
     await setSetting(tx, "billing.defaultTrialMonths", input.defaultTrialMonths, actor.adminId);
+    await setSetting(tx, "billing.graceDays", input.graceDays, actor.adminId);
     await audit(tx, { actorRealm: "ADMIN", actorId: actor.adminId, action: "billing.campaign_update", meta: input, ip: actor.ip });
   });
 }
 
 export async function getBillingOverview(db: Executor) {
-  const [billing, early, defaultTrial] = [
+  const [billing, early, defaultTrial, graceDays] = [
     await getSetting(db, "billing.status"),
     await getSetting(db, "billing.earlyAdopter"),
     await getSetting(db, "billing.defaultTrialMonths"),
+    await getSetting(db, "billing.graceDays"),
   ];
   const [{ n }] = (await db.select({ n: count() }).from(businessSubscriptions).where(eq(businessSubscriptions.isEarlyAdopter, true))) as [{ n: number }];
-  return { billing, early, defaultTrial, earlyUsed: n };
+  return { billing, early, defaultTrial, graceDays, earlyUsed: n };
 }
 
 export async function getBusinessSubscription(db: Executor, businessId: string) {
@@ -246,7 +249,7 @@ export const paymentSchema = z.object({
  */
 export async function recordPayment(
   db: DB,
-  actor: Actor,
+  actor: Actor | null,
   businessId: string,
   input: z.infer<typeof paymentSchema> & { provider?: string; providerRef?: string },
 ) {
@@ -280,19 +283,34 @@ export async function recordPayment(
           providerRef: input.providerRef ?? null,
           paidAt: new Date(`${input.paidOn}T12:00:00+03:00`),
           note: input.note ?? null,
-          recordedByAdminId: actor.adminId,
+          recordedByAdminId: actor?.adminId ?? null,
         })
         .returning();
       await tx.update(businessSubscriptions).set({ paidThrough: coversTo, updatedAt: new Date() }).where(eq(businessSubscriptions.id, sub.id));
+      // Ödeme gecikmesi nedeniyle askıya alınmışsa ve artık gecikme yoksa otomatik yeniden aç
+      const [b] = await tx.select().from(businesses).where(eq(businesses.id, businessId)).for("update");
+      if (b && b.status === "SUSPENDED" && b.suspendedReason === "BILLING" && coversTo >= todayTR()) {
+        await tx
+          .update(businesses)
+          .set({
+            status: "ACTIVE",
+            suspendedReason: null,
+            isPublished: b.republishOnReactivate,
+            republishOnReactivate: false,
+            updatedAt: new Date(),
+          })
+          .where(eq(businesses.id, businessId));
+        await audit(tx, { actorRealm: actor ? "ADMIN" : null, actorId: actor?.adminId ?? null, businessId, action: "business.reactivate_billing", entity: "business", entityId: businessId });
+      }
       await audit(tx, {
-        actorRealm: "ADMIN",
-        actorId: actor.adminId,
+        actorRealm: actor ? "ADMIN" : null,
+        actorId: actor?.adminId ?? null,
         businessId,
         action: "subscription.payment",
         entity: "payment",
         entityId: p!.id,
         meta: { amountKurus, months: input.months, coversFrom, coversTo },
-        ip: actor.ip,
+        ip: actor?.ip ?? null,
       });
       return p!;
     } catch (e) {

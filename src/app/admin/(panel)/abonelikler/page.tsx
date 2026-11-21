@@ -12,6 +12,7 @@ import {
   createPlanAction,
   disableBillingAction,
   enableBillingAction,
+  runEnforcementAction,
   setDefaultPlanAction,
   updateCampaignAction,
   updatePlanAction,
@@ -42,9 +43,17 @@ export default async function SubscriptionsPage() {
           {overview.billing.enabled ? (
             <>
               <p className="text-sm text-stone-600">Durdurursanız tüm işletmeler yeniden ücretsiz görünür; deneme ve ödeme tarihleri korunur.</p>
-              <ActionButton action={disableBillingAction} variant="dangerOutline" confirm="Ücretlendirme durdurulacak. Emin misiniz?">
-                Ücretlendirmeyi durdur
-              </ActionButton>
+              <div className="flex flex-wrap gap-3">
+                <ActionButton action={runEnforcementAction} pendingText="Kontrol ediliyor…">
+                  Gecikmeleri şimdi kontrol et
+                </ActionButton>
+                <ActionButton action={disableBillingAction} variant="dangerOutline" confirm="Ücretlendirme durdurulacak. Emin misiniz?">
+                  Ücretlendirmeyi durdur
+                </ActionButton>
+              </div>
+              <p className="text-xs text-stone-500">
+                Gecikme kontrolü her gün 09:00&apos;da otomatik çalışır: ilk gün size ve işletmeye e-posta gider, {overview.graceDays}. günde işletme askıya alınır.
+              </p>
             </>
           ) : (
             <>
@@ -73,7 +82,12 @@ export default async function SubscriptionsPage() {
           <div className="p-6">
             <CampaignForm
               action={updateCampaignAction}
-              defaults={{ earlyLimit: overview.early.limit, earlyTrialMonths: overview.early.trialMonths, defaultTrialMonths: overview.defaultTrial }}
+              defaults={{
+                earlyLimit: overview.early.limit,
+                earlyTrialMonths: overview.early.trialMonths,
+                defaultTrialMonths: overview.defaultTrial,
+                graceDays: overview.graceDays,
+              }}
             />
           </div>
         </Card>

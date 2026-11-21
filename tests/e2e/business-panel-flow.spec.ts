@@ -81,6 +81,11 @@ test("işletme profilini hazırlar, admin yayına alır; banner ana sayfada gör
   await expect(bp.getByText("1/30 fotoğraf kullanılıyor")).toBeVisible();
   await bp.screenshot(shot(testInfo, "12-portfolyo.png"));
 
+  // Profil salt okunur: işletme bilgileri değiştiremez
+  await bp.goto("/isletme/panel/profil");
+  await expect(bp.getByText("Bilgileri değiştirmek mi istiyorsunuz?")).toBeVisible();
+  await expect(bp.locator("main input, main textarea")).toHaveCount(0);
+
   // Genel bakış
   await bp.goto("/isletme/panel");
   await expect(bp.getByText("Ücretsiz dönem — şu an ödeme alınmıyor")).toBeVisible();

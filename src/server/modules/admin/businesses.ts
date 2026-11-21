@@ -7,6 +7,7 @@ import { audit } from "@/server/lib/audit";
 import { generateTempPassword, hashPassword } from "@/server/auth/password";
 import { invalidateAllSessions } from "@/server/auth/session";
 import { slugify } from "@/lib/slug";
+import { deleteStoredImage, processAndStoreImage } from "@/server/storage/images";
 import { getPublishChecklist } from "@/server/modules/business/publish";
 import { assignInitialSubscription } from "@/server/modules/billing/subscriptions";
 export { getPublishChecklist };
@@ -59,6 +60,7 @@ export async function createBusiness(db: DB, actor: AdminActor, input: CreateBus
           slug,
           name: input.name,
           phone: input.phone,
+          email: input.email,
           description: input.description ?? null,
           addressLine: input.addressLine,
           provinceId: input.provinceId,
@@ -103,6 +105,7 @@ export async function updateBusinessProfile(db: DB, actor: AdminActor, businessI
           name: input.name,
           slug,
           phone: input.phone,
+          email: input.email,
           description: input.description ?? null,
           addressLine: input.addressLine,
           provinceId: input.provinceId,
@@ -138,6 +141,8 @@ export async function setBusinessStatus(db: DB, actor: AdminActor, businessId: s
       .update(businesses)
       .set({
         status,
+        suspendedReason: status === "SUSPENDED" ? "ADMIN" : null,
+        republishOnReactivate: false,
         ...(status === "SUSPENDED" ? { isPublished: false } : {}),
         updatedAt: new Date(),
       })
@@ -251,6 +256,32 @@ export async function updateOwnerAccount(
   }
 }
 
+/** Logo / kapak görseli (yalnızca admin). */
+export async function setBusinessImage(db: DB, actor: AdminActor, businessId: string, kind: "logo" | "cover", image: Buffer) {
+  const [cur] = await db.select().from(businesses).where(eq(businesses.id, businessId));
+  if (!cur) throw notFound("İşletme");
+  const img = await processAndStoreImage(image, kind, `businesses/${businessId}/${kind}`);
+  await db
+    .update(businesses)
+    .set(kind === "logo" ? { logoKey: img.key, logoUrl: img.url, updatedAt: new Date() } : { coverKey: img.key, coverUrl: img.url, updatedAt: new Date() })
+    .where(eq(businesses.id, businessId));
+  const old = kind === "logo" ? { key: cur.logoKey, url: cur.logoUrl } : { key: cur.coverKey, url: cur.coverUrl };
+  if (old.key && old.url) await deleteStoredImage({ key: old.key, url: old.url });
+  await audit(db, { actorRealm: "ADMIN", actorId: actor.adminId, businessId, action: `business.${kind}_update`, ip: actor.ip });
+}
+
+export async function removeBusinessImage(db: DB, actor: AdminActor, businessId: string, kind: "logo" | "cover") {
+  const [cur] = await db.select().from(businesses).where(eq(businesses.id, businessId));
+  if (!cur) throw notFound("İşletme");
+  await db
+    .update(businesses)
+    .set(kind === "logo" ? { logoKey: null, logoUrl: null } : { coverKey: null, coverUrl: null })
+    .where(eq(businesses.id, businessId));
+  const old = kind === "logo" ? { key: cur.logoKey, url: cur.logoUrl } : { key: cur.coverKey, url: cur.coverUrl };
+  if (old.key && old.url) await deleteStoredImage({ key: old.key, url: old.url });
+  await audit(db, { actorRealm: "ADMIN", actorId: actor.adminId, businessId, action: `business.${kind}_remove`, ip: actor.ip });
+}
+
 export type BusinessListFilter = { q?: string; status?: "DRAFT" | "ACTIVE" | "SUSPENDED"; page?: number };
 export const PAGE_SIZE = 20;
 
@@ -270,6 +301,7 @@ export async function listBusinesses(db: Executor, f: BusinessListFilter) {
         name: businesses.name,
         slug: businesses.slug,
         status: businesses.status,
+        suspendedReason: businesses.suspendedReason,
         isPublished: businesses.isPublished,
         isFeatured: businesses.isFeatured,
         createdAt: businesses.createdAt,

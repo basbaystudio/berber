@@ -40,7 +40,7 @@ describe("şifre politikası", () => {
 });
 
 describe("işletme doğrulaması", () => {
-  const base = { name: "Berber", phone: "0532 123 45 67", addressLine: "Adres satırı", provinceId: "34", districtId: "1" };
+  const base = { name: "Berber", phone: "0532 123 45 67", email: "Berber@Ornek.com", addressLine: "Adres satırı", provinceId: "34", districtId: "1" };
   it("rezerve slug'ı reddeder", () => {
     expect(slugSchema.safeParse("admin").success).toBe(false);
     expect(slugSchema.safeParse("Büyük Harf").success).toBe(false);
@@ -56,6 +56,7 @@ describe("işletme doğrulaması", () => {
   it("telefonu normalize eder", () => {
     const r = businessProfileSchema.parse(base);
     expect(r.phone).toBe("+905321234567");
+    expect(r.email).toBe("berber@ornek.com");
     expect(r.provinceId).toBe(34);
   });
 });

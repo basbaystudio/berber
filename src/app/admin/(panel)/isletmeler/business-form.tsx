@@ -17,6 +17,7 @@ export type BusinessFormDefaults = {
   name?: string;
   slug?: string;
   phone?: string;
+  email?: string | null;
   description?: string | null;
   addressLine?: string;
   provinceId?: number;
@@ -52,9 +53,14 @@ function ProfileFields({ d, fe, locations, isEdit }: { d: BusinessFormDefaults; 
           </div>
         </Field>
       </div>
-      <Field label="Telefon" name="phone" error={fe?.phone} required>
-        <Input id="phone" name="phone" type="tel" defaultValue={formatTrPhone(d.phone)} placeholder="0532 123 45 67" required aria-invalid={!!fe?.phone} />
-      </Field>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Telefon" name="phone" error={fe?.phone} required>
+          <Input id="phone" name="phone" type="tel" defaultValue={formatTrPhone(d.phone)} placeholder="0532 123 45 67" required aria-invalid={!!fe?.phone} />
+        </Field>
+        <Field label="E-posta" name="email" error={fe?.email} hint="Abonelik ve randevu bildirimleri bu adrese gider." required>
+          <Input id="email" name="email" type="email" defaultValue={d.email ?? ""} autoCapitalize="none" required aria-invalid={!!fe?.email} />
+        </Field>
+      </div>
       <Field label="Açıklama" name="description" error={fe?.description} hint="Müşterilerin profilde göreceği kısa tanıtım (en fazla 1000 karakter).">
         <Textarea id="description" name="description" rows={3} maxLength={1000} defaultValue={d.description ?? ""} />
       </Field>

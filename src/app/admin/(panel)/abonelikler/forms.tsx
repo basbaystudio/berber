@@ -61,7 +61,13 @@ export function PlanForm({ action, defaults }: { action: Action; defaults?: Plan
   );
 }
 
-export function CampaignForm({ action, defaults }: { action: Action; defaults: { earlyLimit: number; earlyTrialMonths: number; defaultTrialMonths: number } }) {
+export function CampaignForm({
+  action,
+  defaults,
+}: {
+  action: Action;
+  defaults: { earlyLimit: number; earlyTrialMonths: number; defaultTrialMonths: number; graceDays: number };
+}) {
   const { state, pending, onSubmit, fieldErrors: fe } = useFormAction(action);
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
@@ -77,6 +83,9 @@ export function CampaignForm({ action, defaults }: { action: Action; defaults: {
           <Input name="defaultTrialMonths" id="defaultTrialMonths" type="number" min={0} max={36} defaultValue={defaults.defaultTrialMonths} />
         </Field>
       </div>
+      <Field label="Ödeme gecikmesinde askıya alma (gün)" name="graceDays" error={fe?.graceDays} hint="Gecikmenin ilk günü size ve işletmeye e-posta gider; bu gün sayısına ulaşınca işletme otomatik askıya alınır.">
+        <Input name="graceDays" id="graceDays" type="number" min={1} max={60} defaultValue={defaults.graceDays} className="max-w-32" />
+      </Field>
       <div className="flex justify-end">
         <SubmitButton pending={pending}>Kaydet</SubmitButton>
       </div>

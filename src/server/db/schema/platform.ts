@@ -45,10 +45,13 @@ export const notifications = pgTable(
     attempts: integer("attempts").notNull().default(0),
     error: text("error"),
     appointmentId: uuid("appointment_id").references(() => appointments.id, { onDelete: "set null" }),
+    businessId: uuid("business_id").references(() => businesses.id, { onDelete: "set null" }),
+    /** Aynı olay için ikinci kez bildirim gönderilmesini engeller (ör. "gecikme:<işletme>:<alıcı>:<son ödenen gün>"). */
+    dedupeKey: text("dedupe_key"),
     sentAt: ts("sent_at"),
     createdAt: ts("created_at").notNull().defaultNow(),
   },
-  (t) => [index("notifications_status_idx").on(t.status, t.createdAt)],
+  (t) => [index("notifications_status_idx").on(t.status, t.createdAt), uniqueIndex("notifications_dedupe_uq").on(t.dedupeKey)],
 );
 
 /**
@@ -100,6 +103,17 @@ export const businessSubscriptions = pgTable(
     trialEndsOn: date("trial_ends_on"),
     paidThrough: date("paid_through"),
     isEarlyAdopter: boolean("is_early_adopter").notNull().default(false),
+    /*
+     * Otomatik yenilenen kart aboneliği (ödeme sağlayıcısı bağlandığında doldurulur).
+     * Kart bilgisi ASLA bu veritabanında tutulmaz; kart sağlayıcının kasasında saklanır.
+     * Burada yalnızca sağlayıcının referansları ve gösterim için kart markası / son 4 hane bulunur.
+     */
+    paymentProvider: text("payment_provider"),
+    providerCustomerRef: text("provider_customer_ref"),
+    providerSubscriptionRef: text("provider_subscription_ref"),
+    cardBrand: text("card_brand"),
+    cardLast4: text("card_last4"),
+    autoRenew: boolean("auto_renew").notNull().default(false),
     cancelledAt: ts("cancelled_at"),
     note: text("note"),
     createdAt: ts("created_at").notNull().defaultNow(),
@@ -107,6 +121,8 @@ export const businessSubscriptions = pgTable(
   },
   (t) => [
     uniqueIndex("business_subscriptions_business_uq").on(t.businessId),
+    uniqueIndex("business_subscriptions_provider_sub_uq").on(t.paymentProvider, t.providerSubscriptionRef).where(sql`${t.providerSubscriptionRef} IS NOT NULL`),
+    check("business_subscriptions_last4_ck", sql`${t.cardLast4} IS NULL OR ${t.cardLast4} ~ '^[0-9]{4}$'`),
     check("business_subscriptions_fee_ck", sql`${t.monthlyFeeKurus} >= 0`),
     check("business_subscriptions_trial_ck", sql`${t.trialMonths} BETWEEN 0 AND 36`),
   ],

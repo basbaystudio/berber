@@ -9,7 +9,9 @@ import { formToObject, parseInput, runAction, type ActionState } from "@/server/
 import { getRequestMeta } from "@/server/lib/request";
 import {
   createBusiness,
+  removeBusinessImage,
   resetOwnerPassword,
+  setBusinessImage,
   setBusinessStatus,
   setFeatured,
   setPublished,
@@ -18,6 +20,7 @@ import {
   type AdminActor,
 } from "@/server/modules/admin/businesses";
 import { businessProfileSchema, createBusinessSchema, ownerAccountSchema } from "@/lib/validation/business";
+import { readUpload } from "@/server/storage/images";
 
 const id = z.string().uuid();
 
@@ -93,5 +96,26 @@ export async function updateOwnerAction(businessId: string, _p: ActionState, fd:
     await updateOwnerAccount(db, a, id.parse(businessId), input);
     revalidatePath(`/admin/isletmeler/${businessId}`);
     return { status: "success", message: "Hesap bilgileri kaydedildi." };
+  });
+}
+
+const imageKind = z.enum(["logo", "cover"]);
+
+export async function uploadBusinessImageAction(businessId: string, kind: "logo" | "cover", _p: ActionState, fd: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const a = await actor();
+    await enforce(db, `upload:admin:${a.adminId}`, RATE_LIMITS.upload);
+    await setBusinessImage(db, a, id.parse(businessId), imageKind.parse(kind), await readUpload(fd.get("file")));
+    revalidatePath(`/admin/isletmeler/${businessId}`);
+    return { status: "success", message: kind === "logo" ? "Logo güncellendi." : "Kapak görseli güncellendi." };
+  });
+}
+
+export async function removeBusinessImageAction(businessId: string, kind: "logo" | "cover"): Promise<ActionState> {
+  return runAction(async () => {
+    const a = await actor();
+    await removeBusinessImage(db, a, id.parse(businessId), imageKind.parse(kind));
+    revalidatePath(`/admin/isletmeler/${businessId}`);
+    return { status: "success", message: "Kaldırıldı." };
   });
 }

@@ -22,6 +22,10 @@ export const DEFAULT_PLATFORM_SETTINGS = {
   "billing.earlyAdopter": { limit: 20, trialMonths: 3 },
   /** Kampanya dışındaki işletmelerin ücretsiz deneme süresi (ay). */
   "billing.defaultTrialMonths": 1,
+  /** Ödeme gecikmesinin kaçıncı gününde işletme otomatik askıya alınır. */
+  "billing.graceDays": 7,
+  /** İşletmelerin ve müşterilerin platforma ulaşacağı iletişim bilgileri; alertEmail: yönetici bildirimlerinin gideceği adres (boşsa tüm yöneticiler). */
+  "platform.contact": { email: "" as string, phone: "" as string, alertEmail: "" as string },
 } as const satisfies Record<string, unknown>;
 
 export type PlatformSettingKey = keyof typeof DEFAULT_PLATFORM_SETTINGS;

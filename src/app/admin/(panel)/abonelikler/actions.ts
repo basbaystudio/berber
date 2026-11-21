@@ -6,6 +6,7 @@ import { db } from "@/server/db/client";
 import { requireAdmin } from "@/server/auth/guards";
 import { formToObject, parseInput, runAction, type ActionState } from "@/server/lib/action";
 import { getRequestMeta } from "@/server/lib/request";
+import { runBillingEnforcement } from "@/server/modules/billing/enforcement";
 import {
   campaignSchema,
   changePlanSchema,
@@ -90,5 +91,19 @@ export async function recordPaymentAction(businessId: string, _p: ActionState, f
     const a = await actor();
     const p = await recordPayment(db, a, id.parse(businessId), parseInput(paymentSchema, formToObject(fd)));
     return done(`Ödeme kaydedildi. Kapsanan dönem: ${p.coversFrom} – ${p.coversTo}.`);
+  });
+}
+
+/** Günlük abonelik kontrolünü elle çalıştırır (normalde her gün 09:00'da otomatik çalışır). */
+export async function runEnforcementAction(): Promise<ActionState> {
+  return runAction(async () => {
+    await actor();
+    const r = await runBillingEnforcement(db);
+    revalidatePath("/admin", "layout");
+    if (r.skipped) return { status: "success", message: "Ücretlendirme kapalı; yapılacak işlem yok." };
+    return {
+      status: "success",
+      message: `Kontrol tamamlandı: ${r.pastDueNotified} işletmeye gecikme bildirimi gönderildi, ${r.suspended} işletme askıya alındı${r.emailsFailed ? `, ${r.emailsFailed} e-posta gönderilemedi` : ""}.`,
+    };
   });
 }

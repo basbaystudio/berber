@@ -31,6 +31,8 @@ export const businesses = pgTable(
     name: text("name").notNull(),
     description: text("description"),
     phone: text("phone").notNull(),
+    /** Bildirim e-postası (abonelik uyarıları, randevu bildirimleri). Admin girer. */
+    email: text("email"),
     addressLine: text("address_line").notNull(),
     provinceId: smallint("province_id")
       .notNull()
@@ -45,6 +47,10 @@ export const businesses = pgTable(
     coverKey: text("cover_key"),
     coverUrl: text("cover_url"),
     status: businessStatusEnum("status").notNull().default("DRAFT"),
+    /** Askıya alma nedeni: ADMIN (elle) ya da BILLING (ödeme gecikmesi, ödeme kaydedilince otomatik kalkar). */
+    suspendedReason: text("suspended_reason"),
+    /** Ödeme nedeniyle askıya alınırken yayındaysa, yeniden aktifleşince tekrar yayına alınır. */
+    republishOnReactivate: boolean("republish_on_reactivate").notNull().default(false),
     isPublished: boolean("is_published").notNull().default(false),
     publishedAt: ts("published_at"),
     isFeatured: boolean("is_featured").notNull().default(false),

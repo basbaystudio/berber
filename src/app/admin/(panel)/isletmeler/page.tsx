@@ -102,7 +102,7 @@ export default async function BusinessesPage({ searchParams }: { searchParams: P
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-stone-600">{b.login ?? "—"}</td>
                       <td className="px-4 py-3">
-                        <StatusBadge status={b.status} published={b.isPublished} />
+                        <StatusBadge status={b.status} published={b.isPublished} reason={b.suspendedReason} />
                       </td>
                       <td className="px-4 py-3 text-stone-600">{b.lastLoginAt ? formatDateTime(b.lastLoginAt) : "Hiç giriş yapmadı"}</td>
                     </tr>
@@ -118,7 +118,7 @@ export default async function BusinessesPage({ searchParams }: { searchParams: P
                     <p className="text-sm text-stone-500">
                       {b.district}, {b.province}
                     </p>
-                    <StatusBadge status={b.status} published={b.isPublished} />
+                    <StatusBadge status={b.status} published={b.isPublished} reason={b.suspendedReason} />
                   </Link>
                 </li>
               ))}

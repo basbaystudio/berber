@@ -27,6 +27,7 @@ export async function makeBusiness(adminId: string, overrides: Partial<{ name: s
     name: overrides.name ?? `Test Berber ${uid()}`,
     slug: overrides.slug,
     phone: "+905321234567",
+    email: `isletme-${uid()}@test.local`,
     addressLine: "Test Mah. Deneme Sok. No:1",
     provinceId: d.provinceId,
     districtId: d.id,

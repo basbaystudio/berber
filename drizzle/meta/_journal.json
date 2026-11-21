@@ -36,6 +36,20 @@
       "when": 1795257268815,
       "tag": "0004_image_urls",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795259271620,
+      "tag": "0005_billing_enforcement",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795259353489,
+      "tag": "0006_card_subscription_refs",
+      "breakpoints": true
     }
   ]
 }

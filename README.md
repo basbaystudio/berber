@@ -16,8 +16,8 @@ ADMIN_EMAIL=siz@ornek.com ADMIN_NAME="Ad Soyad" ADMIN_PASSWORD='en-az-12-karakte
 npm run dev
 ```
 
-- Platform yönetimi: http://localhost:3000/admin/giris
-- İşletme girişi: http://localhost:3000/isletme/giris (bilgileri admin verir)
+- Platform yönetimi: http://localhost:3000/admin
+- İşletme girişi: http://localhost:3000/isletme (bilgileri admin verir; işletmeye özel: /isletme/<isletme-adi>)
 
 ## Testler
 
@@ -30,7 +30,9 @@ npm run build && npm run e2e  # tarayıcı testleri (masaüstü + mobil), berber
 
 1. Neon'da (Frankfurt) veritabanı oluşturun, `DATABASE_URL` olarak *pooled* bağlantı adresini Vercel'e ekleyin.
 2. Yerelden `DATABASE_URL=... npm run db:migrate && npm run db:seed` ve `npm run admin:create` çalıştırın.
-3. Vercel'de fonksiyon bölgesini `fra1` seçin.
+3. Vercel'de fonksiyon bölgesi `vercel.json` ile `fra1` olarak ayarlıdır.
+4. Ortam değişkenleri: `CRON_SECRET` (günlük görev için zorunlu), `RESEND_API_KEY` + `EMAIL_FROM` (e-posta), `BLOB_READ_WRITE_TOKEN` (görseller). Ayrıntılar `.env.example` dosyasında.
+5. Günlük bakım görevi (`/api/cron/daily`, her gün 09:00 TR): abonelik gecikme kontrolü, e-postalar, otomatik askıya alma, eski oturum temizliği.
 
 ## Klasör yapısı
 

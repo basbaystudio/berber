@@ -15,6 +15,7 @@ const NAV: NavItem[] = [
   { href: "/admin/hizmet-turleri", label: "Hizmet Türleri", icon: "tags" },
   { href: "/admin/tatiller", label: "Resmî Tatiller", icon: "holidays" },
   { href: "/admin/kayitlar", label: "Denetim Kayıtları", icon: "logs" },
+  { href: "/admin/ayarlar", label: "Platform Ayarları", icon: "settings" },
 ];
 
 export default async function AdminPanelLayout({ children }: { children: React.ReactNode }) {

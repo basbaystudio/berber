@@ -21,14 +21,23 @@ async function findPrincipal(db: Executor, realm: Realm, identifier: string): Pr
   }
   if (realm === "BUSINESS") {
     const [row] = await db
-      .select({ u: businessUsers, status: businesses.status })
+      .select({ u: businessUsers, status: businesses.status, reason: businesses.suspendedReason })
       .from(businessUsers)
       .innerJoin(businesses, eq(businesses.id, businessUsers.businessId))
       .where(eq(sql`lower(${businessUsers.login})`, ident))
       .limit(1);
     if (!row) return null;
     if (row.status === "SUSPENDED")
-      return { id: row.u.id, passwordHash: row.u.passwordHash, active: false, businessId: row.u.businessId, disabledMessage: "İşletme hesabınız askıya alınmış. Lütfen platform yönetimiyle iletişime geçin." };
+      return {
+        id: row.u.id,
+        passwordHash: row.u.passwordHash,
+        active: false,
+        businessId: row.u.businessId,
+        disabledMessage:
+          row.reason === "BILLING"
+            ? "İşletme hesabınız abonelik ödemesi gecikmesi nedeniyle askıya alınmış. Ödeme alındığında hesabınız otomatik olarak açılır; lütfen platform yönetimiyle iletişime geçin."
+            : "İşletme hesabınız askıya alınmış. Lütfen platform yönetimiyle iletişime geçin.",
+      };
     return { id: row.u.id, passwordHash: row.u.passwordHash, active: row.u.isActive, businessId: row.u.businessId };
   }
   const [c] = await db.select().from(customers).where(eq(sql`lower(${customers.email})`, ident)).limit(1);

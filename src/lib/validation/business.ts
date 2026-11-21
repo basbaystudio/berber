@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { checkbox, optionalCoord, optionalText, intFromForm, trimmed, trPhone, emptyToUndefined } from "./common";
+import { checkbox, email, optionalCoord, optionalText, intFromForm, trimmed, trPhone, emptyToUndefined } from "./common";
 
 const RESERVED_SLUGS = new Set([
   "admin", "isletme", "giris", "kayit", "hesabim", "api", "ara", "berber", "panel", "yardim", "iletisim", "hakkimizda",
@@ -30,6 +30,7 @@ export const businessProfileSchema = z
     name: trimmed(2, 80, "İşletme adı"),
     slug: z.preprocess(emptyToUndefined, slugSchema.optional()),
     phone: trPhone,
+    email,
     description: optionalText(1000, "Açıklama"),
     addressLine: trimmed(5, 300, "Adres"),
     provinceId: intFromForm("İl"),

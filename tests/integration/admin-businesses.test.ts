@@ -61,6 +61,7 @@ describe("admin: işletme oluşturma", () => {
       createBusiness(db, { adminId: admin.id }, {
         name: "Yanlış İlçe",
         phone: "+905321234567",
+        email: "x@test.local",
         addressLine: "Adres satırı",
         provinceId: 34,
         districtId: ankaraDistrict!.id,
@@ -110,6 +111,7 @@ describe("admin: durum ve yayın", () => {
       name: "Yeni Ad",
       slug,
       phone: "+902125556677",
+      email: "yeni@test.local",
       addressLine: "Yeni adres satırı",
       provinceId: d.provinceId,
       districtId: d.id,

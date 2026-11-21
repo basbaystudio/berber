@@ -14,6 +14,7 @@ export async function createBusinessViaAdmin(page: Page, name: string, login: st
   await page.goto("/admin/isletmeler/yeni");
   await page.getByLabel("İşletme adı").fill(name);
   await page.getByLabel("Telefon").fill("0532 123 45 67");
+  await page.getByLabel("E-posta").fill(`${login}@test.local`);
   await page.getByRole("combobox", { name: "İl", exact: true }).selectOption({ label: "İstanbul" });
   await page.getByRole("combobox", { name: "İlçe" }).selectOption({ label: "Kadıköy" });
   await page.getByLabel("Açık adres").fill("Caferağa Mah. Moda Cad. No:10");

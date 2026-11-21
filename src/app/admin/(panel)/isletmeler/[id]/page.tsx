@@ -13,6 +13,7 @@ import { formatTrPhone } from "@/lib/phone";
 import { StatusBadge } from "../status-badge";
 import { EditBusinessForm } from "../business-form";
 import { OwnerPanel } from "./owner-panel";
+import { ImageUploadForm } from "@/components/panel/image-upload-form";
 import { getBusinessSubscription, listBusinessPayments, listPlans } from "@/server/modules/billing/subscriptions";
 import { PaymentForm, SubscriptionForm } from "../../abonelikler/forms";
 import { SubscriptionBadge } from "../../abonelikler/status-badge";
@@ -20,7 +21,9 @@ import { recordPaymentAction, updateSubscriptionAction } from "../../abonelikler
 import { formatTL } from "@/lib/money";
 import { formatDateStr, todayTR } from "@/lib/dates";
 import {
+  removeBusinessImageAction,
   resetPasswordAction,
+  uploadBusinessImageAction,
   setFeaturedAction,
   setPublishedAction,
   setStatusAction,
@@ -54,7 +57,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
             {b.districtName}, {b.provinceName} · {formatTrPhone(b.phone)} · Profil adresi: /berber/{b.slug}
           </>
         }
-        actions={<StatusBadge status={b.status} published={b.isPublished} />}
+        actions={<StatusBadge status={b.status} published={b.isPublished} reason={b.suspendedReason} />}
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -68,6 +71,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                 name: b.name,
                 slug: b.slug,
                 phone: b.phone,
+                email: b.email,
                 description: b.description,
                 addressLine: b.addressLine,
                 provinceId: b.provinceId,
@@ -76,6 +80,29 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                 longitude: b.longitude,
               }}
             />
+          </Card>
+          <Card>
+            <CardHeader title="Görseller" description="Logo ve kapak görselini yalnızca platform yönetimi değiştirir." />
+            <div className="grid gap-6 p-6 sm:grid-cols-[12rem_1fr]">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-stone-700">Logo</p>
+                <ImageUploadForm action={uploadBusinessImageAction.bind(null, b.id, "logo")} currentUrl={b.logoUrl} aspect="aspect-square" label="Logo seç" />
+                {b.logoUrl && (
+                  <ActionButton action={removeBusinessImageAction.bind(null, b.id, "logo")} variant="ghost" confirm="Logo kaldırılsın mı?">
+                    Logoyu kaldır
+                  </ActionButton>
+                )}
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-stone-700">Kapak görseli</p>
+                <ImageUploadForm action={uploadBusinessImageAction.bind(null, b.id, "cover")} currentUrl={b.coverUrl} aspect="aspect-[20/9]" label="Kapak görseli seç" />
+                {b.coverUrl && (
+                  <ActionButton action={removeBusinessImageAction.bind(null, b.id, "cover")} variant="ghost" confirm="Kapak görseli kaldırılsın mı?">
+                    Kapak görselini kaldır
+                  </ActionButton>
+                )}
+              </div>
+            </div>
           </Card>
           <Card>
             <CardHeader
@@ -178,6 +205,9 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
           <Card>
             <CardHeader title="Durum" description="Askıya alınan işletme panele giremez ve yayından kalkar." />
             <div className="space-y-3 p-5">
+              {b.status === "SUSPENDED" && b.suspendedReason === "BILLING" && (
+                <Alert tone="warning">Ödeme gecikmesi nedeniyle otomatik askıya alındı. Ödemeyi kaydettiğinizde otomatik olarak açılır.</Alert>
+              )}
               {b.status === "ACTIVE" ? (
                 <ActionButton
                   action={setStatusAction.bind(null, b.id, "SUSPENDED")}
