@@ -112,7 +112,8 @@ Genel kurallar:
 |---|---|---|
 | `platform_admins` | id, email (uniq), password_hash, name, totp_secret (opsiyonel), is_active, last_login_at | Yalnızca platform sahibi. Seed script ile oluşturulur. |
 | `business_users` | id, **business_id**, login (uniq, e-posta ya da kullanıcı adı), password_hash, name, must_change_password, is_active, last_login_at | Admin tarafından oluşturulur. Kayıt ekranı yok. **Yalnızca işletme hesabı; çalışan girişi yoktur ve olmayacaktır.** |
-| `customers` | id, name, email (uniq), phone (uniq), password_hash, email_verified_at, phone_verified_at, kvkk_consent_at, marketing_consent, deleted_at | Müşteriler kendi hesabını açar. |
+| `customers` | id, name, **phone (uniq, E.164, zorunlu)**, phone_verified_at, **email (zorunlu, bildirimler için)**, password_hash, kvkk_consent_at, marketing_consent, deleted_at | Kayıt: telefon + **SMS doğrulama kodu**. Giriş: **telefon + şifre**. Şifre sıfırlama: SMS kodu. |
+| `phone_otps` | id, phone, purpose (`REGISTER`/`PASSWORD_RESET`), code_hash, attempts, expires_at (5 dk), consumed_at, ip | Kod düz metin saklanmaz. En fazla 5 deneme. Telefon ve IP başına gönderim limiti (SMS pompalama dolandırıcılığına karşı). |
 | `sessions` | id (= token'ın SHA-256 hash'i), realm (`CUSTOMER`/`BUSINESS`/`ADMIN`), principal_id, expires_at, last_seen_at, ip, user_agent | Token'ın kendisi DB'de saklanmaz. |
 | `password_reset_tokens` | id(hash), realm, principal_id, expires_at, used_at | |
 
@@ -169,7 +170,7 @@ Genel kurallar:
 
 | Tablo | Alanlar / Kısıtlar |
 |---|---|
-| `appointments` | id, business_id, staff_id, business_customer_id, customer_id (online randevularda dolu), **starts_at, ends_at, blocked_until** (= ends_at + buffer), status (`PENDING`/`CONFIRMED`/`COMPLETED`/`CANCELLED`/`NO_SHOW`), source (`ONLINE`/`PANEL`), total_kurus (bilgi amaçlı; **online ödeme yoktur**), customer_note, internal_note, cancelled_at, cancelled_by_realm, cancel_reason, idempotency_key (uniq), created_at, updated_at |
+| `appointments` | id, business_id, staff_id, business_customer_id, customer_id (online randevularda dolu), **starts_at, ends_at, blocked_until** (= ends_at + buffer), confirm_deadline, confirmed_at, status (`PENDING`/`CONFIRMED`/`COMPLETED`/`CANCELLED`/`NO_SHOW`), source (`ONLINE`/`PANEL`), total_kurus (bilgi amaçlı; **online ödeme yoktur**), customer_note, internal_note, cancelled_at, cancelled_by_realm, cancel_reason, idempotency_key (uniq), created_at, updated_at |
 | `appointment_items` | id, appointment_id, service_id / package_id (biri dolu), name_snapshot, price_snapshot_kurus, duration_snapshot_min |
 | `appointment_events` | id, appointment_id, from_status, to_status, actor_realm, actor_id, note, created_at — Denetim izi. |
 
@@ -239,7 +240,36 @@ Kısıtlar:
 
 | Tablo | Alanlar |
 |---|---|
+| `notifications` | id, channel (`EMAIL`), to, template, payload (jsonb), status (`QUEUED`/`SENT`/`FAILED`), attempts, error, related_appointment_id, sent_at, created_at — Gönderim kuyruğu ve kaydı. |
+| `business_subscriptions` | id, business_id, plan_name, monthly_fee_kurus, starts_on, ends_on, status (`ACTIVE`/`ENDED`), note — Platformun işletmeden aldığı ücret. **Online tahsilat yok**; admin manuel kaydeder. |
+| `subscription_payments` | id, business_id, subscription_id, amount_kurus, paid_on, method (`HAVALE`/`NAKIT`/`DIGER`), period_label (örn. 2026-11), note, recorded_by_admin_id |
+| `platform_settings` | key (pk), value (jsonb), updated_by, updated_at — Güven puanı ağırlıkları, onay süresi (6 saat), iptal sınırı (2 saat) gibi kod dışı ayarlar. |
 | `audit_logs` | id, actor_realm, actor_id, business_id, action, entity, entity_id, meta (jsonb), ip, created_at — Admin işlemleri, giriş denemeleri, müşteri verisine erişim. |
+
+### 3.11.1 İşletme Güven Puanı
+
+Amaç: Paneline bakmayan, randevuları onaylamayan ya da onayladığı randevuyu iptal eden işletme pazaryerinde aşağıya düşer. Hesaplama sunucuda yapılır; ağırlıklar `platform_settings` içindedir, kodda sabit değildir.
+
+| Tablo | Alanlar |
+|---|---|
+| `business_trust_scores` | business_id (pk), score (0–100), sample_size, components (jsonb: her bileşenin değeri), computed_at |
+| `business_trust_history` | id, business_id, score, components, computed_on (gün) — Günlük geçmiş; panelde grafik ve admin incelemesi için. |
+| `businesses.last_panel_activity_at` | İşletme panelinde son anlamlı işlem zamanı (giriş, randevu görüntüleme/işlem). |
+
+Bileşenler (son 30 gün, varsayılan ağırlıklar, admin değiştirebilir):
+
+| Bileşen | Ölçüm | Ağırlık |
+|---|---|---|
+| Onay oranı | Bekleyen talepler içinde işletmenin karar verdiği (onay/ret) oran. **Süre dolup otomatik iptal olan her talep en ağır cezadır.** | %40 |
+| Yanıt hızı | Talep → onay/ret arasındaki medyan süre (≤30 dk tam puan, 6 saate doğru azalır) | %20 |
+| İşletme kaynaklı iptal | Onaylanmış randevuyu sonradan işletmenin iptal etme oranı | %20 |
+| Randevu sonuçlandırma | Saati geçmiş onaylı randevuların "Tamamlandı / Gelmedi" olarak işaretlenme oranı | %10 |
+| Panel aktivitesi | Son panel aktivitesinden bu yana geçen gün (≤1 gün tam puan, 14+ gün sıfır) | %10 |
+
+- **Yeni işletme:** Az veriyle haksız ceza olmasın diye puan, nötr bir başlangıç değerine (70) doğru yumuşatılır (Bayesçi ortalama, örn. en az 10 talep sonrası tamamen kendi verisi).
+- **Ne zaman hesaplanır:** Her randevu olayında ilgili işletme için yeniden ve ayrıca günlük toplu hesaplama (Vercel Cron).
+- **Sıralamaya etkisi:** Pazaryerinde varsayılan "Önerilen" sıralama = güven puanı + Bayesçi yorum puanı + (konum varsa) uzaklık + bugün müsaitlik bileşiminden oluşur. Güven puanı belirli bir eşiğin (örn. 40) altındaki işletmeler "Öne çıkanlar" ve "Bugün müsait" vitrinlerine giremez.
+- **Görünürlük:** İşletme kendi puanını ve **hangi bileşenden puan kaybettiğini** panelde görür (örn. "Son 30 günde 3 randevu onaylanmadan iptal oldu"). Admin tüm işletmelerin puanını ve geçmişini görür. Müşteri sayıyı görmez; yalnızca olumlu rozetler gösterilir (örn. "Hızlı onaylar").
 
 ### 3.12 İlişki Özeti
 
@@ -281,7 +311,7 @@ customers *─* businesses  (favorites)
 
 **İşletme paneli menüsü:** Genel Bakış · Takvim · Randevular · Çalışanlar · Hizmetler · Paketler · Çalışma Saatleri · Portfolyo (18/30) · Müşteriler · Yorumlar · İşletme Profili · Ayarlar
 
-**Admin menüsü:** Gösterge Paneli · İşletmeler (oluştur / düzenle / yayınla / askıya al / giriş bilgisi tanımla / şifre sıfırla) · Yorum Şikâyetleri · Raporlar · Hizmet Türleri · Resmî Tatiller · Denetim Kayıtları
+**Admin menüsü:** Gösterge Paneli · İşletmeler (oluştur / düzenle / yayınla / askıya al / giriş bilgisi tanımla / şifre sıfırla / güven puanı) · Yorum Şikâyetleri · Abonelikler & Ödemeler · Raporlar (randevu cirosu, abonelik geliri) · Platform Ayarları · Hizmet Türleri · Resmî Tatiller · Denetim Kayıtları
 
 **İşletmeye özel giriş bağlantısı:** `/isletme/giris/[slug]` adresi işletmenin logosunu ve adını gösterir. Giriş bilgileri yine kontrol edilir; bağlantı bir yetki vermez, yalnızca kolaylık sağlar. İlk girişte şifre değiştirme zorunludur.
 
@@ -334,7 +364,7 @@ Her boş aralık için başlangıç zamanları `slot_interval_min` ızgarasında
 4. Çalışan "fark etmez" seçildiyse adaylar sıralanır (o gün en az randevusu olan önce gelir) ve sırayla denenir.
 5. `INSERT appointments …`. Postgres **exclusion constraint** çakışmada `23P01` hatası döner. Bu durumda sıradaki aday denenir. Hiçbir aday kalmazsa **409 "Bu saat az önce doldu"** hatası ve en yakın alternatif saatler döner.
 6. `business_customers` kaydı upsert edilir, `appointment_events` yazılır → `COMMIT`.
-7. Durum: **Online randevu her zaman `PENDING` (Bekliyor)** olarak oluşur ve işletme onaylar. `PENDING` randevu da slotu bloke eder, yani aynı saate ikinci bir talep yapılamaz. İşletmenin panelden kendi oluşturduğu randevu doğrudan `CONFIRMED` olur (işletme zaten onaylamış sayılır).
+7. Durum: **Online randevu her zaman `PENDING` (Bekliyor)** olarak oluşur ve işletme onaylar. Onay son tarihi `confirm_deadline = min(oluşturma + 6 saat, randevu başlangıcı)` olarak kaydedilir. `PENDING` randevu da slotu bloke eder, yani aynı saate ikinci bir talep yapılamaz. İşletmenin panelden kendi oluşturduğu randevu doğrudan `CONFIRMED` olur (işletme zaten onaylamış sayılır).
 
 ### 5.7 Durum makinesi
 
@@ -347,6 +377,11 @@ COMPLETED, CANCELLED, NO_SHOW → (son durum)
 - Müşteri, randevu saatine **2 saat kalana kadar** kendi randevusunu iptal edebilir ya da değiştirebilir (platform kuralı, sunucuda uygulanır). Değiştirme = aynı transaction'da yeni slotu doğrula + güncelle; exclusion constraint burada da korur. Değiştirilen online randevu yeniden `PENDING` olur.
 - İşletme randevuyu her zaman onaylayabilir, reddedebilir/iptal edebilir, düzenleyebilir ve durumunu güncelleyebilir.
 - İptal edilen randevunun slotu otomatik olarak serbest kalır.
+- **Onaylanmayan talep:** `confirm_deadline` geçen `PENDING` randevu otomatik olarak `CANCELLED` (neden: `ISLETME_ONAYLAMADI`) olur, müşteriye e-posta gider ve işletmenin güven puanı düşer. Bu iki yolla garanti edilir: (1) Vercel Cron birkaç dakikada bir süresi dolanları iptal eder; (2) yeni randevu transaction'ı, ilgili çalışanın süresi dolmuş bekleyenlerini önce iptal eder. Böylece cron gecikse bile süresi dolmuş bir talep saati kapatmaya devam etmez.
+
+### 5.7.1 Bildirimler (e-posta)
+
+Randevu talebi alındı · onaylandı · reddedildi / iptal edildi · onay süresi doldu · değiştirildi · hatırlatma (randevudan 1 gün önce). İşletmeye: yeni talep e-postası. Gönderim `notifications` kuyruğu üzerinden yapılır, randevu transaction'ını bekletmez. Sağlayıcı: Resend (ya da eşdeğeri), sağlayıcıdan bağımsız arayüz arkasında.
 
 ### 5.8 "Gerçek zamanlı" görünüm
 
@@ -391,7 +426,7 @@ Her aşamanın sonunda: yapılanlar, eksikler ve test sonuçları raporlanır, o
 | **1 — Analiz & Mimari** | Bu doküman, açık soruların yanıtlanması | — |
 | **2 — Temel altyapı** | Next.js + TS + Tailwind iskeleti, Docker Compose, Drizzle şeması + migration (exclusion constraint dahil), seed (il/ilçe, hizmet türleri, ilk admin), oturum/realm sistemi, guard'lar, rate limit, AppError, audit log. **Admin paneli:** giriş, işletme oluşturma/düzenleme/yayınlama/askıya alma, işletme kullanıcısı tanımlama, temel istatistikler | Realm izolasyonu, şifre hash, rate limit |
 | **3 — İşletme paneli** | Giriş (+özel bağlantı, ilk şifre değişimi), işletme profili, çalışma saatleri (çoklu aralık, istisna, tatil, geçici kapanış), otomatik açık/kapalı, çalışanlar (vardiya, mola, izin, yetkinlik), hizmetler, paketler, portfolyo (S3, 30 limiti, kategori, çalışan bağı) | İşletmeler arası izolasyon, foto limiti eşzamanlılık testi |
-| **4 — Randevu sistemi** | Müsaitlik motoru, randevu oluşturma/düzenleme/iptal, durum makinesi, panel takvimi (gün/hafta/ay, çalışan bazlı), panelden randevu ekleme, müşteri CRM kaydı, genel bakış metrikleri | **Eşzamanlı çakışma testi** (N paralel istek → tam 1 başarı), algoritma birim testleri (mola, izin, paket, buffer, sınırlar) |
+| **4 — Randevu sistemi** | Müsaitlik motoru, randevu oluşturma/düzenleme/iptal, durum makinesi, onay süresi + otomatik iptal (cron), e-posta bildirimleri, güven puanı hesaplama, panel takvimi (gün/hafta/ay, çalışan bazlı), panelden randevu ekleme, müşteri CRM kaydı, genel bakış metrikleri | **Eşzamanlı çakışma testi** (N paralel istek → tam 1 başarı), algoritma birim testleri (mola, izin, paket, buffer, sınırlar) |
 | **5 — Müşteri pazaryeri** | Ana sayfa, arama + filtreler (il/ilçe, fiyat, puan, hizmet türü, bugün müsait, konuma yakınlık), öne çıkan/popüler, berber profili, galeri, harita, randevu sihirbazı (giriş sonrası seçim koruma), müşteri hesabı (randevularım, geçmiş, favoriler, ayarlar), yorumlar | E2E randevu akışı, misafir → giriş → seçim korunması, 401 testi |
 | **6 — Test & güvenlik** | Yetki matrisi testleri, IDOR taraması, mobil/tablet görünüm testleri (Playwright cihaz profilleri), form/API doğrulama testleri, güvenlik başlıkları, performans kontrolü, PWA hazırlığı (manifest, ikon, offline sayfası) | Tam test raporu |
 
@@ -412,3 +447,8 @@ Her aşamanın sonunda: yapılanlar, eksikler ve test sonuçları raporlanır, o
 | 12 | Paket | Paketin tamamını **tek çalışan** yapar. |
 | 13 | Yorumlar | İşletme yanıt verebilir, **gizleyemez**. İşletme şikâyet eder; admin inceler ve silebilir. |
 | 14 | Sadakat puanı | **v1 kapsamı dışında**, sonra geliştirilecek. |
+| 2 | Müşteri hesabı | Kayıtta **telefon + SMS kodu** doğrulaması, sonraki girişler **telefon + şifre**. E-posta kayıtta zorunlu (bildirimler için). SMS sağlayıcı **henüz seçilmedi**: modül sağlayıcıdan bağımsız yazılır, geliştirmede kod log'a düşer. **Canlıya çıkmadan sağlayıcı seçilmeli.** |
+| 5 | Gelir takibi | **İkisi de:** işletmelerin tamamlanan randevu cirosu + platformun işletmelerden aldığı abonelik ücretlerinin admin tarafından manuel kaydı. |
+| 9 | Bildirim | **Ekran + e-posta.** WhatsApp/SMS bildirimi yok. |
+| 15 | Onaylanmayan talep | **6 saat** içinde onaylanmazsa (ya da randevu saati daha yakınsa o saate kadar) otomatik iptal. |
+| 16 | Güven puanı | İşletmenin onaylama, yanıt hızı, iptal ve panel aktivitesi davranışından hesaplanır; pazaryeri sıralamasını etkiler (§3.11.1). |
