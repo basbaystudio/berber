@@ -23,10 +23,12 @@ npm run dev
 
 ```bash
 npm test                      # birim + entegrasyon (TEST_DATABASE_URL'deki veritabanını SIFIRLAR)
-npm run build && npm run e2e  # tarayıcı testleri (masaüstü + mobil), berber_e2e veritabanını sıfırlar
+npm run build && npm run e2e  # tarayıcı testleri (masaüstü, tablet, mobil): akışlar, güvenlik, erişilebilirlik, PWA; berber_e2e veritabanını sıfırlar
 ```
 
 ## Canlı ortam (Vercel + Neon)
+
+Adım adım kontrol listesi: [`docs/CANLIYA-CIKIS.md`](docs/CANLIYA-CIKIS.md).
 
 1. Neon'da (Frankfurt) veritabanı oluşturun, `DATABASE_URL` olarak *pooled* bağlantı adresini Vercel'e ekleyin.
 2. Yerelden `DATABASE_URL=... npm run db:migrate && npm run db:seed` ve `npm run admin:create` çalıştırın.
