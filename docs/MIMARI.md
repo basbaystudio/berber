@@ -1,6 +1,6 @@
 # Berber Pazaryeri ve Randevu Platformu — Mimari Doküman (Aşama 1)
 
-> Durum: **Taslak — onay bekliyor.** Bu doküman onaylanmadan kod geliştirmesine başlanmayacaktır.
+> Durum: **Taslak — kararlar işlendi, son sorular bekleniyor.** (Bkz. §8 Kararlar)
 > Dil: Türkçe · Para birimi: TL (veritabanında kuruş, tam sayı) · Saat dilimi: Europe/Istanbul
 
 ---
@@ -18,20 +18,21 @@ Depoda yalnızca boş bir `README.md` var. Ne mevcut kod ne de bağımlılık bu
 | Dil | **TypeScript (strict)** | Frontend ile backend aynı tipleri kullanır, uçtan uca tip güvenliği olur. |
 | Uygulama çatısı | **Next.js (App Router, güncel kararlı sürüm) + React 19** | Tek kod tabanında hem SSR/SEO'lu pazaryeri sayfaları hem paneller hem API. PWA'ya dönüşüm kolay (manifest + service worker). |
 | Backend | Next.js Route Handler + Server Action'lar, ama **iş mantığı framework'ten bağımsız bir `server/modules` katmanında** | Tek merkezi backend olur. İleride ayrı bir API servisine (mobil uygulama vb.) taşımak gerekirse modüller olduğu gibi taşınabilir. |
-| Veritabanı | **PostgreSQL 16+ (+ PostGIS, btree_gist, pg_trgm, unaccent)** | Randevu çakışmasını **veritabanı seviyesinde** engelleyen *exclusion constraint*, konum sorguları, Türkçe metin araması ve sağlam transaction desteği. |
+| Barındırma | **Vercel** (fonksiyon bölgesi: `fra1` Frankfurt) | Karar verildi. Veritabanı ve servisler aynı bölgede tutularak gecikme düşük tutulur. |
+| Veritabanı | **PostgreSQL — Neon (Vercel Marketplace, Frankfurt) (+ PostGIS, btree_gist, pg_trgm, unaccent)** | Randevu çakışmasını **veritabanı seviyesinde** engelleyen *exclusion constraint*, konum sorguları, Türkçe metin araması ve sağlam transaction desteği. |
 | ORM | **Drizzle ORM + drizzle-kit migration** | SQL'e yakın, tip güvenli ve hafif. `tstzrange`, exclusion constraint ve `FOR UPDATE` gibi ileri SQL özelliklerini rahatça kullanmaya izin veriyor. |
 | Doğrulama | **Zod** | Aynı şema hem formda hem API'de kullanılır. Backend doğrulaması her zaman zorunlu. |
 | Kimlik doğrulama | **Kendi oturum katmanımız** (opak token + DB oturumu, **Argon2id** hash) | Üç ayrı giriş alanını (müşteri / işletme / admin) katı şekilde ayırmak, hazır kütüphanelerle zorlama ve sızıntıya açık olurdu. Kod küçük ve denetlenebilir kalıyor. |
-| Dosya depolama | **S3 uyumlu nesne depolama** (Cloudflare R2 / AWS S3 / MinIO) + **sharp** | Fotoğraf sunucuda doğrulanır, WebP'ye dönüştürülür ve EXIF temizlenir. Veritabanında yalnızca anahtar/URL ve metadata tutulur. |
-| Önbellek / Rate limit | **Redis** (yönetilen ya da self-host) | Rate limiting ve müsaitlik önbelleği için. |
+| Dosya depolama | **Vercel Blob** (bir depolama arayüzünün arkasında; yerelde disk adaptörü) + **sharp** | Fotoğraf sunucuda doğrulanır, WebP'ye dönüştürülür ve EXIF temizlenir. Veritabanında yalnızca anahtar/URL ve metadata tutulur. |
+| Önbellek / Rate limit | **Upstash Redis** (Vercel Marketplace) | Rate limiting ve müsaitlik önbelleği için. |
 | UI | **Tailwind CSS + shadcn/ui (Radix)**, ikonlar: lucide | Erişilebilir, sade ve tutarlı bileşenler. |
 | Takvim | Kendi geliştirdiğimiz gün / hafta / ay görünümü (çalışan sütunlu) | FullCalendar'ın çalışan sütunlu (resource) görünümleri ücretli lisans istiyor. |
 | Grafik | Recharts | Panel istatistikleri için. |
-| Harita | Leaflet + OpenStreetMap *(ya da Google Maps — bkz. Sorular)* | |
+| Harita | **Leaflet + OpenStreetMap** (ücretsiz) | Karar verildi. |
 | Tarih/saat | `date-fns` + `@date-fns/tz` | Tüm hesaplamalar Europe/Istanbul'da yapılır, DB'de `timestamptz` (UTC) tutulur. |
 | Test | **Vitest** (birim + entegrasyon, gerçek Postgres ile), **Playwright** (E2E + mobil görünüm) | Çakışma testleri gerçek veritabanında, eşzamanlı isteklerle koşturulur. |
 | Loglama / hata | pino + merkezi `AppError` yapısı, isteğe bağlı Sentry | |
-| Geliştirme ortamı | Docker Compose (Postgres + Redis + MinIO) | |
+| Geliştirme ortamı | Docker Compose (Postgres + Redis) — yalnızca yerel geliştirme ve testler için | |
 
 ---
 
@@ -40,7 +41,7 @@ Depoda yalnızca boş bir `README.md` var. Ne mevcut kod ne de bağımlılık bu
 ```
 berber/
 ├─ docs/                         # Mimari, karar kayıtları
-├─ docker-compose.yml            # postgres(postgis), redis, minio
+├─ docker-compose.yml            # yerel: postgres(postgis), redis
 ├─ drizzle/                      # SQL migration dosyaları (exclusion constraint vb. dahil)
 ├─ public/                       # statik dosyalar, ileride PWA manifest/ikonlar
 ├─ scripts/                      # seed (il/ilçe, hizmet türleri, ilk admin)
@@ -70,13 +71,13 @@ berber/
 │  │  │  ├─ catalog/             # hizmet, paket, hizmet türleri
 │  │  │  ├─ availability/        # *** müsaitlik motoru (saf fonksiyonlar + veri yükleyici) ***
 │  │  │  ├─ booking/             # randevu oluşturma/güncelleme/iptal/durum makinesi
-│  │  │  ├─ loyalty/             # puan hesabı, kazanma, harcama, geçmiş
+│  │  │  ├─ loyalty/             # (sonraki sürüm) puan sistemi
 │  │  │  ├─ portfolio/           # yükleme, limit, kategoriler
 │  │  │  ├─ customers/           # müşteri hesabı + işletme CRM kaydı
 │  │  │  ├─ reviews/
 │  │  │  ├─ marketplace/         # arama, filtreleme, öne çıkanlar
 │  │  │  └─ admin/               # platform istatistikleri, işletme oluşturma
-│  │  ├─ storage/                # S3 istemcisi, görsel işleme
+│  │  ├─ storage/                # Vercel Blob / yerel disk adaptörü, görsel işleme
 │  │  └─ lib/                    # AppError, logger, audit log, saat/zaman yardımcıları
 │  ├─ components/
 │  │  ├─ ui/                     # shadcn temel bileşenler
@@ -110,7 +111,7 @@ Genel kurallar:
 | Tablo | Alanlar | Not |
 |---|---|---|
 | `platform_admins` | id, email (uniq), password_hash, name, totp_secret (opsiyonel), is_active, last_login_at | Yalnızca platform sahibi. Seed script ile oluşturulur. |
-| `business_users` | id, **business_id**, login (uniq, e-posta ya da kullanıcı adı), password_hash, name, role (`OWNER`), must_change_password, is_active, last_login_at | Admin tarafından oluşturulur. Kayıt ekranı yok. |
+| `business_users` | id, **business_id**, login (uniq, e-posta ya da kullanıcı adı), password_hash, name, must_change_password, is_active, last_login_at | Admin tarafından oluşturulur. Kayıt ekranı yok. **Yalnızca işletme hesabı; çalışan girişi yoktur ve olmayacaktır.** |
 | `customers` | id, name, email (uniq), phone (uniq), password_hash, email_verified_at, phone_verified_at, kvkk_consent_at, marketing_consent, deleted_at | Müşteriler kendi hesabını açar. |
 | `sessions` | id (= token'ın SHA-256 hash'i), realm (`CUSTOMER`/`BUSINESS`/`ADMIN`), principal_id, expires_at, last_seen_at, ip, user_agent | Token'ın kendisi DB'de saklanmaz. |
 | `password_reset_tokens` | id(hash), realm, principal_id, expires_at, used_at | |
@@ -129,7 +130,7 @@ Genel kurallar:
 | Tablo | Alanlar / Kısıtlar |
 |---|---|
 | `businesses` | id, **slug (uniq)**, name, description, phone, address_line, province_id, district_id, **location (PostGIS geography Point)**, logo_key, cover_key, status (`DRAFT`/`ACTIVE`/`SUSPENDED`), is_published, published_at, is_featured, featured_rank, **photo_count (CHECK 0..30)**, rating_avg, rating_count, min_price_kurus (önbellek), created_at, updated_at |
-| `business_settings` | business_id (pk), slot_interval_min (vars. 15), min_lead_min (vars. 60), max_advance_days (vars. 30), buffer_min (vars. 0), cancel_cutoff_min (vars. 120), auto_confirm (bool), temp_closed_until (timestamptz, geçici kapanış), temp_closed_note |
+| `business_settings` | business_id (pk), slot_interval_min (vars. 15), min_lead_min (vars. 60), max_advance_days (vars. 30), buffer_min (vars. 0), temp_closed_until (timestamptz, geçici kapanış), temp_closed_note |
 | `business_hours` | id, business_id, weekday, start_time, end_time — **Bir gün için birden çok satır = birden çok aralık.** O gün için satır yoksa = kapalı. CHECK(start<end) + aynı gün aralıklar çakışamaz (exclusion). |
 | `business_exceptions` | id, business_id, date, kind (`CLOSED`/`CUSTOM_HOURS`), reason (`HOLIDAY`/`SPECIAL`/`VACATION`/`OTHER`), note — uniq(business_id, date) |
 | `business_exception_ranges` | id, exception_id, start_time, end_time — Özel gün saatleri. |
@@ -138,7 +139,7 @@ Genel kurallar:
 
 | Tablo | Alanlar / Kısıtlar |
 |---|---|
-| `staff` | id, business_id, name, title, photo_key, bio, is_active, sort_order, deleted_at — uniq(business_id, id) bileşik FK hedefi |
+| `staff` | id, business_id, name, title, photo_key, bio, is_active, sort_order, deleted_at — uniq(business_id, id) bileşik FK hedefi. Çalışanlar işletme tarafından tanımlanan kayıtlardır; **giriş hesabı yoktur**. |
 | `staff_shifts` | id, business_id, staff_id, weekday, start_time, end_time — Haftalık vardiya şablonu. İşletme saatlerinden **ayrı** tutulur. |
 | `staff_breaks` | id, business_id, staff_id, weekday, start_time, end_time — Tekrarlayan mola (örn. her gün 13:00–13:45). |
 | `staff_time_off` | id, business_id, staff_id, starts_at, ends_at (timestamptz), kind (`LEAVE`/`SICK`/`BLOCK`), note — İzin, rapor ya da tek seferlik blok. |
@@ -161,13 +162,14 @@ Genel kurallar:
 
 - İşletme, yalnızca **kendisinden randevu almış** müşterileri bu tablo üzerinden görür. `customers` tablosuna doğrudan erişimi olmaz.
 - Müşteri notları işletmeye özeldir. Başka işletme ve müşteri bu notları göremez.
-- `customer_id` NULL olan kayıtlar, işletmenin panelden manuel girdiği telefon veya kapıdan gelen müşterilerdir *(onay bekliyor — bkz. Soru 6)*.
+- `customer_id` NULL olan kayıtlar, işletmenin panelden manuel girdiği telefonla arayan ya da kapıdan gelen **hesapsız** müşterilerdir (karar verildi). Bu kayıtlar yalnızca panelden oluşturulabilir. Online randevu her zaman üyelik ister.
+- Hesapsız müşteri daha sonra aynı telefonla üye olursa, işletme kaydı hesapla eşleştirilebilir.
 
 ### 3.7 Randevu
 
 | Tablo | Alanlar / Kısıtlar |
 |---|---|
-| `appointments` | id, business_id, staff_id, business_customer_id, customer_id (online randevularda dolu), **starts_at, ends_at, blocked_until** (= ends_at + buffer), status (`PENDING`/`CONFIRMED`/`COMPLETED`/`CANCELLED`/`NO_SHOW`), source (`ONLINE`/`PANEL`), subtotal_kurus, points_discount_kurus, total_kurus, points_redeemed, customer_note, internal_note, cancelled_at, cancelled_by_realm, cancel_reason, idempotency_key (uniq), created_at, updated_at |
+| `appointments` | id, business_id, staff_id, business_customer_id, customer_id (online randevularda dolu), **starts_at, ends_at, blocked_until** (= ends_at + buffer), status (`PENDING`/`CONFIRMED`/`COMPLETED`/`CANCELLED`/`NO_SHOW`), source (`ONLINE`/`PANEL`), total_kurus (bilgi amaçlı; **online ödeme yoktur**), customer_note, internal_note, cancelled_at, cancelled_by_realm, cancel_reason, idempotency_key (uniq), created_at, updated_at |
 | `appointment_items` | id, appointment_id, service_id / package_id (biri dolu), name_snapshot, price_snapshot_kurus, duration_snapshot_min |
 | `appointment_events` | id, appointment_id, from_status, to_status, actor_realm, actor_id, note, created_at — Denetim izi. |
 
@@ -205,10 +207,19 @@ Ek güvence olarak `CHECK (photo_count BETWEEN 0 AND 30)` tanımlanır. Silme i�
 
 | Tablo | Alanlar |
 |---|---|
-| `reviews` | id, business_id, **appointment_id (uniq)**, customer_id, staff_id, rating (1–5), comment, business_reply, replied_at, status (`VISIBLE`/`HIDDEN`), created_at — **Yalnızca `COMPLETED` randevu için** ve randevu başına tek yorum. |
+| `reviews` | id, business_id, **appointment_id (uniq)**, customer_id, staff_id, rating (1–5), comment, business_reply, replied_at, status (`VISIBLE`/`REMOVED`), removed_by_admin_id, removed_at, removal_reason, created_at — **Yalnızca `COMPLETED` randevu için** ve randevu başına tek yorum. |
+| `review_reports` | id, review_id, business_id, reason (`SPAM`/`HAKARET`/`YANILTICI`/`DIGER`), note, status (`OPEN`/`REJECTED`/`REMOVED`), resolved_by_admin_id, resolved_at, admin_note, created_at — İşletmenin şikâyetleri. |
 | `favorites` | customer_id, business_id — PK(customer_id, business_id) |
 
-### 3.10 Sadakat Puanı (işletme bazlı)
+Yorum kuralları (karar verildi):
+
+- İşletme yoruma **yanıt verebilir**, ama yorumu **gizleyemez ya da silemez**.
+- İşletme yorumu şikâyet edebilir (yorum başına işletmenin tek açık şikâyeti).
+- Şikâyetler admin panelindeki "Yorum Şikâyetleri" kuyruğuna düşer. Admin inceler, ardından yorumu **kaldırır** (`REMOVED`, puan ortalamasından düşülür) ya da şikâyeti **reddeder**. Bu işlemler denetim kaydına yazılır.
+
+### 3.10 Sadakat Puanı (işletme bazlı) — **SONRAKİ SÜRÜM**
+
+> Karar: Puan sistemi v1 kapsamında değildir. Aşağıdaki tasarım ileride uygulanmak üzere saklanmıştır. v1'de bu tablolar oluşturulmaz, ancak randevu modeli puan sistemine engel olmayacak şekilde kurulur.
 
 | Tablo | Alanlar / Kısıtlar |
 |---|---|
@@ -268,9 +279,9 @@ customers *─* businesses  (favorites)
 
 **İşletme bağlamı kuralı:** İşletme paneli API'lerinde `businessId` **hiçbir zaman istek gövdesinden ya da URL'den alınmaz**. Her zaman oturumdan gelir. Modül fonksiyonları zorunlu olarak `ctx: BusinessContext` parametresi alır, ve sorgular bu parametre olmadan derlenmez (tip seviyesinde zorlanır).
 
-**İşletme paneli menüsü:** Genel Bakış · Takvim · Randevular · Çalışanlar · Hizmetler · Paketler · Çalışma Saatleri · Portfolyo (18/30) · Müşteriler · Sadakat · Yorumlar · İşletme Profili · Ayarlar
+**İşletme paneli menüsü:** Genel Bakış · Takvim · Randevular · Çalışanlar · Hizmetler · Paketler · Çalışma Saatleri · Portfolyo (18/30) · Müşteriler · Yorumlar · İşletme Profili · Ayarlar
 
-**Admin menüsü:** Gösterge Paneli · İşletmeler (oluştur / düzenle / yayınla / askıya al / giriş bilgisi tanımla / şifre sıfırla) · Raporlar · Hizmet Türleri · Resmî Tatiller · Denetim Kayıtları
+**Admin menüsü:** Gösterge Paneli · İşletmeler (oluştur / düzenle / yayınla / askıya al / giriş bilgisi tanımla / şifre sıfırla) · Yorum Şikâyetleri · Raporlar · Hizmet Türleri · Resmî Tatiller · Denetim Kayıtları
 
 **İşletmeye özel giriş bağlantısı:** `/isletme/giris/[slug]` adresi işletmenin logosunu ve adını gösterir. Giriş bilgileri yine kontrol edilir; bağlantı bir yetki vermez, yalnızca kolaylık sağlar. İlk girişte şifre değiştirme zorunludur.
 
@@ -322,8 +333,8 @@ Her boş aralık için başlangıç zamanları `slot_interval_min` ızgarasında
 3. `BEGIN` → hizmet/paket fiyat ve süreleri **DB'den** yeniden okunur (istemciden gelen fiyat ya da süreye asla güvenilmez). Seçilen slot, aynı algoritmayla o çalışan için **yeniden doğrulanır**.
 4. Çalışan "fark etmez" seçildiyse adaylar sıralanır (o gün en az randevusu olan önce gelir) ve sırayla denenir.
 5. `INSERT appointments …`. Postgres **exclusion constraint** çakışmada `23P01` hatası döner. Bu durumda sıradaki aday denenir. Hiçbir aday kalmazsa **409 "Bu saat az önce doldu"** hatası ve en yakın alternatif saatler döner.
-6. Puan kullanıldıysa bakiye atomik olarak düşülür (`REDEEM`). `business_customers` kaydı upsert edilir, `appointment_events` yazılır → `COMMIT`.
-7. Durum: işletmenin `auto_confirm` ayarına göre `CONFIRMED` ya da `PENDING` olur *(bkz. Soru 3)*.
+6. `business_customers` kaydı upsert edilir, `appointment_events` yazılır → `COMMIT`.
+7. Durum: **Online randevu her zaman `PENDING` (Bekliyor)** olarak oluşur ve işletme onaylar. `PENDING` randevu da slotu bloke eder, yani aynı saate ikinci bir talep yapılamaz. İşletmenin panelden kendi oluşturduğu randevu doğrudan `CONFIRMED` olur (işletme zaten onaylamış sayılır).
 
 ### 5.7 Durum makinesi
 
@@ -333,9 +344,9 @@ CONFIRMED→ COMPLETED | CANCELLED | NO_SHOW
 COMPLETED, CANCELLED, NO_SHOW → (son durum)
 ```
 
-- Müşteri, `cancel_cutoff_min` süresi dolmadan kendi randevusunu iptal edebilir ya da değiştirebilir. Değiştirme = aynı transaction'da yeni slotu doğrula + güncelle; exclusion constraint burada da korur.
-- İptalde harcanan puan iade edilir (`REFUND`), slot otomatik olarak serbest kalır.
-- `COMPLETED` geçişinde puan kazanılır (`EARN`, tekil). `NO_SHOW` ve `CANCELLED` durumlarında puan kazanılmaz.
+- Müşteri, randevu saatine **2 saat kalana kadar** kendi randevusunu iptal edebilir ya da değiştirebilir (platform kuralı, sunucuda uygulanır). Değiştirme = aynı transaction'da yeni slotu doğrula + güncelle; exclusion constraint burada da korur. Değiştirilen online randevu yeniden `PENDING` olur.
+- İşletme randevuyu her zaman onaylayabilir, reddedebilir/iptal edebilir, düzenleyebilir ve durumunu güncelleyebilir.
+- İptal edilen randevunun slotu otomatik olarak serbest kalır.
 
 ### 5.8 "Gerçek zamanlı" görünüm
 
@@ -371,6 +382,8 @@ Randevu sihirbazının tüm seçimi URL'de tutulur: `/berber/[slug]/randevu?h=�
 
 ## 7. Geliştirme Aşamaları
 
+*Sadakat puanı sistemi v1 sonrasına ertelendi; ayrı bir aşama olarak eklenecek.*
+
 Her aşamanın sonunda: yapılanlar, eksikler ve test sonuçları raporlanır, onay alınmadan sonraki aşamaya geçilmez.
 
 | Aşama | Teslimatlar | Testler |
@@ -380,26 +393,22 @@ Her aşamanın sonunda: yapılanlar, eksikler ve test sonuçları raporlanır, o
 | **3 — İşletme paneli** | Giriş (+özel bağlantı, ilk şifre değişimi), işletme profili, çalışma saatleri (çoklu aralık, istisna, tatil, geçici kapanış), otomatik açık/kapalı, çalışanlar (vardiya, mola, izin, yetkinlik), hizmetler, paketler, portfolyo (S3, 30 limiti, kategori, çalışan bağı) | İşletmeler arası izolasyon, foto limiti eşzamanlılık testi |
 | **4 — Randevu sistemi** | Müsaitlik motoru, randevu oluşturma/düzenleme/iptal, durum makinesi, panel takvimi (gün/hafta/ay, çalışan bazlı), panelden randevu ekleme, müşteri CRM kaydı, genel bakış metrikleri | **Eşzamanlı çakışma testi** (N paralel istek → tam 1 başarı), algoritma birim testleri (mola, izin, paket, buffer, sınırlar) |
 | **5 — Müşteri pazaryeri** | Ana sayfa, arama + filtreler (il/ilçe, fiyat, puan, hizmet türü, bugün müsait, konuma yakınlık), öne çıkan/popüler, berber profili, galeri, harita, randevu sihirbazı (giriş sonrası seçim koruma), müşteri hesabı (randevularım, geçmiş, favoriler, ayarlar), yorumlar | E2E randevu akışı, misafir → giriş → seçim korunması, 401 testi |
-| **6 — Sadakat** | Puan ayarları, kazanma (COMPLETED), harcama (randevuda indirim), iade, geçmiş, müşteri "Puanlarım", panelde müşteri bakiyesi | Çift kazanım engeli, bakiye yarışı, iptal iadesi, ledger tutarlılığı |
-| **7 — Test & güvenlik** | Yetki matrisi testleri, IDOR taraması, mobil/tablet görünüm testleri (Playwright cihaz profilleri), form/API doğrulama testleri, güvenlik başlıkları, performans kontrolü, PWA hazırlığı (manifest, ikon, offline sayfası) | Tam test raporu |
+| **6 — Test & güvenlik** | Yetki matrisi testleri, IDOR taraması, mobil/tablet görünüm testleri (Playwright cihaz profilleri), form/API doğrulama testleri, güvenlik başlıkları, performans kontrolü, PWA hazırlığı (manifest, ikon, offline sayfası) | Tam test raporu |
 
 ---
 
-## 8. Açık Sorular
+## 8. Kararlar
 
-Yanıtlanana kadar kritik karar alınmayacak. Her sorunun yanında önerilen varsayılan belirtilmiştir.
-
-1. **Barındırma ve KVKK:** Yönetilen bulut (Vercel + Neon Postgres + Cloudflare R2 + Upstash Redis: hızlı kurulum, yurt dışı) mı, Türkiye'de bir VPS / yerli bulut (Docker ile: veri yurt içinde) mi? *Öneri: Kod iki seçenekte de çalışacak şekilde taşınabilir yazılır. Kişisel veri yurt dışına aktarımı KVKK yükümlülüğü doğurduğu için canlı ortamda Türkiye lokasyonu önerilir.*
-2. **Müşteri kaydı ve girişi:** E-posta + şifre mi, telefon + SMS doğrulama kodu (OTP) mu? SMS için Netgsm / İleti Merkezi gibi bir sağlayıcı ve ücret gerekir. *Öneri: v1'de e-posta + şifre ile giriş, telefon numarası zorunlu alan. SMS doğrulama sağlayıcı netleşince eklenir.*
-3. **Randevu ilk durumu:** Müşteri randevu alınca doğrudan "Onaylandı" mı olsun, yoksa işletme onayına kadar "Bekliyor" mu? *Öneri: İşletme başına ayar, varsayılan otomatik onay.*
-4. **Ödeme:** v1'de online ödeme yok, ödeme işletmede yapılır. Doğru mu? *Öneri: Evet.* (Puan indirimi randevu tutarından düşülür, kalan tutar işletmede ödenir.)
-5. **Admin "gelir takibi":** Platformun işletmelerden aldığı abonelik ücretleri mi (iş modeli nedir?), yoksa işletmelerin tamamlanan randevu cirosunun toplamı mı? *Öneri: v1'de randevu cirosu raporu. Abonelik/faturalandırma modeli sonraya bırakılır.*
-6. **Panelden randevu:** İşletme, telefonla arayan ya da kapıdan gelen ve **hesabı olmayan** müşteriye panelden randevu girebilsin mi? (Bu, müşterinin kendi başına misafir randevu alması değildir. Online kanal yine yalnızca üyelere açık kalır.) *Öneri: Evet. Aksi halde takvim gerçeği yansıtmaz ve çakışma kontrolü eksik kalır.*
-7. **İşletme kullanıcıları:** v1'de işletme başına yalnızca sahip hesabı mı, yoksa çalışanların kendi takvimini gördüğü ayrı girişler de mi? *Öneri: v1'de yalnızca sahip. Tablo yapısı çoklu kullanıcıya hazır.*
-8. **İptal politikası:** Müşteri randevudan kaç saat öncesine kadar iptal ya da değişiklik yapabilir? *Öneri: İşletme ayarı, varsayılan 2 saat.*
-9. **Bildirimler:** v1'de onay ve hatırlatma e-postası ya da SMS gönderilsin mi, yoksa yalnızca ekranda onay mı gösterilsin? *Öneri: v1'de ekranda onay + e-posta onayı (ucuz). SMS ve push bildirimi PWA aşamasında eklenir.*
-10. **Harita sağlayıcı:** OpenStreetMap/Leaflet (ücretsiz) mi, Google Maps (ücretli, Türkiye adres verisi daha iyi) mi? *Öneri: OpenStreetMap ile başlanır, işletme konumu admin ya da işletme tarafından haritada pin ile seçilir.*
-11. **Çoklu hizmet:** Müşteri paket dışında birden fazla hizmeti (örn. saç + sakal) tek randevuda, aynı çalışandan arka arkaya seçebilsin mi? *Öneri: Evet. Süreler toplanır, tek çalışan yapar.*
-12. **Paket uygulaması:** Paketin tamamını tek çalışan yapar varsayımı doğru mu? *Öneri: Evet. Hizmetlerin farklı çalışanlara bölünmesi v1 kapsamı dışında.*
-13. **Yorumlar:** Yalnızca tamamlanmış randevusu olan müşteri yorum yapabilsin. İşletme yanıt verebilsin, admin gizleyebilsin. Uygun mu? *Öneri: Evet.*
-14. **Sadakat puanı kullanımı:** Puan, randevu alırken indirim olarak mı seçilsin (iptalde iade edilir), yoksa işletmede ödeme sırasında işletme tarafından mı düşülsün? *Öneri: Randevu alırken müşteri seçer. İşletme panelden manuel düzeltme de yapabilir.*
+| # | Konu | Karar |
+|---|---|---|
+| 1 | Barındırma | **Vercel** (+ Neon Postgres, Vercel Blob, Upstash Redis; Frankfurt bölgesi) |
+| 3 | Randevu ilk durumu | Online randevu **Bekliyor** olarak oluşur, işletme onaylar. Panelden girilen randevu doğrudan Onaylandı. |
+| 4 | Ödeme | **Online ödeme hiçbir şekilde olmayacak.** Ödeme işletmede yapılır. |
+| 6 | Panelden randevu | İşletme, telefonla arayan ya da kapıdan gelen **hesapsız** müşteriye panelden randevu girebilir. Online kanal yalnızca üyelere açık. |
+| 7 | İşletme hesapları | Yalnızca işletme hesabı. **Çalışan girişi kesinlikle yok**; çalışanları işletme tanımlar. |
+| 8 | İptal / değişiklik | Müşteri randevuya **2 saat** kalana kadar iptal ya da değişiklik yapabilir. |
+| 10 | Harita | **OpenStreetMap + Leaflet** (ücretsiz) |
+| 11 | Çoklu hizmet | Evet. Süreler toplanır, tek çalışan yapar. |
+| 12 | Paket | Paketin tamamını **tek çalışan** yapar. |
+| 13 | Yorumlar | İşletme yanıt verebilir, **gizleyemez**. İşletme şikâyet eder; admin inceler ve silebilir. |
+| 14 | Sadakat puanı | **v1 kapsamı dışında**, sonra geliştirilecek. |
