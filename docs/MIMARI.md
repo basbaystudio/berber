@@ -19,12 +19,12 @@ Depoda yalnızca boş bir `README.md` var. Ne mevcut kod ne de bağımlılık bu
 | Uygulama çatısı | **Next.js (App Router, güncel kararlı sürüm) + React 19** | Tek kod tabanında hem SSR/SEO'lu pazaryeri sayfaları hem paneller hem API. PWA'ya dönüşüm kolay (manifest + service worker). |
 | Backend | Next.js Route Handler + Server Action'lar, ama **iş mantığı framework'ten bağımsız bir `server/modules` katmanında** | Tek merkezi backend olur. İleride ayrı bir API servisine (mobil uygulama vb.) taşımak gerekirse modüller olduğu gibi taşınabilir. |
 | Barındırma | **Vercel** (fonksiyon bölgesi: `fra1` Frankfurt) | Karar verildi. Veritabanı ve servisler aynı bölgede tutularak gecikme düşük tutulur. |
-| Veritabanı | **PostgreSQL — Neon (Vercel Marketplace, Frankfurt) (+ PostGIS, btree_gist, pg_trgm, unaccent)** | Randevu çakışmasını **veritabanı seviyesinde** engelleyen *exclusion constraint*, konum sorguları, Türkçe metin araması ve sağlam transaction desteği. |
+| Veritabanı | **PostgreSQL — Neon (Vercel Marketplace, Frankfurt) (+ btree_gist; arama için ileride pg_trgm, unaccent)** | Randevu çakışmasını **veritabanı seviyesinde** engelleyen *exclusion constraint*, konum için enlem/boylam (PostGIS gerekmez), Türkçe metin araması ve sağlam transaction desteği. |
 | ORM | **Drizzle ORM + drizzle-kit migration** | SQL'e yakın, tip güvenli ve hafif. `tstzrange`, exclusion constraint ve `FOR UPDATE` gibi ileri SQL özelliklerini rahatça kullanmaya izin veriyor. |
 | Doğrulama | **Zod** | Aynı şema hem formda hem API'de kullanılır. Backend doğrulaması her zaman zorunlu. |
 | Kimlik doğrulama | **Kendi oturum katmanımız** (opak token + DB oturumu, **Argon2id** hash) | Üç ayrı giriş alanını (müşteri / işletme / admin) katı şekilde ayırmak, hazır kütüphanelerle zorlama ve sızıntıya açık olurdu. Kod küçük ve denetlenebilir kalıyor. |
 | Dosya depolama | **Vercel Blob** (bir depolama arayüzünün arkasında; yerelde disk adaptörü) + **sharp** | Fotoğraf sunucuda doğrulanır, WebP'ye dönüştürülür ve EXIF temizlenir. Veritabanında yalnızca anahtar/URL ve metadata tutulur. |
-| Önbellek / Rate limit | **Upstash Redis** (Vercel Marketplace) | Rate limiting ve müsaitlik önbelleği için. |
+| Rate limit / önbellek | **PostgreSQL** (atomik sayaç tablosu) | Ek servis ve ücret gerektirmez. Yük artarsa Redis'e geçilebilir. |
 | UI | **Tailwind CSS + shadcn/ui (Radix)**, ikonlar: lucide | Erişilebilir, sade ve tutarlı bileşenler. |
 | Takvim | Kendi geliştirdiğimiz gün / hafta / ay görünümü (çalışan sütunlu) | FullCalendar'ın çalışan sütunlu (resource) görünümleri ücretli lisans istiyor. |
 | Grafik | Recharts | Panel istatistikleri için. |
@@ -32,7 +32,8 @@ Depoda yalnızca boş bir `README.md` var. Ne mevcut kod ne de bağımlılık bu
 | Tarih/saat | `date-fns` + `@date-fns/tz` | Tüm hesaplamalar Europe/Istanbul'da yapılır, DB'de `timestamptz` (UTC) tutulur. |
 | Test | **Vitest** (birim + entegrasyon, gerçek Postgres ile), **Playwright** (E2E + mobil görünüm) | Çakışma testleri gerçek veritabanında, eşzamanlı isteklerle koşturulur. |
 | Loglama / hata | pino + merkezi `AppError` yapısı, isteğe bağlı Sentry | |
-| Geliştirme ortamı | Docker Compose (Postgres + Redis) — yalnızca yerel geliştirme ve testler için | |
+| E-posta | **Resend** (ücretsiz katman) | Doğrulama ve randevu bildirimleri. |
+| Geliştirme ortamı | Docker Compose (Postgres) — yalnızca yerel geliştirme ve testler için | |
 
 ---
 
@@ -112,8 +113,9 @@ Genel kurallar:
 |---|---|---|
 | `platform_admins` | id, email (uniq), password_hash, name, totp_secret (opsiyonel), is_active, last_login_at | Yalnızca platform sahibi. Seed script ile oluşturulur. |
 | `business_users` | id, **business_id**, login (uniq, e-posta ya da kullanıcı adı), password_hash, name, must_change_password, is_active, last_login_at | Admin tarafından oluşturulur. Kayıt ekranı yok. **Yalnızca işletme hesabı; çalışan girişi yoktur ve olmayacaktır.** |
-| `customers` | id, name, **phone (uniq, E.164, zorunlu)**, phone_verified_at, **email (zorunlu, bildirimler için)**, password_hash, kvkk_consent_at, marketing_consent, deleted_at | Kayıt: telefon + **SMS doğrulama kodu**. Giriş: **telefon + şifre**. Şifre sıfırlama: SMS kodu. |
-| `phone_otps` | id, phone, purpose (`REGISTER`/`PASSWORD_RESET`), code_hash, attempts, expires_at (5 dk), consumed_at, ip | Kod düz metin saklanmaz. En fazla 5 deneme. Telefon ve IP başına gönderim limiti (SMS pompalama dolandırıcılığına karşı). |
+| `customers` | id, name, **email (uniq, zorunlu)**, email_verified_at, phone (zorunlu, doğrulanmaz), password_hash, kvkk_consent_at, marketing_consent, deleted_at | Kayıt ve giriş: **e-posta + şifre**. E-posta doğrulama bağlantısı gönderilir. SMS yok. |
+| `auth_tokens` | id (hash), realm, principal_id, purpose (`EMAIL_VERIFY`/`PASSWORD_RESET`), expires_at, used_at | E-posta doğrulama ve şifre sıfırlama bağlantıları. |
+| `rate_limits` | key, count, window_ends_at | Sabit pencereli sayaçlar. |
 | `sessions` | id (= token'ın SHA-256 hash'i), realm (`CUSTOMER`/`BUSINESS`/`ADMIN`), principal_id, expires_at, last_seen_at, ip, user_agent | Token'ın kendisi DB'de saklanmaz. |
 | `password_reset_tokens` | id(hash), realm, principal_id, expires_at, used_at | |
 
@@ -130,7 +132,7 @@ Genel kurallar:
 
 | Tablo | Alanlar / Kısıtlar |
 |---|---|
-| `businesses` | id, **slug (uniq)**, name, description, phone, address_line, province_id, district_id, **location (PostGIS geography Point)**, logo_key, cover_key, status (`DRAFT`/`ACTIVE`/`SUSPENDED`), is_published, published_at, is_featured, featured_rank, **photo_count (CHECK 0..30)**, rating_avg, rating_count, min_price_kurus (önbellek), created_at, updated_at |
+| `businesses` | id, **slug (uniq)**, name, description, phone, address_line, province_id, district_id, **latitude, longitude**, logo_key, cover_key, status (`DRAFT`/`ACTIVE`/`SUSPENDED`), is_published, published_at, is_featured, featured_rank, **photo_count (CHECK 0..30)**, rating_avg, rating_count, min_price_kurus (önbellek), created_at, updated_at |
 | `business_settings` | business_id (pk), slot_interval_min (vars. 15), min_lead_min (vars. 60), max_advance_days (vars. 30), buffer_min (vars. 0), temp_closed_until (timestamptz, geçici kapanış), temp_closed_note |
 | `business_hours` | id, business_id, weekday, start_time, end_time — **Bir gün için birden çok satır = birden çok aralık.** O gün için satır yoksa = kapalı. CHECK(start<end) + aynı gün aralıklar çakışamaz (exclusion). |
 | `business_exceptions` | id, business_id, date, kind (`CLOSED`/`CUSTOM_HOURS`), reason (`HOLIDAY`/`SPECIAL`/`VACATION`/`OTHER`), note — uniq(business_id, date) |
@@ -386,7 +388,7 @@ Randevu talebi alındı · onaylandı · reddedildi / iptal edildi · onay süre
 ### 5.8 "Gerçek zamanlı" görünüm
 
 - Slotlar her seçim değişikliğinde sunucudan taze çekilir (önbelleksiz ya da ≤30 sn önbellekli). Kesin kontrol her zaman 5.6'daki transaction'dır.
-- Pazaryerinde "Bugün müsait" ve "en yakın boş saat" bilgisi, listelenen sayfadaki işletmeler (sayfa başına ~20) için hesaplanır ve Redis'te 60 sn tutulur. Randevu oluştuğunda ya da iptal edildiğinde ilgili işletmenin önbelleği temizlenir.
+- Pazaryerinde "Bugün müsait" ve "en yakın boş saat" bilgisi, listelenen sayfadaki işletmeler (sayfa başına ~20) için hesaplanır ve kısa süre önbelleklenir.
 - İşletme takvimi periyodik yenileme (polling) ile güncellenir. Gerçek zamanlı push (SSE) bir sonraki sürümde eklenebilir.
 
 ### 5.9 Giriş sonrası seçimin korunması
@@ -407,7 +409,7 @@ Randevu sihirbazının tüm seçimi URL'de tutulur: `/berber/[slug]/randevu?h=�
 | Çakışma | Exclusion constraint + transaction + idempotency key |
 | Girdi doğrulama | Zod ile tüm gövde, parametre ve sorgu değerleri doğrulanır. Sorgular parametreli yazılır (Drizzle). Kullanıcı metinleri render sırasında escape edilir. |
 | CSRF | SameSite çerez + değişiklik yapan isteklerde `Origin` başlığı kontrolü (server action'lar bunu yerleşik olarak yapar) |
-| Rate limiting (Redis) | Giriş: IP ve hesap başına (örn. 5 deneme / 15 dk, kademeli bekleme). Kayıt, şifre sıfırlama, randevu oluşturma, yükleme ve arama için ayrı limitler. |
+| Rate limiting (PostgreSQL) | Giriş: IP ve hesap başına (örn. 5 deneme / 15 dk, kademeli bekleme). Kayıt, şifre sıfırlama, randevu oluşturma, yükleme ve arama için ayrı limitler. |
 | Dosya yükleme | Yalnızca JPEG/PNG/WebP/HEIC kabul edilir. Gerçek tip uzantıdan değil, magic byte'tan anlaşılır. En fazla ~8 MB. sharp ile yeniden kodlanır (WebP, EXIF/GPS temizlenir) ve boyutlandırılır. Rastgele anahtar kullanılır. 30 limiti atomik sayaçla uygulanır. |
 | KVKK | Açık rıza ve aydınlatma metni onayı, veri minimizasyonu. İşletme yalnızca kendi müşterisini görür. Müşteri verisine erişim loglanır. Hesap silme ve anonimleştirme sunulur. |
 | Hata yönetimi | `AppError(code, httpStatus, kullanıcıMesajı)` → merkezi handler Türkçe mesaj döner, iç detay ve stack trace sızdırılmaz. Loglar pino ile tutulur, PII maskelenir. |
@@ -436,7 +438,7 @@ Her aşamanın sonunda: yapılanlar, eksikler ve test sonuçları raporlanır, o
 
 | # | Konu | Karar |
 |---|---|---|
-| 1 | Barındırma | **Vercel** (+ Neon Postgres, Vercel Blob, Upstash Redis; Frankfurt bölgesi) |
+| 1 | Barındırma | **Vercel** (+ Neon Postgres, Vercel Blob; Frankfurt bölgesi). Hedef: tamamen ücretsiz katmanlar. Not: Vercel Hobby planı ticari kullanıma izin vermez; gelir elde edilmeye başlanınca Pro plan gerekir. |
 | 3 | Randevu ilk durumu | Online randevu **Bekliyor** olarak oluşur, işletme onaylar. Panelden girilen randevu doğrudan Onaylandı. |
 | 4 | Ödeme | **Online ödeme hiçbir şekilde olmayacak.** Ödeme işletmede yapılır. |
 | 6 | Panelden randevu | İşletme, telefonla arayan ya da kapıdan gelen **hesapsız** müşteriye panelden randevu girebilir. Online kanal yalnızca üyelere açık. |
@@ -447,7 +449,7 @@ Her aşamanın sonunda: yapılanlar, eksikler ve test sonuçları raporlanır, o
 | 12 | Paket | Paketin tamamını **tek çalışan** yapar. |
 | 13 | Yorumlar | İşletme yanıt verebilir, **gizleyemez**. İşletme şikâyet eder; admin inceler ve silebilir. |
 | 14 | Sadakat puanı | **v1 kapsamı dışında**, sonra geliştirilecek. |
-| 2 | Müşteri hesabı | Kayıtta **telefon + SMS kodu** doğrulaması, sonraki girişler **telefon + şifre**. E-posta kayıtta zorunlu (bildirimler için). SMS sağlayıcı **henüz seçilmedi**: modül sağlayıcıdan bağımsız yazılır, geliştirmede kod log'a düşer. **Canlıya çıkmadan sağlayıcı seçilmeli.** |
+| 2 | Müşteri hesabı | **E-posta + şifre**, e-posta doğrulamalı. **SMS doğrulaması yok** (ücretsiz ilerleme kararı). Telefon iletişim için alınır. |
 | 5 | Gelir takibi | **İkisi de:** işletmelerin tamamlanan randevu cirosu + platformun işletmelerden aldığı abonelik ücretlerinin admin tarafından manuel kaydı. |
 | 9 | Bildirim | **Ekran + e-posta.** WhatsApp/SMS bildirimi yok. |
 | 15 | Onaylanmayan talep | **6 saat** içinde onaylanmazsa (ya da randevu saati daha yakınsa o saate kadar) otomatik iptal. |

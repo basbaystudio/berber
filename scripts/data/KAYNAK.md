@@ -1,0 +1,1 @@
+`il-ilce.json`: [turkey-neighbourhoods](https://github.com/muratgozel/turkey-neighbourhoods) v4.0.3 paketinden (MIT Lisansı, © 2020 Murat Gözel) türetilmiştir. Kaynak veri: PTT posta kodu listesi. 81 il, 973 ilçe.
