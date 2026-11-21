@@ -27,6 +27,8 @@ export const DEFAULT_PLATFORM_SETTINGS = {
   /** İşletmelerin ve müşterilerin platforma ulaşacağı iletişim bilgileri; alertEmail: yönetici bildirimlerinin gideceği adres (boşsa tüm yöneticiler). */
   /** Havale/EFT ile ödeme seçen işletmelere gösterilecek banka bilgileri. */
   "billing.bankTransfer": { bankName: "" as string, accountName: "" as string, iban: "" as string },
+  /** Ayın İşletmesi: ay içinde en az bu kadar yorum almış ve güven puanı eşiğin üzerindeki işletmeler yarışır. */
+  "awards.minReviews": 10,
   /** Müşteriye gösterilen yasal metinler (admin düzenler). */
   "legal.customerPrivacy": "" as string,
   "legal.terms": "" as string,

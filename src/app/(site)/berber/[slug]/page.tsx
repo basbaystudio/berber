@@ -68,15 +68,15 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
           <div className="aspect-[3/1] w-full bg-gradient-to-br from-stone-200 to-stone-300 sm:aspect-[4/1]" />
         )}
       </div>
-      <header className="-mt-10 flex flex-wrap items-end gap-4 px-2 sm:px-6">
+      <header className="flex flex-col gap-3 px-2 sm:flex-row sm:items-end sm:gap-4 sm:px-6">
         {p.logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={p.logoUrl} alt="" className="size-20 rounded-3xl border-4 border-stone-50 object-cover" />
+          <img src={p.logoUrl} alt="" className="-mt-10 size-20 shrink-0 rounded-3xl border-4 border-stone-50 object-cover" />
         ) : (
-          <span className="grid size-20 place-items-center rounded-3xl border-4 border-stone-50 bg-stone-900 text-2xl font-semibold text-white">{p.name.slice(0, 1)}</span>
+          <span className="-mt-10 grid size-20 shrink-0 place-items-center rounded-3xl border-4 border-stone-50 bg-stone-900 text-2xl font-semibold text-white">{p.name.slice(0, 1)}</span>
         )}
         <div className="min-w-0 flex-1 space-y-1 pb-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl">{p.name}</h1>
+          <h1 className="break-words text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl">{p.name}</h1>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-stone-600">
             <Stars value={p.ratingAvg} count={p.ratingCount} size="md" />
             <span className={cn("inline-flex items-center gap-1.5", p.open.isOpen ? "text-emerald-700" : "text-stone-500")}>

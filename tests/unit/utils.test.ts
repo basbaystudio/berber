@@ -81,3 +81,17 @@ describe("dosya türü tespiti", () => {
     expect(reviewSchema.safeParse({ decision: "APPROVED" }).success).toBe(true);
   });
 });
+
+import { safeNext } from "@/lib/safe-next";
+
+describe("giriş sonrası yönlendirme güvenliği", () => {
+  it.each([
+    ["/berber/x/randevu?h=1&t=2030-01-01", "/berber/x/randevu?h=1&t=2030-01-01"],
+    ["https://kotu.site", "/hesabim"],
+    ["//kotu.site/a", "/hesabim"],
+    ["/\\kotu.site", "/hesabim"],
+    ["/admin", "/hesabim"],
+    ["/isletme/panel", "/hesabim"],
+    [undefined, "/hesabim"],
+  ])("%s → %s", (v, out) => expect(safeNext(v)).toBe(out));
+});

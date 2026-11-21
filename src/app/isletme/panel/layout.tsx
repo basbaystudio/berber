@@ -21,6 +21,7 @@ const NAV: NavItem[] = [
   { href: "/isletme/panel/takvim", label: "Takvim", icon: "calendar" },
   { href: "/isletme/panel/randevular", label: "Randevular", icon: "list" },
   { href: "/isletme/panel/musteriler", label: "Müşteriler", icon: "customers" },
+  { href: "/isletme/panel/yorumlar", label: "Yorumlar", icon: "reviews" },
   { href: "/isletme/panel/calisma-saatleri", label: "Çalışma Saatleri", icon: "clock" },
   { href: "/isletme/panel/calisanlar", label: "Çalışanlar", icon: "users" },
   { href: "/isletme/panel/hizmetler", label: "Hizmetler", icon: "scissors" },
