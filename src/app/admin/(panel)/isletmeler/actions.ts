@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/server/db/client";
 import { requireAdmin } from "@/server/auth/guards";
-import { enforce, RATE_LIMITS } from "@/server/auth/rate-limit";
+import { enforce, hit, RATE_LIMITS } from "@/server/auth/rate-limit";
+import { geocodeAddress, geocodeSchema, type GeocodeResult } from "@/server/modules/geo/geocode";
 import { formToObject, parseInput, runAction, type ActionState } from "@/server/lib/action";
 import { getRequestMeta } from "@/server/lib/request";
 import {
@@ -118,4 +119,15 @@ export async function removeBusinessImageAction(businessId: string, kind: "logo"
     revalidatePath(`/admin/isletmeler/${businessId}`);
     return { status: "success", message: "Kaldırıldı." };
   });
+}
+
+/** Adresten harita konumu (yönetici formunda adres girilince otomatik çağrılır). */
+export async function geocodeAction(input: { address: string; district?: string; province?: string }): Promise<GeocodeResult> {
+  const ctx = await requireAdmin();
+  const parsed = geocodeSchema.safeParse(input);
+  if (!parsed.success) return null;
+  // Harita servisinin kullanım kuralı gereği seyrek: yönetici başına dakikada 20 istek
+  const rl = await hit(db, `geocode:${ctx.admin.id}`, { limit: 20, windowSec: 60 });
+  if (!rl.allowed) return null;
+  return geocodeAddress(parsed.data);
 }

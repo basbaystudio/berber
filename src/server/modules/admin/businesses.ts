@@ -168,7 +168,8 @@ export async function setPublished(db: DB, actor: AdminActor, businessId: string
     const [b] = await tx.select().from(businesses).where(eq(businesses.id, businessId)).for("update").limit(1);
     if (!b) throw notFound("İşletme");
     if (publish) {
-      const missing = (await getPublishChecklist(tx, businessId)).filter((c) => !c.ok);
+      // Belgeler yöneticinin takdirinde: eksik belge yayına almayı engellemez (yalnızca uyarıdır).
+      const missing = (await getPublishChecklist(tx, businessId)).filter((c) => c.required && !c.ok);
       if (missing.length)
         throw new AppError("VALIDATION", `Yayına almak için eksikler var: ${missing.map((m) => m.label.toLocaleLowerCase("tr-TR")).join(", ")}.`);
     }

@@ -51,7 +51,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
   const docs = await listDocuments(db, { businessId: id });
   const trust = await getTrust(db, id);
   const METHOD = { BANK_TRANSFER: "Havale/EFT", CARD: "Kart", CASH: "Nakit", OTHER: "Diğer" } as const;
-  const canPublish = checklist.every((c) => c.ok);
+  const canPublish = checklist.every((c) => c.ok || !c.required);
 
   return (
     <>
@@ -275,7 +275,10 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                     ) : (
                       <Circle className="size-4 text-stone-300" aria-label="Eksik" />
                     )}
-                    <span className={c.ok ? "text-stone-700" : "text-stone-500"}>{c.label}</span>
+                    <span className={c.ok ? "text-stone-700" : "text-stone-500"}>
+                      {c.label}
+                      {!c.ok && !c.required && <span className="ml-1 text-xs text-amber-700">(eksik — yine de yayına alabilirsiniz)</span>}
+                    </span>
                   </li>
                 ))}
               </ul>
