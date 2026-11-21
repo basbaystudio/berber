@@ -33,7 +33,7 @@ export default async function StaffListPage() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={s.photoUrl} alt="" className="size-11 rounded-full object-cover" />
                   ) : (
-                    <span className="grid size-11 place-items-center rounded-full bg-stone-100 text-stone-400">
+                    <span className="grid size-11 place-items-center rounded-full bg-stone-100 text-stone-500">
                       <UserRound className="size-5" aria-hidden />
                     </span>
                   )}

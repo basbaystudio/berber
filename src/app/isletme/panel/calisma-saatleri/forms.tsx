@@ -39,10 +39,10 @@ export function DayRangesInput({ name, defaultValue = [{ start: "10:00", end: "1
       {ranges.map((r, i) => (
         <div key={i} className="flex items-center gap-2">
           <input type="time" step={300} value={r.start} aria-label={`${i + 1}. aralık başlangıç`} onChange={(e) => setRanges(ranges.map((x, j) => (j === i ? { ...x, start: e.target.value } : x)))} className="h-9 w-28 rounded-xl border border-stone-200 px-2 text-sm" />
-          <span className="text-stone-400">–</span>
+          <span className="text-stone-500">–</span>
           <input type="time" step={300} value={r.end} aria-label={`${i + 1}. aralık bitiş`} onChange={(e) => setRanges(ranges.map((x, j) => (j === i ? { ...x, end: e.target.value } : x)))} className="h-9 w-28 rounded-xl border border-stone-200 px-2 text-sm" />
           {ranges.length > 1 && (
-            <button type="button" onClick={() => setRanges(ranges.filter((_, j) => j !== i))} className="rounded-lg p-1.5 text-stone-400 hover:bg-stone-100" aria-label="Aralığı kaldır">
+            <button type="button" onClick={() => setRanges(ranges.filter((_, j) => j !== i))} className="rounded-lg p-1.5 text-stone-500 hover:bg-stone-100" aria-label="Aralığı kaldır">
               <X className="size-4" />
             </button>
           )}

@@ -129,7 +129,7 @@ export default async function AppointmentPage({ params, searchParams }: { params
                     {e.actorRealm === "CUSTOMER" ? " · müşteri" : e.actorRealm === "BUSINESS" ? " · işletme" : !e.actorRealm ? " · sistem" : ""}
                     {e.note ? <span className="text-stone-500"> · {e.note.startsWith("Yeni zaman") ? "Zaman değişti" : e.note}</span> : null}
                   </span>
-                  <span className="shrink-0 text-stone-400">{formatDateTime(e.createdAt)}</span>
+                  <span className="shrink-0 text-stone-500">{formatDateTime(e.createdAt)}</span>
                 </li>
               ))}
             </ul>
@@ -142,7 +142,7 @@ export default async function AppointmentPage({ params, searchParams }: { params
               {d.items.map((i) => (
                 <li key={i.id} className="flex justify-between px-6 py-2.5">
                   <span>
-                    {i.nameSnapshot} <span className="text-stone-400">· {i.durationSnapshotMin} dk</span>
+                    {i.nameSnapshot} <span className="text-stone-500">· {i.durationSnapshotMin} dk</span>
                   </span>
                   <span className="tabular-nums">{formatTL(i.priceSnapshotKurus)}</span>
                 </li>

@@ -70,7 +70,7 @@ export function NewAppointmentForm({
               {customer.phone && <span className="text-stone-500"> · {formatTrPhone(customer.phone)}</span>}
               {customer.hasAccount && <span className="ml-2 text-xs text-accent-600">Üye</span>}
             </span>
-            <button type="button" onClick={() => setCustomer(null)} className="rounded-lg p-1 text-stone-400 hover:bg-stone-100" aria-label="Müşteriyi kaldır">
+            <button type="button" onClick={() => setCustomer(null)} className="rounded-lg p-1 text-stone-500 hover:bg-stone-100" aria-label="Müşteriyi kaldır">
               <X className="size-4" />
             </button>
           </div>
@@ -91,7 +91,7 @@ export function NewAppointmentForm({
             <div className="flex gap-2">
               <label className="relative min-w-0 flex-1">
                 <span className="sr-only">Müşteri ara</span>
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-400" aria-hidden />
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-500" aria-hidden />
                 <Input
                   value={q}
                   onChange={(e) => {
@@ -139,7 +139,7 @@ export function NewAppointmentForm({
                   role="tab"
                   aria-selected={mode === m}
                   onClick={() => setMode(m)}
-                  className={cn("rounded-lg px-3 py-1", mode === m ? "bg-white text-stone-900 shadow-sm" : "text-stone-500")}
+                  className={cn("rounded-lg px-3 py-1", mode === m ? "bg-white text-stone-900 shadow-sm" : "text-stone-600")}
                 >
                   {m === "services" ? "Hizmetler" : "Paket"}
                 </button>

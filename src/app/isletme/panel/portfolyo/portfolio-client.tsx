@@ -91,7 +91,7 @@ export function Uploader({
       <label
         className={cn(
           "flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed px-6 py-10 text-center text-sm transition-colors",
-          full ? "cursor-not-allowed border-stone-200 bg-stone-50 text-stone-400" : "cursor-pointer border-stone-300 bg-stone-50 text-stone-600 hover:bg-stone-100",
+          full ? "cursor-not-allowed border-stone-200 bg-stone-50 text-stone-500" : "cursor-pointer border-stone-300 bg-stone-50 text-stone-600 hover:bg-stone-100",
         )}
       >
         {busy ? (
@@ -106,9 +106,9 @@ export function Uploader({
           </>
         ) : (
           <>
-            <ImagePlus className="size-6 text-stone-400" aria-hidden />
+            <ImagePlus className="size-6 text-stone-500" aria-hidden />
             Fotoğraf seçin (birden fazla seçebilirsiniz)
-            <span className="text-xs text-stone-400">JPEG, PNG veya WebP · kalan hak: {remaining}</span>
+            <span className="text-xs text-stone-500">JPEG, PNG veya WebP · kalan hak: {remaining}</span>
           </>
         )}
         <input
@@ -166,24 +166,24 @@ export function PhotoCard({
         <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-xs text-stone-700">{index + 1}</span>
       </div>
       <div className="space-y-2 p-3">
-        <p className="line-clamp-2 min-h-10 text-sm text-stone-700">{photo.caption || <span className="text-stone-400">Açıklama yok</span>}</p>
+        <p className="line-clamp-2 min-h-10 text-sm text-stone-700">{photo.caption || <span className="text-stone-500">Açıklama yok</span>}</p>
         <p className="truncate text-xs text-stone-500">{[cat, st].filter(Boolean).join(" · ") || " "}</p>
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="sm" onClick={() => setOpen((o) => !o)}>
             {open ? "Kapat" : "Düzenle"}
           </Button>
           <span className="flex-1" />
-          <button type="button" disabled={index === 0 || moving} onClick={() => startTransition(() => moveDispatch("up"))} className="rounded-lg p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-800 disabled:opacity-30" aria-label="Öne taşı">
+          <button type="button" disabled={index === 0 || moving} onClick={() => startTransition(() => moveDispatch("up"))} className="rounded-lg p-1.5 text-stone-500 hover:bg-stone-100 hover:text-stone-800 disabled:opacity-30" aria-label="Öne taşı">
             <ArrowUp className="size-4" />
           </button>
-          <button type="button" disabled={index === total - 1 || moving} onClick={() => startTransition(() => moveDispatch("down"))} className="rounded-lg p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-800 disabled:opacity-30" aria-label="Sona taşı">
+          <button type="button" disabled={index === total - 1 || moving} onClick={() => startTransition(() => moveDispatch("down"))} className="rounded-lg p-1.5 text-stone-500 hover:bg-stone-100 hover:text-stone-800 disabled:opacity-30" aria-label="Sona taşı">
             <ArrowDown className="size-4" />
           </button>
           <button
             type="button"
             disabled={remove.pending}
             onClick={() => window.confirm("Fotoğraf silinsin mi?") && remove.run()}
-            className="rounded-lg p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-700"
+            className="rounded-lg p-1.5 text-stone-500 hover:bg-red-50 hover:text-red-700"
             aria-label="Sil"
           >
             {remove.pending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
@@ -268,7 +268,7 @@ function CategoryChip({ name, remove }: { name: string; remove: () => Promise<Ac
       <button
         type="button"
         onClick={() => window.confirm(`“${name}” kategorisi silinsin mi? Fotoğraflar kategorisiz kalır.`) && r.run()}
-        className="rounded-full p-0.5 text-stone-400 hover:bg-stone-200 hover:text-stone-800"
+        className="rounded-full p-0.5 text-stone-500 hover:bg-stone-200 hover:text-stone-800"
         aria-label={`${name} kategorisini sil`}
       >
         {r.pending ? <Loader2 className="size-3.5 animate-spin" /> : <X className="size-3.5" />}

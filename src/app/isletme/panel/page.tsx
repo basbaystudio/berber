@@ -183,7 +183,7 @@ export default async function BusinessHome({ searchParams }: { searchParams: Pro
                 <Link href={LINKS[c.key]!} className="flex items-center gap-3 px-6 py-3.5 text-sm hover:bg-stone-50">
                   <Circle className="size-4 text-stone-300" aria-label="Eksik" />
                   <span className="flex-1 text-stone-600">{c.label}</span>
-                  <ArrowRight className="size-4 text-stone-400" aria-hidden />
+                  <ArrowRight className="size-4 text-stone-500" aria-hidden />
                 </Link>
               ) : (
                 <div className="flex items-center gap-3 px-6 py-3.5 text-sm">

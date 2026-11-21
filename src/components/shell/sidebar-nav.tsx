@@ -31,7 +31,7 @@ function Links({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => voi
                 active ? "bg-stone-100 font-medium text-stone-900" : "text-stone-500 hover:bg-stone-50 hover:text-stone-900",
               )}
             >
-              <Icon className={cn("size-4", active ? "text-accent-600" : "text-stone-400")} aria-hidden />
+              <Icon className={cn("size-4", active ? "text-accent-600" : "text-stone-500")} aria-hidden />
               {item.label}
             </Link>
           </li>

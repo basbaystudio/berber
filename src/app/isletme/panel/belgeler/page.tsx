@@ -37,7 +37,7 @@ export default async function DocumentsPage() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="font-medium text-stone-900">
-                  {type.name} {type.isRequired ? <span className="text-xs text-stone-400">· Zorunlu</span> : <span className="text-xs text-stone-400">· İsteğe bağlı</span>}
+                  {type.name} {type.isRequired ? <span className="text-xs text-stone-500">· Zorunlu</span> : <span className="text-xs text-stone-500">· İsteğe bağlı</span>}
                 </p>
                 {type.description && <p className="text-sm text-stone-500">{type.description}</p>}
               </div>

@@ -72,7 +72,7 @@ export default async function HoursPage() {
           )}
           {holidays.length > 0 && (
             <div className="border-t border-stone-100">
-              <p className="px-6 pt-4 text-xs font-medium uppercase tracking-wide text-stone-400">Yaklaşan resmî tatiller</p>
+              <p className="px-6 pt-4 text-xs font-medium uppercase tracking-wide text-stone-500">Yaklaşan resmî tatiller</p>
               <ul className="divide-y divide-stone-100">
                 {holidays.map((h) => (
                   <li key={h.date} className="flex items-center justify-between gap-3 px-6 py-3 text-sm">

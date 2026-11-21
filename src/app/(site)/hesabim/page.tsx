@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireCustomer } from "@/server/auth/guards";
+import { requireCustomerPage } from "@/server/auth/guards";
 import { db } from "@/server/db/client";
 import { listMyAppointments } from "@/server/modules/customer/account";
 import { Alert, Card } from "@/components/ui/feedback";
@@ -8,7 +8,7 @@ import { AppointmentStatusBadge } from "@/components/panel/appointment-status";
 import { formatDateTime } from "@/lib/time";
 
 export default async function AccountHome({ searchParams }: { searchParams: Promise<{ kayit?: string }> }) {
-  const ctx = await requireCustomer();
+  const ctx = await requireCustomerPage("/hesabim");
   const sp = await searchParams;
   const { upcoming } = await listMyAppointments(db, ctx.customer.id);
   return (

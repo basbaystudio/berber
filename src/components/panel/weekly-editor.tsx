@@ -83,7 +83,7 @@ export function WeeklyEditor({
                         aria-label={`${d.label} ${i + 1}. aralık başlangıç`}
                         className="h-9 w-28 rounded-xl border border-stone-200 px-2 text-sm"
                       />
-                      <span className="text-stone-400">–</span>
+                      <span className="text-stone-500">–</span>
                       <input
                         type="time"
                         step={300}
@@ -95,7 +95,7 @@ export function WeeklyEditor({
                       <button
                         type="button"
                         onClick={() => setDay(d.value, ranges.filter((_, j) => j !== i))}
-                        className="rounded-lg p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
+                        className="rounded-lg p-1.5 text-stone-500 hover:bg-stone-100 hover:text-stone-700"
                         aria-label="Aralığı kaldır"
                       >
                         <X className="size-4" />

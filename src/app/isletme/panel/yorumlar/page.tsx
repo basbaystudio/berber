@@ -25,9 +25,9 @@ export default async function ReviewsPage() {
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                 <span className="font-medium text-stone-900">
                   {r.customerName ?? "Müşteri"} <span className="text-accent-600">{"★".repeat(r.rating)}</span>
-                  {r.staffName && <span className="text-stone-400"> · {r.staffName}</span>}
+                  {r.staffName && <span className="text-stone-500"> · {r.staffName}</span>}
                 </span>
-                <span className="flex items-center gap-2 text-stone-400">
+                <span className="flex items-center gap-2 text-stone-500">
                   {r.status === "REMOVED" && <Badge tone="red">Kaldırıldı</Badge>}
                   {r.openReport && <Badge tone="amber">Şikâyet incelemede</Badge>}
                   {formatDateTime(r.createdAt)}

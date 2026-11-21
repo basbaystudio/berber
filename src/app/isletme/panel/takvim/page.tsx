@@ -94,7 +94,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex rounded-xl bg-stone-100 p-0.5 text-sm">
             {(["gun", "hafta", "ay"] as const).map((v) => (
-              <Link key={v} href={href(v, date, staffId)} aria-current={view === v ? "page" : undefined} className={cn("rounded-lg px-3 py-1", view === v ? "bg-white text-stone-900 shadow-sm" : "text-stone-500")}>
+              <Link key={v} href={href(v, date, staffId)} aria-current={view === v ? "page" : undefined} className={cn("rounded-lg px-3 py-1", view === v ? "bg-white text-stone-900 shadow-sm" : "text-stone-600")}>
                 {v === "gun" ? "Gün" : v === "hafta" ? "Hafta" : "Ay"}
               </Link>
             ))}
@@ -153,7 +153,7 @@ async function DayView({ businessId, date, staff, rows }: { businessId: string; 
         <div className="flex min-w-full">
           <div className="sticky left-0 z-10 w-14 shrink-0 border-r border-stone-100 bg-white pt-10">
             {hours.map((h) => (
-              <div key={h} style={{ height: 60 * PX }} className="-mt-2 pr-2 text-right text-xs tabular-nums text-stone-400">
+              <div key={h} style={{ height: 60 * PX }} className="-mt-2 pr-2 text-right text-xs tabular-nums text-stone-500">
                 {fromMinutes(h)}
               </div>
             ))}
@@ -222,7 +222,7 @@ function WeekView({ from, rows, today, staffId }: { from: string; rows: ApptRow[
               <span className="font-medium text-stone-900">{WEEKDAYS[i]!.short}</span> <span className="text-stone-500">{d.slice(8)}.{d.slice(5, 7)}</span>
             </Link>
             {list.length === 0 ? (
-              <p className="text-xs text-stone-400">Randevu yok</p>
+              <p className="text-xs text-stone-500">Randevu yok</p>
             ) : (
               <ul className="space-y-1.5">
                 {list.map((r) => (
@@ -261,7 +261,7 @@ function MonthView({ from, month, rows, today, staffId }: { from: string; month:
             <Link
               key={d}
               href={href("gun", d, staffId)}
-              className={cn("min-h-20 border-b border-r border-stone-100 p-2 text-sm hover:bg-stone-50", !d.startsWith(month) && "bg-stone-50/60 text-stone-400")}
+              className={cn("min-h-20 border-b border-r border-stone-100 p-2 text-sm hover:bg-stone-50", !d.startsWith(month) && "bg-stone-50/60 text-stone-500")}
             >
               <span className={cn("inline-grid size-6 place-items-center rounded-full text-xs", d === today && "bg-stone-900 text-white")}>{Number(d.slice(8))}</span>
               {list.length > 0 && <span className="mt-1 block text-xs text-stone-700">{list.length} randevu</span>}

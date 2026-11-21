@@ -23,7 +23,7 @@ export function SearchBar({ provinces }: { provinces: { id: number; name: string
       <form action="/ara" className="flex flex-col gap-2 rounded-3xl border border-stone-200/80 bg-white p-2 sm:flex-row" role="search">
         <label className="relative flex-1">
           <span className="sr-only">Berber adı</span>
-          <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-stone-400" aria-hidden />
+          <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-stone-500" aria-hidden />
           <input name="q" placeholder="Berber adı" className="h-12 w-full rounded-2xl bg-transparent pl-11 pr-3 text-sm focus:outline-none" />
         </label>
         <label className="sm:w-52">

@@ -62,7 +62,7 @@ export default async function BusinessPanelLayout({ children }: { children: Reac
               </a>
             </div>
             <form action={businessLogoutAction}>
-              <button type="submit" className="rounded-xl p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-900" title="Çıkış yap" aria-label="Çıkış yap">
+              <button type="submit" className="rounded-xl p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-900" title="Çıkış yap" aria-label="Çıkış yap">
                 <LogOut className="size-4" />
               </button>
             </form>

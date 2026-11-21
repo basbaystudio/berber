@@ -174,7 +174,7 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={s.photoUrl} alt="" className="size-14 rounded-full object-cover" />
                     ) : (
-                      <span className="grid size-14 place-items-center rounded-full bg-stone-100 font-semibold text-stone-400">{s.name.slice(0, 1)}</span>
+                      <span className="grid size-14 place-items-center rounded-full bg-stone-100 font-semibold text-stone-500">{s.name.slice(0, 1)}</span>
                     )}
                     <div className="min-w-0">
                       <p className="font-medium text-stone-900">{s.name}</p>
@@ -196,7 +196,7 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
                   <li key={r.id} className="rounded-3xl border border-stone-200/80 bg-white p-5">
                     <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                       <span className="font-medium text-stone-900">{r.customerName}</span>
-                      <span className="text-stone-400">{formatDateStr(r.createdAt.toISOString().slice(0, 10))}</span>
+                      <span className="text-stone-500">{formatDateStr(r.createdAt.toISOString().slice(0, 10))}</span>
                     </div>
                     <p className="mt-1 text-accent-600" aria-label={`${r.rating} yıldız`}>
                       {"★".repeat(r.rating)}
@@ -285,7 +285,7 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
           Randevu al
         </ButtonLink>
       </div>
-      <p className="mt-10 text-center text-xs text-stone-400">
+      <p className="mt-10 text-center text-xs text-stone-500">
         <Link href="/ara">Diğer berberlere göz atın</Link>
       </p>
     </main>

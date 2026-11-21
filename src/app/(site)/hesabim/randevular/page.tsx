@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireCustomer } from "@/server/auth/guards";
+import { requireCustomerPage } from "@/server/auth/guards";
 import { db } from "@/server/db/client";
 import { listMyAppointments } from "@/server/modules/customer/account";
 import { Alert, Card, EmptyState } from "@/components/ui/feedback";
@@ -19,7 +19,7 @@ export const metadata = { title: "Randevularım" };
 const fmtDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" });
 
 export default async function MyAppointmentsPage({ searchParams }: { searchParams: Promise<{ yeni?: string }> }) {
-  const ctx = await requireCustomer();
+  const ctx = await requireCustomerPage("/hesabim/randevular");
   const sp = await searchParams;
   const { upcoming, past, cutoffMin } = await listMyAppointments(db, ctx.customer.id);
   const today = todayTR();
@@ -91,7 +91,7 @@ export default async function MyAppointmentsPage({ searchParams }: { searchParam
                     {formatDateTime(a.startsAt)} · {a.services}
                   </p>
                   {a.status === "CANCELLED" && a.cancelReason && (
-                    <p className="text-xs text-stone-400">
+                    <p className="text-xs text-stone-500">
                       {CANCEL_REASON[a.cancelReason]}
                       {a.cancelNote ? ` · ${a.cancelNote}` : ""}
                     </p>

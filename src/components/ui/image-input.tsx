@@ -56,9 +56,9 @@ export function ImageInput({
           <img src={preview} alt="Önizleme" className="absolute inset-0 size-full object-cover" />
         ) : (
           <span className="flex flex-col items-center gap-2 p-4 text-center">
-            <ImagePlus className="size-6 text-stone-400" aria-hidden />
+            <ImagePlus className="size-6 text-stone-500" aria-hidden />
             {label}
-            <span className="text-xs text-stone-400">JPEG, PNG veya WebP</span>
+            <span className="text-xs text-stone-500">JPEG, PNG veya WebP</span>
           </span>
         )}
         {busy && (

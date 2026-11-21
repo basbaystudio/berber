@@ -23,7 +23,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
         <form className="border-b border-stone-100 p-4" role="search">
           <label className="relative block">
             <span className="sr-only">Müşteri ara</span>
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-400" aria-hidden />
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-500" aria-hidden />
             <input name="q" defaultValue={q} placeholder="Ad ya da telefon" className="h-10 w-full rounded-xl border border-stone-200 bg-white pl-9 pr-3 text-sm focus:border-stone-400 focus:outline-none" />
           </label>
         </form>
@@ -39,7 +39,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
                     <span className="text-stone-500">{c.phone ? formatTrPhone(c.phone) : "Telefon yok"}</span>
                   </span>
                   <span className="text-stone-500">{c.visitCount} ziyaret</span>
-                  <span className="hidden text-stone-400 sm:inline">{c.lastVisitAt ? `Son: ${formatDateTime(c.lastVisitAt)}` : ""}</span>
+                  <span className="hidden text-stone-500 sm:inline">{c.lastVisitAt ? `Son: ${formatDateTime(c.lastVisitAt)}` : ""}</span>
                   {c.customerId ? <Badge tone="blue">Üye</Badge> : <Badge>Panel</Badge>}
                 </Link>
               </li>

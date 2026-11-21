@@ -5,12 +5,12 @@ import { formatTL } from "@/lib/money";
 import { cn } from "@/lib/cn";
 
 export function Stars({ value, count, size = "sm" }: { value: number; count: number; size?: "sm" | "md" }) {
-  if (!count) return <span className="text-xs text-stone-400">Henüz yorum yok</span>;
+  if (!count) return <span className="text-xs text-stone-500">Henüz yorum yok</span>;
   return (
     <span className={cn("inline-flex items-center gap-1", size === "md" ? "text-sm" : "text-xs")} aria-label={`${value.toFixed(1)} puan, ${count} yorum`}>
       <Star className={cn("fill-accent-500 text-accent-500", size === "md" ? "size-4" : "size-3.5")} aria-hidden />
       <span className="font-medium text-stone-900">{value.toFixed(1)}</span>
-      <span className="text-stone-400">({count})</span>
+      <span className="text-stone-500">({count})</span>
     </span>
   );
 }
@@ -33,7 +33,7 @@ export function BusinessCardView({ c }: { c: EnrichedCard }) {
         <span
           className={cn(
             "absolute right-3 top-3 rounded-full px-2.5 py-1 text-xs font-medium shadow-sm",
-            c.open.isOpen ? "bg-emerald-600 text-white" : "bg-white/95 text-stone-600",
+            c.open.isOpen ? "bg-emerald-700 text-white" : "bg-white/95 text-stone-600",
           )}
         >
           {c.open.isOpen ? "Açık" : "Kapalı"}
@@ -58,7 +58,7 @@ export function BusinessCardView({ c }: { c: EnrichedCard }) {
           <Stars value={c.ratingAvg} count={c.ratingCount} />
           {c.minPriceKurus != null && <span className="text-xs text-stone-500">{formatTL(c.minPriceKurus)}’den başlayan</span>}
         </div>
-        <p className={cn("flex items-center gap-1.5 text-xs", c.nextFree ? "text-emerald-700" : "text-stone-400")}>
+        <p className={cn("flex items-center gap-1.5 text-xs", c.nextFree ? "text-emerald-700" : "text-stone-500")}>
           <Clock className="size-3.5" aria-hidden />
           {c.nextFree ? `Bugün ilk boş saat: ${c.nextFree}` : "Bugün boş saat yok"}
         </p>

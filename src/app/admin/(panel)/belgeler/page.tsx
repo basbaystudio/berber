@@ -32,7 +32,7 @@ export default async function DocumentsAdminPage() {
                   <a href={`/admin/dosya/belge/${d.id}`} target="_blank" rel="noopener" className="mt-1 inline-flex items-center gap-1.5 text-stone-800 underline underline-offset-4">
                     <FileText className="size-4" aria-hidden /> {d.fileName}
                   </a>
-                  <p className="text-xs text-stone-400">{formatDateTime(d.uploadedAt)}</p>
+                  <p className="text-xs text-stone-500">{formatDateTime(d.uploadedAt)}</p>
                 </div>
                 <ReviewForm action={reviewDocumentAction.bind(null, d.id)} />
               </li>

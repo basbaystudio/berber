@@ -56,12 +56,12 @@ export default async function ProfilePage() {
                 <p className="text-stone-600">Değişiklik talebiniz için bize ulaşın:</p>
                 {contact.email && (
                   <a href={`mailto:${contact.email}`} className="flex items-center gap-2 text-stone-900 hover:text-accent-600">
-                    <Mail className="size-4 text-stone-400" aria-hidden /> {contact.email}
+                    <Mail className="size-4 text-stone-500" aria-hidden /> {contact.email}
                   </a>
                 )}
                 {contact.phone && (
                   <a href={`tel:${contact.phone.replace(/\s/g, "")}`} className="flex items-center gap-2 text-stone-900 hover:text-accent-600">
-                    <Phone className="size-4 text-stone-400" aria-hidden /> {contact.phone}
+                    <Phone className="size-4 text-stone-500" aria-hidden /> {contact.phone}
                   </a>
                 )}
               </>

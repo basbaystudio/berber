@@ -60,7 +60,7 @@ export default async function AwardsPage({ searchParams }: { searchParams: Promi
           <ol className="divide-y divide-stone-100">
             {r.rows.map((x, i) => (
               <li key={x.businessId} className="flex flex-wrap items-center gap-3 px-6 py-3 text-sm">
-                <span className="w-6 font-semibold tabular-nums text-stone-400">{i + 1}</span>
+                <span className="w-6 font-semibold tabular-nums text-stone-500">{i + 1}</span>
                 <Link href={`/admin/isletmeler/${x.businessId}`} className="min-w-0 flex-1 font-medium text-stone-900 hover:text-accent-600">
                   {x.name}
                 </Link>

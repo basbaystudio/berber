@@ -108,6 +108,13 @@ export async function requireBusiness(opts: { allowPasswordChange?: boolean } = 
   return ctx;
 }
 
+/** Sayfalar için: oturum yoksa girişe yönlendirir (dönüş adresiyle). */
+export async function requireCustomerPage(next: string): Promise<CustomerContext> {
+  const ctx = await getCustomer();
+  if (!ctx) redirect(`/giris?next=${encodeURIComponent(next)}`);
+  return ctx;
+}
+
 export async function requireCustomer(): Promise<CustomerContext> {
   const ctx = await getCustomer();
   if (!ctx) throw new AppError("UNAUTHENTICATED", "Bu işlem için giriş yapmanız gerekiyor.");

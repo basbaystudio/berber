@@ -51,7 +51,7 @@ export default async function BillingPage() {
           <div className="space-y-4 p-6 text-sm">
             {b.sub.cardLast4 ? (
               <p className="flex items-center gap-2 text-stone-900">
-                <CreditCard className="size-4 text-stone-400" aria-hidden />
+                <CreditCard className="size-4 text-stone-500" aria-hidden />
                 {b.sub.cardBrand ?? "Kart"} •••• {b.sub.cardLast4}
                 {b.sub.autoRenew ? <Badge tone="green">Otomatik ödeme açık</Badge> : <Badge>Otomatik ödeme kapalı</Badge>}
               </p>
@@ -137,7 +137,7 @@ export default async function BillingPage() {
                     <FileText className="size-4" aria-hidden /> Faturayı görüntüle (PDF)
                   </a>
                 ) : (
-                  <span className="text-stone-400">Fatura hazırlanıyor</span>
+                  <span className="text-stone-500">Fatura hazırlanıyor</span>
                 )}
               </li>
             ))}

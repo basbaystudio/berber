@@ -4,9 +4,9 @@ import { cn } from "@/lib/cn";
 
 const variants = {
   primary: "bg-stone-900 text-white hover:bg-stone-800 disabled:bg-stone-900/40",
-  secondary: "bg-stone-100 text-stone-800 hover:bg-stone-200 disabled:text-stone-400",
-  outline: "border border-stone-200 bg-white text-stone-800 hover:border-stone-300 hover:bg-stone-50 disabled:text-stone-400",
-  ghost: "text-stone-700 hover:bg-stone-100 disabled:text-stone-400",
+  secondary: "bg-stone-100 text-stone-800 hover:bg-stone-200 disabled:text-stone-500",
+  outline: "border border-stone-200 bg-white text-stone-800 hover:border-stone-300 hover:bg-stone-50 disabled:text-stone-500",
+  ghost: "text-stone-700 hover:bg-stone-100 disabled:text-stone-500",
   danger: "bg-red-600 text-white hover:bg-red-700 disabled:bg-red-600/60",
   dangerOutline: "border border-red-200 bg-white text-red-700 hover:bg-red-50 disabled:text-red-300",
 } as const;

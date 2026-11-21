@@ -21,6 +21,7 @@ export default defineConfig({
   },
   projects: [
     { name: "masaustu", use: { ...devices["Desktop Chrome"], launchOptions: { executablePath } } },
+    { name: "tablet", use: { ...devices["Galaxy Tab S4"], launchOptions: { executablePath } }, testMatch: /a11y-responsive|marketplace-flow/ },
     { name: "mobil", use: { ...devices["Pixel 7"], launchOptions: { executablePath } } },
   ],
   webServer: {

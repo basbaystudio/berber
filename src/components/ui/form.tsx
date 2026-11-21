@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 import { Button, type ButtonVariant } from "./button";
 
 const control =
-  "block w-full rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:border-stone-400 focus:outline-none focus:ring-4 focus:ring-stone-200/60 disabled:bg-stone-50 disabled:text-stone-500 aria-[invalid=true]:border-red-400";
+  "block w-full rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-900 placeholder:text-stone-500 focus:border-stone-400 focus:outline-none focus:ring-4 focus:ring-stone-200/60 disabled:bg-stone-50 disabled:text-stone-500 aria-[invalid=true]:border-red-400";
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
   return <input className={cn(control, "h-10", className)} {...props} />;
@@ -50,7 +50,7 @@ export function Field({
     <>
       {label}
       {required && (
-        <span className="text-stone-400" aria-hidden>
+        <span className="text-stone-500" aria-hidden>
           {" "}*
         </span>
       )}

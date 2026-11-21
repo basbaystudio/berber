@@ -36,7 +36,7 @@ export default async function ReportsPage() {
                   <p className="text-stone-500">
                     {r.customerName ?? "Müşteri"} · <span className="text-accent-600">{"★".repeat(r.rating)}</span> · {formatDateTime(r.reviewCreatedAt)}
                   </p>
-                  {r.comment ? <p className="mt-1 whitespace-pre-line text-stone-800">{r.comment}</p> : <p className="mt-1 text-stone-400">Yorum metni yok (yalnızca puan).</p>}
+                  {r.comment ? <p className="mt-1 whitespace-pre-line text-stone-800">{r.comment}</p> : <p className="mt-1 text-stone-500">Yorum metni yok (yalnızca puan).</p>}
                   {r.reply && <p className="mt-2 text-xs text-stone-500">İşletme yanıtı: {r.reply}</p>}
                 </div>
               </div>

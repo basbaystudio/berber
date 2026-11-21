@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { requireCustomer } from "@/server/auth/guards";
+import { requireCustomerPage } from "@/server/auth/guards";
 import { db } from "@/server/db/client";
 import { customers } from "@/server/db/schema";
 import { Card, CardHeader } from "@/components/ui/feedback";
@@ -9,7 +9,7 @@ import { changePasswordAction, deleteAccountAction, updateProfileAction } from "
 export const metadata = { title: "Ayarlar" };
 
 export default async function SettingsPage() {
-  const ctx = await requireCustomer();
+  const ctx = await requireCustomerPage("/hesabim/ayarlar");
   const [c] = await db.select().from(customers).where(eq(customers.id, ctx.customer.id));
   return (
     <div className="space-y-6">

@@ -1,4 +1,4 @@
-import { requireCustomer } from "@/server/auth/guards";
+import { requireCustomerPage } from "@/server/auth/guards";
 import { db } from "@/server/db/client";
 import { listMyFavorites } from "@/server/modules/customer/account";
 import { CardGrid } from "@/components/marketplace/business-card";
@@ -8,7 +8,7 @@ import { ButtonLink } from "@/components/ui/button";
 export const metadata = { title: "Favorilerim" };
 
 export default async function FavoritesPage() {
-  const ctx = await requireCustomer();
+  const ctx = await requireCustomerPage("/hesabim/favoriler");
   const favs = await listMyFavorites(db, ctx.customer.id);
   return favs.length === 0 ? (
     <Card>

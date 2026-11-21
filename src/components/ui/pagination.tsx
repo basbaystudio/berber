@@ -6,7 +6,7 @@ export function Pagination({ page, pageSize, total, hrefFor }: { page: number; p
   if (pages <= 1) return null;
   const link = (p: number, label: string, disabled: boolean) =>
     disabled ? (
-      <span className="rounded-lg px-3 py-1.5 text-sm text-stone-400">{label}</span>
+      <span className="rounded-lg px-3 py-1.5 text-sm text-stone-500">{label}</span>
     ) : (
       <Link href={hrefFor(p)} className={cn("rounded-lg px-3 py-1.5 text-sm text-stone-700 hover:bg-stone-100")}>
         {label}

@@ -150,7 +150,7 @@ export function BookingWizard({
         </div>
         {packages.length > 0 && (
           <>
-            <p className="mb-2 mt-5 text-xs font-medium uppercase tracking-wide text-stone-400">Paketler</p>
+            <p className="mb-2 mt-5 text-xs font-medium uppercase tracking-wide text-stone-500">Paketler</p>
             <div className="grid gap-2 sm:grid-cols-2">
               {packages.map((p) => {
                 const on = pkgId === p.id;
@@ -180,7 +180,7 @@ export function BookingWizard({
         )}
       </section>
 
-      <section className={cn(step, !hasSel && "opacity-50")}>
+      <section className={cn(step, !hasSel && "opacity-50")} inert={!hasSel}>
         {stepTitle(2, "Çalışan", hasSel)}
         <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Çalışan">
           <button type="button" role="radio" aria-checked={!effStaff} disabled={!hasSel} onClick={() => setStaffId("")} className={cn("rounded-full border px-4 py-2 text-sm", !effStaff ? "border-stone-900 bg-stone-900 text-white" : "border-stone-200 text-stone-700")}>
@@ -205,7 +205,7 @@ export function BookingWizard({
         {hasSel && eligible.length === 0 && <p className="mt-3 text-sm text-red-600">Bu seçim için müsait çalışan yok. Farklı bir hizmet deneyin.</p>}
       </section>
 
-      <section className={cn(step, !hasSel && "opacity-50")}>
+      <section className={cn(step, !hasSel && "opacity-50")} inert={!hasSel}>
         {stepTitle(3, "Tarih ve saat", !!slotOk)}
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2" role="radiogroup" aria-label="Tarih">
           {days.map((d) => (
@@ -252,7 +252,7 @@ export function BookingWizard({
         </div>
       </section>
 
-      <section className={cn(step, !slotOk && "opacity-50")}>
+      <section className={cn(step, !slotOk && "opacity-50")} inert={!slotOk}>
         {stepTitle(4, "Onay", false)}
         {total && slotOk ? (
           <dl className="mb-4 grid gap-1 text-sm sm:grid-cols-[auto_1fr] sm:gap-x-6">

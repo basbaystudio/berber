@@ -29,7 +29,7 @@ export default async function InboxPage() {
                   <div className="min-w-0">
                     <p className={cn("text-sm", n.readAt ? "text-stone-600" : "font-medium text-stone-900")}>{n.title}</p>
                     {n.body && <p className="text-sm text-stone-500">{n.body}</p>}
-                    <p className="mt-1 text-xs text-stone-400">{formatDateTime(n.createdAt)}</p>
+                    <p className="mt-1 text-xs text-stone-500">{formatDateTime(n.createdAt)}</p>
                   </div>
                 </div>
               );
