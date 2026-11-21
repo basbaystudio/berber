@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Scissors, UserRound } from "lucide-react";
+import { UserRound } from "lucide-react";
 import { getCustomer } from "@/server/auth/guards";
 
 export async function SiteHeader() {
@@ -7,11 +7,9 @@ export async function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-stone-50/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="grid size-8 place-items-center rounded-xl bg-stone-900 text-white">
-            <Scissors className="size-4" aria-hidden />
-          </span>
-          <span className="font-semibold tracking-tight text-stone-900">Dijital Berber</span>
+        <Link href="/" className="flex shrink-0 items-center" aria-label="Dijital Berber ana sayfa">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/logo.png" alt="Dijital Berber" width={834} height={151} className="h-7 w-auto sm:h-8" />
         </Link>
         <nav className="flex items-center gap-1 text-sm" aria-label="Site menüsü">
           <Link href="/ara" className="hidden rounded-xl px-3 py-2 text-stone-600 hover:bg-stone-100 hover:text-stone-900 sm:block">
