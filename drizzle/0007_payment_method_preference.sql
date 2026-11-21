@@ -1,0 +1,2 @@
+ALTER TABLE "business_subscriptions" ADD COLUMN "preferred_method" text DEFAULT 'CARD' NOT NULL;--> statement-breakpoint
+ALTER TABLE "business_subscriptions" ADD CONSTRAINT "business_subscriptions_method_ck" CHECK ("business_subscriptions"."preferred_method" IN ('CARD', 'BANK_TRANSFER'));

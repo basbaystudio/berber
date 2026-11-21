@@ -1,0 +1,104 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1795254814535,
+      "tag": "0000_init",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795254823111,
+      "tag": "0001_appointment_overlap_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795256878003,
+      "tag": "0002_drop_unused_subscription_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795256878648,
+      "tag": "0003_subscriptions_banners",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795257268815,
+      "tag": "0004_image_urls",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795259271620,
+      "tag": "0005_billing_enforcement",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795259353489,
+      "tag": "0006_card_subscription_refs",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795260094338,
+      "tag": "0007_payment_method_preference",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795260169850,
+      "tag": "0008_payment_invoices",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795260232360,
+      "tag": "0009_compliance_inbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795261587930,
+      "tag": "0010_trust_history_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795263748700,
+      "tag": "0011_monthly_awards",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1795272820648,
+      "tag": "0012_yearly_billing",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1795280015556,
+      "tag": "0013_banner_placement",
+      "breakpoints": true
+    }
+  ]
+}
