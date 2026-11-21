@@ -43,7 +43,7 @@ export async function listAppointments(
 }
 
 export function listPendingRequests(db: Executor, businessId: string) {
-  return listAppointments(db, businessId, { from: new Date(0), to: new Date(8.64e15) }, { statuses: ["PENDING"] });
+  return listAppointments(db, businessId, { from: new Date("2000-01-01T00:00:00Z"), to: new Date("9999-12-31T00:00:00Z") }, { statuses: ["PENDING"] });
 }
 
 export async function getAppointmentDetail(db: Executor, businessId: string, id: string) {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { computeOpenState, dayRangesSchema, weeklyRangesSchema, type OpenStateInput } from "@/lib/schedule";
 import { computeSubscriptionStatus } from "@/server/modules/billing/status";
-import { parseTLToKurus, kurusToInput } from "@/lib/money";
+import { formatTL, parseTLToKurus, kurusToInput } from "@/lib/money";
 import { periodEnd, todayTR, parseLocalDateTime } from "@/lib/dates";
 
 // 2030-01-07 Pazartesi. Türkiye UTC+3.
@@ -143,5 +143,15 @@ describe("güven puanı", () => {
   it("gerekçeler", () => {
     const r = trustReasons({ ...base, expired: 3, unresolved: 2, daysSinceActivity: 9 });
     expect(r.map((x) => x.text).join(" ")).toMatch(/3 randevu talebi.*2 geçmiş randevu.*9 gün/s);
+  });
+});
+
+describe("formatTL", () => {
+  it("kuruş varsa iki hane, yoksa tam sayı gösterir", () => {
+    const n = (s: string) => s.replace(/\s/g, " ");
+    expect(n(formatTL(69990))).toBe("₺699,90");
+    expect(n(formatTL(699000))).toBe("₺6.990");
+    expect(n(formatTL(45050))).toBe("₺450,50");
+    expect(n(formatTL(0))).toBe("₺0");
   });
 });

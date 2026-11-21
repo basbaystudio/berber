@@ -152,11 +152,14 @@ async function DayView({ businessId, date, staff, rows }: { businessId: string; 
       <div className="overflow-x-auto">
         <div className="flex min-w-full">
           <div className="sticky left-0 z-10 w-14 shrink-0 border-r border-stone-100 bg-white pt-10">
-            {hours.map((h) => (
-              <div key={h} style={{ height: 60 * PX }} className="-mt-2 pr-2 text-right text-xs tabular-nums text-stone-500">
-                {fromMinutes(h)}
-              </div>
-            ))}
+            {/* Etiketler mutlak konumlu: çizgilerle aynı hizada kalır (birikimli kayma olmaz) */}
+            <div className="relative" style={{ height: (end - start) * PX }}>
+              {hours.map((h) => (
+                <div key={h} style={{ top: (h - start) * PX }} className="absolute inset-x-0 -translate-y-1/2 pr-2 text-right text-xs tabular-nums text-stone-500 first:translate-y-0">
+                  {fromMinutes(h)}
+                </div>
+              ))}
+            </div>
           </div>
           {staff.map((s, si) => {
             const d = details[si]!;

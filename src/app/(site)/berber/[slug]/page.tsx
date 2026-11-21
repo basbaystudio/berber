@@ -71,9 +71,9 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
       <header className="flex flex-col gap-3 px-2 sm:flex-row sm:items-end sm:gap-4 sm:px-6">
         {p.logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={p.logoUrl} alt="" className="-mt-10 size-20 shrink-0 rounded-3xl border-4 border-stone-50 object-cover" />
+          <img src={p.logoUrl} alt="" className="relative z-10 -mt-10 size-20 shrink-0 rounded-3xl border-4 border-stone-50 object-cover" />
         ) : (
-          <span className="-mt-10 grid size-20 shrink-0 place-items-center rounded-3xl border-4 border-stone-50 bg-stone-900 text-2xl font-semibold text-white">{p.name.slice(0, 1)}</span>
+          <span className="relative z-10 -mt-10 grid size-20 shrink-0 place-items-center rounded-3xl border-4 border-stone-50 bg-stone-900 text-2xl font-semibold text-white">{p.name.slice(0, 1)}</span>
         )}
         <div className="min-w-0 flex-1 space-y-1 pb-1">
           <h1 className="break-words text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl">{p.name}</h1>

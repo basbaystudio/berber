@@ -18,6 +18,7 @@ import {
   finalizeAppointment,
   rescheduleAppointment,
 } from "@/server/modules/booking/service";
+import { listPendingRequests } from "@/server/modules/booking/queries";
 import { minuteToDate } from "@/lib/availability";
 import { addDaysStr, todayTR } from "@/lib/dates";
 import { makeAdmin, makeBusiness, uid } from "../helpers/factory";
@@ -119,6 +120,9 @@ describe("online randevu", () => {
     // İşletme CRM kaydı müşteri hesabına bağlanır
     const [bc] = await db.select().from(businessCustomers).where(and(eq(businessCustomers.businessId, b.businessId), eq(businessCustomers.customerId, c.id)));
     expect(bc?.displayName).toBe(c.name);
+    // Panelde "onay bekleyenler" listesi
+    const pending = await listPendingRequests(db, b.businessId);
+    expect(pending.map((p) => p.id)).toContain(a.id);
   });
 
   it("ızgara dışı, geçmiş ve yayında olmayan işletme reddedilir", async () => {

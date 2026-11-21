@@ -1,8 +1,10 @@
-const fmt = new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", minimumFractionDigits: 0, maximumFractionDigits: 2 });
+const whole = new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", minimumFractionDigits: 0, maximumFractionDigits: 0 });
+const cents = new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/** Kuruş → "1.250 ₺" */
+/** Kuruş → "₺1.250" ya da "₺699,90" (kuruş varsa iki hane) */
 export function formatTL(kurus: number | null | undefined): string {
-  return fmt.format((kurus ?? 0) / 100);
+  const k = kurus ?? 0;
+  return (k % 100 === 0 ? whole : cents).format(k / 100);
 }
 
 /** "900", "899,90", "1.250,50", "1250.5" → kuruş. Geçersizse null. */

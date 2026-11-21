@@ -16,6 +16,14 @@ ADMIN_EMAIL=siz@ornek.com ADMIN_NAME="Ad Soyad" ADMIN_PASSWORD='en-az-12-karakte
 npm run dev
 ```
 
+Örnek verilerle denemek için (yalnızca yerel/önizleme veritabanında):
+
+```bash
+npm run db:seed-demo          # 6 örnek berber, müşteriler, yorumlar, randevular
+```
+
+Demo girişleri: yönetici `demo-admin@ornek.local` / `DemoAdmin2026!` · işletme `demo-isletme` / `DemoIsletme2026` · müşteri `demo-musteri@ornek.local` / `DemoMusteri2026`
+
 - Platform yönetimi: http://localhost:3000/admin
 - İşletme girişi: http://localhost:3000/isletme (bilgileri admin verir; işletmeye özel: /isletme/<isletme-adi>)
 
