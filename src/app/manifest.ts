@@ -3,8 +3,8 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Berber Randevu",
-    short_name: "Berber",
+    name: "Dijital Berber",
+    short_name: "Dijital Berber",
     description: "Yakınındaki berberleri keşfet, boş saatleri gör ve online randevu al.",
     lang: "tr",
     dir: "ltr",

@@ -13,7 +13,7 @@ import { LocationPrompt } from "@/components/marketplace/location-prompt";
 import { SearchBar } from "@/components/marketplace/search-bar";
 
 export const metadata: Metadata = {
-  title: { absolute: "Berber Randevu — Yakınındaki berberi bul, online randevu al" },
+  title: { absolute: "Dijital Berber — Yakınındaki berberi bul, online randevu al" },
   description: "Yakınındaki berberleri keşfet, hizmet ve fiyatları incele, anlık boş saatleri gör ve online randevu al.",
 };
 

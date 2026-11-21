@@ -11,7 +11,7 @@ export async function SiteHeader() {
           <span className="grid size-8 place-items-center rounded-xl bg-stone-900 text-white">
             <Scissors className="size-4" aria-hidden />
           </span>
-          <span className="font-semibold tracking-tight text-stone-900">Berber Randevu</span>
+          <span className="font-semibold tracking-tight text-stone-900">Dijital Berber</span>
         </Link>
         <nav className="flex items-center gap-1 text-sm" aria-label="Site menüsü">
           <Link href="/ara" className="hidden rounded-xl px-3 py-2 text-stone-600 hover:bg-stone-100 hover:text-stone-900 sm:block">
@@ -42,7 +42,7 @@ export function SiteFooter() {
   return (
     <footer className="mt-16 border-t border-stone-200/70">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm text-stone-500 sm:px-6">
-        <span>© {new Date().getFullYear()} Berber Randevu</span>
+        <span>© {new Date().getFullYear()} Dijital Berber</span>
         <nav className="flex flex-wrap gap-4" aria-label="Alt menü">
           <Link href="/ara" className="hover:text-stone-900">
             Berber bul

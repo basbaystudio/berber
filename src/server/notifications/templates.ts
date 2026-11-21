@@ -9,7 +9,7 @@ function layout(title: string, paragraphs: string[]) {
   return `<!doctype html><html lang="tr"><body style="margin:0;background:#fafaf9;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#292524">
 <div style="max-width:560px;margin:0 auto;padding:32px 20px"><div style="background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:28px">
 <h1 style="font-size:18px;margin:0 0 18px">${esc(title)}</h1>${body}</div>
-<p style="font-size:12px;color:#a8a29e;text-align:center;margin-top:16px">Berber Randevu</p></div></body></html>`;
+<p style="font-size:12px;color:#a8a29e;text-align:center;margin-top:16px">Dijital Berber</p></div></body></html>`;
 }
 
 type Ctx = { businessName: string; coveredUntil: string; feeKurus: number; feeUnit?: string; graceDays: number; contactLine: string };

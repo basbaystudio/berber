@@ -18,7 +18,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "db:seed-demo": "node --conditions=react-server --import tsx scripts/seed-demo.ts"
+    "db:seed-demo": "node --conditions=react-server --import tsx scripts/seed-demo.ts",
+    "vercel-build": "tsx scripts/deploy-setup.ts && next build"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",

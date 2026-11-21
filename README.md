@@ -1,4 +1,6 @@
-# Berber Pazaryeri ve Randevu Platformu
+# Dijital Berber — dijitalberber.com
+
+Berber pazaryeri ve online randevu platformu.
 
 Müşteri pazaryeri, berber işletme paneli ve platform yönetim paneli. Mimari ve kararlar: [`docs/MIMARI.md`](docs/MIMARI.md).
 

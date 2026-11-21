@@ -3,10 +3,10 @@ import "./globals.css";
 import { RegisterServiceWorker } from "@/components/pwa/register-sw";
 
 export const metadata: Metadata = {
-  title: { default: "Berber Randevu", template: "%s · Berber Randevu" },
+  title: { default: "Dijital Berber", template: "%s · Dijital Berber" },
   description: "Yakınındaki berberleri keşfet, boş saatleri gör ve online randevu al.",
-  applicationName: "Berber Randevu",
-  appleWebApp: { capable: true, title: "Berber", statusBarStyle: "default" },
+  applicationName: "Dijital Berber",
+  appleWebApp: { capable: true, title: "Dijital Berber", statusBarStyle: "default" },
   formatDetection: { telephone: false },
 };
 

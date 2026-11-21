@@ -1,61 +1,65 @@
 # Canlıya Çıkış Kontrol Listesi
 
-Hedef ortam: **Vercel + Neon (PostgreSQL) + Vercel Blob + Resend**. Tamamı ücretsiz katmanlarla başlar; tek zorunlu masraf **alan adıdır** (aşağıya bakın).
+Adres: **https://dijitalberber.com** · Ortam: **Vercel + Neon (PostgreSQL) + Vercel Blob + Resend**. Tamamı ücretsiz katmanlarla başlar; alan adı alındı.
 
 > Vercel Hobby (ücretsiz) planı ticari kullanıma izin vermez. Deneme döneminde Hobby yeterlidir; işletmelerden ücret almaya başlamadan önce **Vercel Pro**'ya geçin.
 
 ---
 
-## 1. Alan adı (zorunlu, ücretli)
+## 1. Hesaplar
 
-- [ ] Alan adı alın (ör. `.com` veya `.com.tr`).
-- [ ] Vercel → Project → Settings → Domains: alan adını ekleyin, DNS kayıtlarını girin. HTTPS sertifikası otomatik gelir.
-- [ ] **Neden zorunlu:** Resend, alan adı doğrulanmadan yalnızca sizin kendi e-posta adresinize gönderim yapar. Doğrulama e-postası, şifre sıfırlama ve randevu e-postaları müşterilere ancak doğrulanmış alan adıyla gider. `vercel.app` adresi e-posta için doğrulanamaz.
+Hepsi ücretsiz açılır. Vercel'e GitHub hesabınızla girin; Neon ve Blob'u Vercel içinden açacağız.
 
-## 2. Veritabanı (Neon)
+- [ ] **Vercel** (vercel.com): "Continue with GitHub" ile giriş.
+- [ ] **Resend** (resend.com): e-posta gönderimi için.
 
-- [ ] Neon'da proje açın, bölge **Frankfurt (eu-central-1)**: Vercel `fra1` ile aynı bölge, düşük gecikme.
-- [ ] İki bağlantı adresi alın: *pooled* (uygulama için) ve *direct* (migration için).
-- [ ] Yerelden kurulum:
-  ```bash
-  DATABASE_URL="<direct adres>" npm run db:migrate
-  DATABASE_URL="<direct adres>" npm run db:seed
-  DATABASE_URL="<direct adres>" ADMIN_EMAIL=... ADMIN_NAME="..." ADMIN_PASSWORD='...' npm run admin:create
-  ```
-  `btree_gist` uzantısı migration ile kurulur; Neon destekler.
-- [ ] Yedekleme: Neon ücretsiz katmanında geri dönüş penceresi kısadır. Haftalık `pg_dump` alıp güvenli bir yerde saklayın:
-  ```bash
-  pg_dump "<direct adres>" -Fc -f yedek-$(date +%F).dump
-  ```
+## 2. Vercel projesi ve veritabanı
 
-## 3. Vercel projesi
-
-- [ ] GitHub deposunu Vercel'e bağlayın (Framework: Next.js; ayarlar otomatik gelir).
-- [ ] Fonksiyon bölgesi `vercel.json` ile `fra1` olarak ayarlıdır.
-- [ ] **Storage → Blob** oluşturun; `BLOB_READ_WRITE_TOKEN` otomatik eklenir.
-- [ ] Ortam değişkenleri (Production):
+- [ ] Vercel → **Add New → Project** → `basbaystudio/berber` deposunu seçin → **Deploy**'a henüz basmayın, önce aşağıdaki değişkenleri ekleyin. (İlk denemede hata verirse sorun değil; değişkenleri ekleyip **Redeploy** yaparsınız.)
+- [ ] Proje → **Storage → Create Database → Neon (Postgres)**, bölge **Frankfurt**. Vercel `DATABASE_URL` değişkenini kendisi ekler.
+- [ ] Proje → **Storage → Create → Blob**. `BLOB_READ_WRITE_TOKEN` kendiliğinden eklenir.
+- [ ] Proje → **Settings → Environment Variables** (Production):
 
 | Değişken | Değer |
 |---|---|
-| `DATABASE_URL` | Neon **pooled** bağlantı adresi |
-| `APP_URL` | `https://alanadiniz.com` (sonunda `/` olmadan) |
-| `CRON_SECRET` | Uzun rastgele değer, ör. `openssl rand -hex 32` |
-| `RESEND_API_KEY` | Resend API anahtarı |
-| `EMAIL_FROM` | `Berber Randevu <bildirim@alanadiniz.com>` |
-| `BLOB_READ_WRITE_TOKEN` | Blob oluşturulunca otomatik eklenir |
+| `APP_URL` | `https://dijitalberber.com` |
+| `CRON_SECRET` | 40+ karakterlik rastgele bir metin (bir şifre üreticiden alın) |
+| `RESEND_API_KEY` | Resend → API Keys'ten alınan anahtar (4. adım) |
+| `EMAIL_FROM` | `Dijital Berber <bildirim@dijitalberber.com>` |
+| `ADMIN_EMAIL` | Yönetici girişinde kullanacağınız e-posta |
+| `ADMIN_NAME` | Adınız soyadınız |
+| `ADMIN_PASSWORD` | En az 12 karakter, harf + rakam. **İlk girişten sonra bu değişkeni silin.** |
 
-- [ ] Günlük görev (`/api/cron/daily`) `vercel.json` ile her gün 06:00 UTC (09:00 TR) çalışır. Hobby planında günde bir çalışmaya izin verilir, bu yeterlidir.
-  Görevin işleri: abonelik gecikme e-postaları ve 7. gün askıya alma, süresi dolan randevu taleplerinin iptali, yarınki randevu hatırlatmaları, güven puanları, eski oturum temizliği.
+- [ ] **Deploy / Redeploy.** Her canlı dağıtımda veritabanı tabloları, il/ilçe ve hizmet türleri **otomatik** kurulur ve ilk yönetici hesabı açılır (`scripts/deploy-setup.ts`). Bilgisayarınızda komut çalıştırmanız gerekmez. Önizleme dağıtımları veritabanına dokunmaz.
+- [ ] Günlük görev (`/api/cron/daily`) her gün 09:00'da (TR) kendiliğinden çalışır: abonelik gecikme e-postaları ve 7. gün askıya alma, süresi dolan taleplerin iptali, yarınki randevu hatırlatmaları, güven puanları, temizlik.
+
+## 3. Alan adı: dijitalberber.com (Natro)
+
+En kolay yol: alan adının **ad sunucularını Vercel'e yönlendirmek**. Böylece tüm DNS kayıtlarını (site + e-posta) Vercel ekranından yönetirsiniz.
+
+- [ ] Vercel → Proje → **Settings → Domains** → `dijitalberber.com` ekleyin (www'yu da ekleyin; Vercel yönlendirmeyi önerir).
+- [ ] Vercel size **ad sunucularını** gösterir (genelde `ns1.vercel-dns.com`, `ns2.vercel-dns.com`).
+- [ ] Natro paneli → alan adınız → **ad sunucusu (nameserver / DNS sunucusu) değiştir** → Vercel'in verdiği iki adresi girin, kaydedin.
+- [ ] Yayılması birkaç dakika ile 24 saat sürebilir. Vercel'de alan adının yanında yeşil onay görünce HTTPS de otomatik açılır.
+
+> Ad sunucularını değiştirmek istemezseniz: Natro'nun DNS yönetiminde Vercel'in **Domains** ekranında gösterdiği A (kök alan) ve CNAME (www) kayıtlarını aynen girin.
 
 ## 4. E-posta (Resend)
 
-- [ ] Resend'de alan adını ekleyin; SPF/DKIM DNS kayıtlarını girip doğrulayın.
-- [ ] Ücretsiz katman: günde 100, ayda 3.000 e-posta. Kullanım artınca ücretli plana geçin.
-- [ ] Test: kayıt olun → doğrulama e-postası gelmeli; spam klasörüne düşüyorsa DMARC kaydı ekleyin.
+- [ ] Resend → **Domains → Add Domain** → `dijitalberber.com`, bölge **EU (Frankfurt)**.
+- [ ] Resend'in gösterdiği DNS kayıtlarını (MX, TXT/SPF, DKIM) **Vercel → Domains → dijitalberber.com → DNS Records** ekranına tek tek girin (3. adımda ad sunucusunu Vercel'e verdiyseniz). Natro'da kaldıysanız Natro DNS yönetimine girin.
+- [ ] Resend'de **Verify** → yeşil olunca **API Keys → Create** ile anahtarı alın ve Vercel'de `RESEND_API_KEY` olarak ekleyip **Redeploy** yapın.
+- [ ] Ücretsiz katman: günde 100, ayda 3.000 e-posta.
+- [ ] Test: siteden müşteri olarak kayıt olun → doğrulama e-postası gelmeli. Spam'e düşerse Resend'in önerdiği DMARC kaydını da ekleyin.
+- [ ] Gelen kutusu: `bildirim@` yalnızca gönderim içindir. `info@dijitalberber.com` gibi okunacak bir adres isterseniz Natro'nun e-posta hizmeti ya da Zoho/Google Workspace kullanın (MX kayıtları Resend'inkilerle çakışmaz; Resend gönderim için `send.` alt alanını kullanır).
 
-## 5. İlk yapılandırma (admin paneli)
+## 5. Yedekleme
 
-- [ ] `/admin` ile giriş yapın, şifrenizi güçlü tutun.
+- [ ] Neon ücretsiz katmanında geri dönüş penceresi kısadır. Neon panelinden düzenli olarak **branch/yedek** alın ya da haftalık `pg_dump` için bize başvurun.
+
+## 6. İlk yapılandırma (admin paneli)
+
+- [ ] `https://dijitalberber.com/admin` ile giriş yapın. Ardından Vercel'den `ADMIN_PASSWORD` değişkenini silin.
 - [ ] **Ayarlar:** iletişim e-postası/telefon, uyarı e-postası (ödeme ve gecikme bildirimleri buraya gelir), banka/IBAN bilgileri.
 - [ ] **Ayarlar → yasal metinler:** KVKK aydınlatma metni ve kullanım koşulları. Bu metinleri bir hukukçuya kontrol ettirin.
 - [ ] **Sözleşmeler:** işletme sözleşmesini yayınlayın; işletmeler panelde onaylar.
@@ -64,14 +68,14 @@ Hedef ortam: **Vercel + Neon (PostgreSQL) + Vercel Blob + Resend**. Tamamı ücr
   **Ücretlendirme anahtarı kapalı** başlar: açtığınız gün deneme süreleri işlemeye başlar.
 - [ ] **Bannerlar, hizmet türleri, resmî tatiller:** gözden geçirin.
 
-## 6. Yasal (Türkiye)
+## 7. Yasal (Türkiye)
 
 - [ ] Şirket kuruluşu ve vergi kaydı: abonelik ücreti almadan önce.
 - [ ] KVKK: VERBİS kayıt yükümlülüğünüzü kontrol edin; aydınlatma metni ve açık rıza metinleri yayında olmalı.
 - [ ] Mesafeli satış ve abonelik sözleşmesi: işletmelere kartla ödeme açılmadan önce hazırlanmalı.
 - [ ] Fatura: her ödemede admin e-posta alır ve PDF faturayı ödemeye yükler. E-fatura/e-arşiv için mali müşavirinizle çalışın.
 
-## 7. Kartla otomatik ödeme (şirket kurulduktan sonra)
+## 8. Kartla otomatik ödeme (şirket kurulduktan sonra)
 
 Altyapı hazırdır; kart bilgisi hiçbir zaman bizim sunucumuza gelmez.
 
@@ -81,17 +85,17 @@ Altyapı hazırdır; kart bilgisi hiçbir zaman bizim sunucumuza gelmez.
 - [ ] `getPaymentGateway()` uygulamayı döndürsün; sağlayıcı anahtarlarını ortam değişkeni olarak ekleyin.
 - [ ] Sağlayıcının test ortamında uçtan uca deneyin: kart tanımlama, ilk çekim, başarısız çekim, dönem değişikliği, iptal.
 
-## 8. Yayın öncesi son kontroller
+## 9. Yayın öncesi son kontroller
 
 - [ ] `npm test` ve `npm run build && npm run e2e`: hepsi geçmeli.
 - [ ] `npm audit --omit=dev`: 0 açık.
 - [ ] Canlı adreste: ana sayfa, arama, profil, kayıt → doğrulama e-postası → randevu, işletme paneli onay, admin girişi.
 - [ ] Telefon tarayıcısında "Ana ekrana ekle" ile uygulama kurulabiliyor mu? Çevrimdışıyken uyarı sayfası geliyor mu?
-- [ ] `https://alanadiniz.com/robots.txt` ve `/sitemap.xml` doğru adresi gösteriyor mu?
+- [ ] `https://dijitalberber.com/robots.txt` ve `/sitemap.xml` doğru adresi gösteriyor mu?
 - [ ] Vercel → Logs: hata kaydı yok mu? Ertesi sabah cron çalıştı mı (Logs → `/api/cron/daily`, 200)?
 - [ ] Google Search Console'a alan adını ve site haritasını ekleyin.
 
-## 9. Ücretsiz katman sınırları (özet)
+## 10. Ücretsiz katman sınırları (özet)
 
 | Servis | Sınır | Aşılınca |
 |---|---|---|

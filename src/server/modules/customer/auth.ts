@@ -58,7 +58,7 @@ async function consumeToken(db: Executor, token: string, purpose: "EMAIL_VERIFY"
 
 export async function sendVerificationEmail(db: Executor, customer: { id: string; name: string; email: string }) {
   const token = await issueToken(db, customer.id, "EMAIL_VERIFY", 48 * 3_600_000);
-  const t = mail("E-posta adresinizi doğrulayın", [`Merhaba ${customer.name}, Berber Randevu hesabınızı oluşturdunuz.`, "Randevu alabilmek için e-posta adresinizi doğrulayın. Bağlantı 48 saat geçerlidir."], {
+  const t = mail("E-posta adresinizi doğrulayın", [`Merhaba ${customer.name}, Dijital Berber hesabınızı oluşturdunuz.`, "Randevu alabilmek için e-posta adresinizi doğrulayın. Bağlantı 48 saat geçerlidir."], {
     url: `${appUrl()}/dogrula?token=${token}`,
     label: "E-postamı doğrula",
   });

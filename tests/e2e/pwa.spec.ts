@@ -5,7 +5,7 @@ test.describe("PWA", () => {
     const res = await request.get("/manifest.webmanifest");
     expect(res.ok()).toBe(true);
     const m = await res.json();
-    expect(m).toMatchObject({ name: "Berber Randevu", display: "standalone", start_url: "/", lang: "tr" });
+    expect(m).toMatchObject({ name: "Dijital Berber", display: "standalone", start_url: "/", lang: "tr" });
     for (const icon of m.icons as { src: string; sizes: string }[]) {
       const r = await request.get(icon.src);
       expect(r.ok(), icon.src).toBe(true);

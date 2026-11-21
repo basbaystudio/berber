@@ -1,5 +1,5 @@
 /*
- * Berber Randevu service worker.
+ * Dijital Berber service worker.
  * İlke: randevu ve hesap verisi her zaman ağdan gelir; HTML ve API yanıtları ÖNBELLEĞE ALINMAZ
  * (paylaşılan cihazda kişisel veri kalmasın, eski müsaitlik gösterilmesin).
  * Önbellek yalnızca: değişmez derleme dosyaları (/_next/static), ikonlar ve çevrimdışı sayfası.
