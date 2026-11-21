@@ -47,3 +47,20 @@ export async function saveBankAction(_p: ActionState, fd: FormData): Promise<Act
     return { status: "success", message: "Banka bilgileri kaydedildi." };
   });
 }
+
+const legalSchema = z.object({
+  customerPrivacy: z.string().max(100_000).default(""),
+  terms: z.string().max(100_000).default(""),
+});
+
+export async function saveLegalAction(_p: ActionState, fd: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const ctx = await requireAdmin();
+    const v = parseInput(legalSchema, formToObject(fd));
+    await setSetting(db, "legal.customerPrivacy", v.customerPrivacy.trim(), ctx.admin.id);
+    await setSetting(db, "legal.terms", v.terms.trim(), ctx.admin.id);
+    await audit(db, { actorRealm: "ADMIN", actorId: ctx.admin.id, action: "settings.legal_update", ip: (await getRequestMeta()).ip });
+    revalidatePath("/admin/ayarlar");
+    return { status: "success", message: "Yasal metinler kaydedildi." };
+  });
+}

@@ -2,7 +2,7 @@
 
 import type { ActionState } from "@/server/lib/action";
 import { Alert } from "@/components/ui/feedback";
-import { Field, Input, SubmitButton } from "@/components/ui/form";
+import { Field, Input, SubmitButton, Textarea } from "@/components/ui/form";
 import { useFormAction } from "@/components/ui/use-action";
 
 export function ContactForm({
@@ -57,6 +57,25 @@ export function BankForm({
       </div>
       <Field label="IBAN" name="iban" error={fe?.iban}>
         <Input id="iban" name="iban" defaultValue={defaults.iban} placeholder="TR00 0000 0000 0000 0000 0000 00" />
+      </Field>
+      <div className="flex justify-end">
+        <SubmitButton pending={pending}>Kaydet</SubmitButton>
+      </div>
+    </form>
+  );
+}
+
+export function LegalForm({ action, defaults }: { action: (p: ActionState, fd: FormData) => Promise<ActionState>; defaults: { customerPrivacy: string; terms: string } }) {
+  const { state, pending, onSubmit } = useFormAction(action);
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      {state.status === "error" && <Alert tone="error">{state.message}</Alert>}
+      {state.status === "success" && <Alert tone="success">{state.message}</Alert>}
+      <Field label="KVKK Aydınlatma Metni (müşteriler)" name="customerPrivacy" hint="Kayıt ekranında onaylatılır; /kvkk-aydinlatma adresinde yayınlanır.">
+        <Textarea id="customerPrivacy" name="customerPrivacy" rows={8} defaultValue={defaults.customerPrivacy} />
+      </Field>
+      <Field label="Kullanım Koşulları" name="terms" hint="/kullanim-kosullari adresinde yayınlanır.">
+        <Textarea id="terms" name="terms" rows={8} defaultValue={defaults.terms} />
       </Field>
       <div className="flex justify-end">
         <SubmitButton pending={pending}>Kaydet</SubmitButton>

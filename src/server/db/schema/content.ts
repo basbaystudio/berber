@@ -122,3 +122,21 @@ export const favorites = pgTable(
   (t) => [primaryKey({ columns: [t.customerId, t.businessId] })],
 );
 
+
+/** Ayın İşletmesi ödülü (ay başına bir kazanan; admin onaylar). month: "2026-11" */
+export const monthlyAwards = pgTable(
+  "monthly_awards",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    month: text("month").notNull(),
+    businessId: uuid("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    ratingAvg: text("rating_avg").notNull(),
+    reviewCount: integer("review_count").notNull(),
+    awardedByAdminId: uuid("awarded_by_admin_id").references(() => platformAdmins.id),
+    note: text("note"),
+    createdAt: ts("created_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("monthly_awards_month_uq").on(t.month), index("monthly_awards_business_idx").on(t.businessId)],
+);
