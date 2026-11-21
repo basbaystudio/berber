@@ -22,7 +22,11 @@ export async function BusinessLoginScreen({ slug }: { slug?: string }) {
     businessName = b?.name ?? null;
   }
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-stone-50 px-4 py-10">
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-stone-50 px-4 py-10">
+      <a href="/" aria-label="Dijital Berber ana sayfa">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/logo.png" alt="Dijital Berber" width={834} height={151} className="h-8 w-auto" />
+      </a>
       <div className="w-full max-w-sm rounded-3xl border border-stone-200/80 bg-white p-6 sm:p-10">
         <div className="mb-6 flex items-center gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-stone-900 text-white">
