@@ -5,15 +5,22 @@ import { db } from "@/server/db/client";
 import { unreadCount } from "@/server/modules/business/inbox";
 import { pendingContractVersions } from "@/server/modules/business/contracts";
 import { Alert } from "@/components/ui/feedback";
+import { PaymentRequiredModal } from "@/components/panel/payment-required-modal";
+import { getBusinessSubscription } from "@/server/modules/billing/subscriptions";
+import { needsPaymentSetup } from "@/server/modules/billing/status";
+import { formatTL } from "@/lib/money";
+import { todayTR } from "@/lib/dates";
 import { requireBusinessPage } from "@/server/auth/guards";
 import { SidebarNav, type NavItem } from "@/components/shell/sidebar-nav";
 import { businessLogoutAction } from "../auth-actions";
 
 export const metadata: Metadata = { title: { default: "İşletme Paneli", template: "%s · İşletme Paneli" }, robots: { index: false, follow: false } };
 
-// Takvim ve randevular Aşama 4'te eklenecek.
 const NAV: NavItem[] = [
   { href: "/isletme/panel", label: "Genel Bakış", icon: "dashboard", exact: true },
+  { href: "/isletme/panel/takvim", label: "Takvim", icon: "calendar" },
+  { href: "/isletme/panel/randevular", label: "Randevular", icon: "list" },
+  { href: "/isletme/panel/musteriler", label: "Müşteriler", icon: "customers" },
   { href: "/isletme/panel/calisma-saatleri", label: "Çalışma Saatleri", icon: "clock" },
   { href: "/isletme/panel/calisanlar", label: "Çalışanlar", icon: "users" },
   { href: "/isletme/panel/hizmetler", label: "Hizmetler", icon: "scissors" },
@@ -23,11 +30,17 @@ const NAV: NavItem[] = [
   { href: "/isletme/panel/sozlesmeler", label: "Sözleşmeler", icon: "contracts" },
   { href: "/isletme/panel/abonelik", label: "Abonelik", icon: "billing" },
   { href: "/isletme/panel/profil", label: "İşletme Profili", icon: "store" },
+  { href: "/isletme/panel/ayarlar", label: "Randevu Ayarları", icon: "settings" },
 ];
 
 export default async function BusinessPanelLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireBusinessPage();
-  const [unread, pendingContracts] = [await unreadCount(db, ctx.businessId), await pendingContractVersions(db, ctx.businessId)];
+  const [unread, pendingContracts, sub] = [
+    await unreadCount(db, ctx.businessId),
+    await pendingContractVersions(db, ctx.businessId),
+    await getBusinessSubscription(db, ctx.businessId),
+  ];
+  const mustPay = sub ? needsPaymentSetup(sub.sub, sub.billingEnabled, todayTR()) : false;
   return (
     <div className="lg:flex lg:min-h-dvh">
       <SidebarNav
@@ -67,6 +80,13 @@ export default async function BusinessPanelLayout({ children }: { children: Reac
               {unread > 0 && <span className="rounded-full bg-stone-900 px-1.5 text-xs font-medium text-white tabular-nums">{unread}</span>}
             </Link>
           </div>
+          {mustPay && sub && (
+            <PaymentRequiredModal
+              title={sub.sub.isEarlyAdopter || sub.sub.trialMonths > 0 ? "Ücretsiz deneme süreniz sona erdi" : "Ücretsiz kullanım süreniz sona erdi"}
+              feeText={`Bu aydan itibaren aylık ödemeniz: ${formatTL(sub.sub.monthlyFeeKurus)}`}
+              logoutAction={businessLogoutAction}
+            />
+          )}
           {pendingContracts.length > 0 && (
             <Alert tone="warning" className="mb-6" title="Onayınızı bekleyen sözleşme var">
               {pendingContracts.map((c) => c.title).join(", ")} güncellendi.{" "}

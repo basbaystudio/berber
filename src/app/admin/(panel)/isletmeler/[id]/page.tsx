@@ -14,6 +14,8 @@ import { StatusBadge } from "../status-badge";
 import { EditBusinessForm } from "../business-form";
 import { OwnerPanel } from "./owner-panel";
 import { ImageUploadForm } from "@/components/panel/image-upload-form";
+import { getTrust } from "@/server/modules/trust/score";
+import { TrustCard } from "@/components/panel/trust-card";
 import { listDocuments } from "@/server/modules/admin/documents";
 import { ReviewForm } from "../../belgeler/forms";
 import { reviewDocumentAction } from "../../belgeler/actions";
@@ -46,6 +48,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
   const subscription = await getBusinessSubscription(db, id);
   const [plans, payments] = [await listPlans(db), await listBusinessPayments(db, id)];
   const docs = await listDocuments(db, { businessId: id });
+  const trust = await getTrust(db, id);
   const METHOD = { BANK_TRANSFER: "Havale/EFT", CARD: "Kart", CASH: "Nakit", OTHER: "Diğer" } as const;
   const canPublish = checklist.every((c) => c.ok);
 
@@ -300,6 +303,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
             </div>
           </Card>
 
+          <TrustCard {...trust} forAdmin />
           <Card className="p-5 text-sm text-stone-600">
             <p>Oluşturulma: {formatDateTime(b.createdAt)}</p>
             <p>Son güncelleme: {formatDateTime(b.updatedAt)}</p>

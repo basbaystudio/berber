@@ -71,6 +71,13 @@
       "when": 1795260232360,
       "tag": "0009_compliance_inbox",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795261587930,
+      "tag": "0010_trust_history_unique",
+      "breakpoints": true
     }
   ]
 }

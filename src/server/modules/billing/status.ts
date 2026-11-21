@@ -29,3 +29,19 @@ export function computeSubscriptionStatus(
   const lastCovered = sub.paidThrough && sub.paidThrough > sub.trialEndsOn ? sub.paidThrough : sub.trialEndsOn;
   return { kind: "PAST_DUE", label: "Ödeme gecikti", days: diffDays(today, lastCovered), coveredUntil: lastCovered };
 }
+
+/**
+ * Ücretsiz süresi bitmiş ve ödemesi kurulmamış işletme: panelde kapatılamayan "kart bilgisi girin" penceresi gösterilir.
+ * Kartla otomatik ödeme kuruluysa ya da dönem ödenmişse gösterilmez. Ücretlendirme kapalıyken hiç gösterilmez.
+ */
+export function needsPaymentSetup(
+  sub: { trialEndsOn: string | null; paidThrough: string | null; cancelledAt: Date | null; autoRenew: boolean; cardLast4: string | null },
+  billingEnabled: boolean,
+  today: string,
+): boolean {
+  if (!billingEnabled || !sub.trialEndsOn || sub.cancelledAt) return false;
+  if (today <= sub.trialEndsOn) return false;
+  if (sub.autoRenew && sub.cardLast4) return false;
+  if (sub.paidThrough && today <= sub.paidThrough) return false;
+  return true;
+}

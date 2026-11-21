@@ -106,3 +106,42 @@ describe("para ve tarih", () => {
     expect(parseLocalDateTime("bozuk")).toBeNull();
   });
 });
+
+import { needsPaymentSetup } from "@/server/modules/billing/status";
+
+describe("ödeme penceresi (kapatılamaz) koşulu", () => {
+  const base = { trialEndsOn: "2030-03-31", paidThrough: null, cancelledAt: null, autoRenew: false, cardLast4: null };
+  it("ücretlendirme kapalıyken ya da deneme sürerken gösterilmez", () => {
+    expect(needsPaymentSetup(base, false, "2030-05-01")).toBe(false);
+    expect(needsPaymentSetup(base, true, "2030-03-31")).toBe(false);
+  });
+  it("deneme bitti, kart yok → gösterilir", () => {
+    expect(needsPaymentSetup(base, true, "2030-04-01")).toBe(true);
+  });
+  it("kartla otomatik ödeme kuruluysa ya da dönem ödenmişse gösterilmez", () => {
+    expect(needsPaymentSetup({ ...base, autoRenew: true, cardLast4: "4242" }, true, "2030-04-01")).toBe(false);
+    expect(needsPaymentSetup({ ...base, paidThrough: "2030-04-30" }, true, "2030-04-10")).toBe(false);
+    expect(needsPaymentSetup({ ...base, paidThrough: "2030-04-30" }, true, "2030-05-01")).toBe(true);
+  });
+});
+
+import { trustScore, trustReasons } from "@/lib/trust";
+
+describe("güven puanı", () => {
+  const w = { confirmation: 0.4, responseSpeed: 0.2, businessCancellation: 0.2, closure: 0.1, activity: 0.1 };
+  const prior = { score: 70, fullConfidenceSamples: 10 };
+  const base = { decided: 0, expired: 0, medianResponseMin: null, confirmed: 0, cancelledAfterConfirm: 0, resolved: 0, unresolved: 0, daysSinceActivity: 0 };
+  it("verisi olmayan yeni işletme başlangıç puanına yakındır", () => {
+    expect(trustScore(base, w, prior).score).toBeCloseTo(73, 0); // 0.9*70 + 0.1*100
+  });
+  it("hızlı yanıt veren, iptal etmeyen işletme yüksek; taleplerini kaçıran düşük puan alır", () => {
+    const good = trustScore({ ...base, decided: 20, medianResponseMin: 10, confirmed: 20, resolved: 15 }, w, prior).score;
+    const bad = trustScore({ ...base, decided: 5, expired: 15, medianResponseMin: 300, confirmed: 5, cancelledAfterConfirm: 2, resolved: 1, unresolved: 4, daysSinceActivity: 12 }, w, prior).score;
+    expect(good).toBeGreaterThan(95);
+    expect(bad).toBeLessThan(40);
+  });
+  it("gerekçeler", () => {
+    const r = trustReasons({ ...base, expired: 3, unresolved: 2, daysSinceActivity: 9 });
+    expect(r.map((x) => x.text).join(" ")).toMatch(/3 randevu talebi.*2 geçmiş randevu.*9 gün/s);
+  });
+});

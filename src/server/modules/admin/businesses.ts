@@ -1,7 +1,7 @@
 import "server-only";
 import { and, count, desc, eq, ilike, or, sql, type SQL } from "drizzle-orm";
 import type { DB, Executor } from "@/server/db/client";
-import { businessSettings, businessUsers, businesses, districts, provinces } from "@/server/db/schema";
+import { businessSettings, businessTrustScores, businessUsers, businesses, districts, provinces } from "@/server/db/schema";
 import { AppError, notFound, pgConstraint, pgErrorCode, PG } from "@/server/lib/errors";
 import { audit } from "@/server/lib/audit";
 import { generateTempPassword, hashPassword } from "@/server/auth/password";
@@ -309,11 +309,13 @@ export async function listBusinesses(db: Executor, f: BusinessListFilter) {
         district: districts.name,
         login: businessUsers.login,
         lastLoginAt: businessUsers.lastLoginAt,
+        trustScore: businessTrustScores.score,
       })
       .from(businesses)
       .innerJoin(provinces, eq(provinces.id, businesses.provinceId))
       .innerJoin(districts, eq(districts.id, businesses.districtId))
       .leftJoin(businessUsers, eq(businessUsers.businessId, businesses.id))
+      .leftJoin(businessTrustScores, eq(businessTrustScores.businessId, businesses.id))
       .where(where)
       .orderBy(desc(businesses.createdAt))
       .limit(PAGE_SIZE)

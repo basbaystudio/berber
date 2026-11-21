@@ -85,6 +85,7 @@ export default async function BusinessesPage({ searchParams }: { searchParams: P
                     <th className="px-4 py-3 font-medium">Konum</th>
                     <th className="px-4 py-3 font-medium">Kullanıcı adı</th>
                     <th className="px-4 py-3 font-medium">Durum</th>
+                    <th className="px-4 py-3 font-medium">Güven</th>
                     <th className="px-4 py-3 font-medium">Son giriş</th>
                   </tr>
                 </thead>
@@ -104,6 +105,7 @@ export default async function BusinessesPage({ searchParams }: { searchParams: P
                       <td className="px-4 py-3">
                         <StatusBadge status={b.status} published={b.isPublished} reason={b.suspendedReason} />
                       </td>
+                      <td className="px-4 py-3 tabular-nums text-stone-600">{b.trustScore != null ? Math.round(Number(b.trustScore)) : "—"}</td>
                       <td className="px-4 py-3 text-stone-600">{b.lastLoginAt ? formatDateTime(b.lastLoginAt) : "Hiç giriş yapmadı"}</td>
                     </tr>
                   ))}

@@ -222,5 +222,5 @@ export const businessTrustHistory = pgTable(
     components: jsonb("components").notNull(),
     computedOn: date("computed_on").notNull(),
   },
-  (t) => [index("business_trust_history_idx").on(t.businessId, t.computedOn)],
+  (t) => [uniqueIndex("business_trust_history_day_uq").on(t.businessId, t.computedOn)],
 );
