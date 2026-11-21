@@ -3,11 +3,13 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { ArrowRight } from "lucide-react";
 import { db } from "@/server/db/client";
-import { getActiveBanners } from "@/server/modules/admin/banners";
+import { getActiveBanners, rotateAds } from "@/server/modules/admin/banners";
 import { getHomeShowcases, listServiceTypesPublic } from "@/server/modules/marketplace/search";
+import { getNearby, getVisitorLocation, NEARBY_RADIUS_KM } from "@/server/modules/marketplace/location";
 import { getLocations } from "@/server/modules/reference/locations";
 import { BannerCarousel } from "@/components/marketplace/banner-carousel";
-import { CardGrid } from "@/components/marketplace/business-card";
+import { AdCard, CardGrid } from "@/components/marketplace/business-card";
+import { LocationPrompt } from "@/components/marketplace/location-prompt";
 import { SearchBar } from "@/components/marketplace/search-bar";
 
 export const metadata: Metadata = {
@@ -15,11 +17,14 @@ export const metadata: Metadata = {
   description: "Yakınındaki berberleri keşfet, hizmet ve fiyatları incele, anlık boş saatleri gör ve online randevu al.",
 };
 
-function Section({ title, href, children }: { title: string; href?: string; children: React.ReactNode }) {
+function Section({ title, href, note, children }: { title: string; href?: string; note?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section className="space-y-4">
-      <div className="flex items-end justify-between gap-3">
-        <h2 className="text-xl font-semibold tracking-tight text-stone-900">{title}</h2>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="space-y-1">
+          <h2 className="text-xl font-semibold tracking-tight text-stone-900">{title}</h2>
+          {note && <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-stone-500">{note}</div>}
+        </div>
         {href && (
           <Link href={href} className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-900">
             Tümü <ArrowRight className="size-4" aria-hidden />
@@ -33,8 +38,20 @@ function Section({ title, href, children }: { title: string; href?: string; chil
 
 export default async function HomePage() {
   await connection();
-  const [banners, show, types, locations] = [await getActiveBanners(db), await getHomeShowcases(), await listServiceTypesPublic(), await getLocations()];
+  const [banners, show, types, locations, loc] = [
+    await getActiveBanners(db, { placement: "HERO" }),
+    await getHomeShowcases(),
+    await listServiceTypesPublic(),
+    await getLocations(),
+    await getVisitorLocation(),
+  ];
+  const nearby = loc ? await getNearby(loc) : null;
+  // Reklam alanları: ziyaretçinin iline hedeflenmiş olanlar + herkese açık olanlar
+  const ads = rotateAds(await getActiveBanners(db, { placement: "LISTING", provinceId: nearby?.provinceId ?? null }));
+  // Aynı reklam sayfada bir kez gösterilir
+  const ad = (i: number) => (ads[i] ? <AdCard ad={ads[i]} /> : null);
   const empty = !show.featured.length && !show.availableToday.length && !show.popular.length;
+  const nearHref = loc ? `/ara?lat=${loc.lat.toFixed(3)}&lng=${loc.lng.toFixed(3)}&sirala=yakin` : undefined;
   return (
     <main className="mx-auto max-w-6xl space-y-12 px-4 pb-8 pt-6 sm:px-6">
       <BannerCarousel banners={banners} />
@@ -49,6 +66,25 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+      {!loc && !empty && <LocationPrompt mode="ASK" />}
+      {loc && nearby && (
+        <Section
+          title="Yakınındaki berberler"
+          href={nearby.cards.length ? nearHref : undefined}
+          note={
+            <>
+              <span>
+                {loc.source === "PRECISE" ? "Konumuna göre" : `Yaklaşık konumuna göre${loc.city ? ` (${loc.city})` : ""}`}
+                {nearby.cards.length === 0 && ` · ${NEARBY_RADIUS_KM} km içinde henüz berber yok`}
+              </span>
+              <LocationPrompt mode={loc.source === "PRECISE" ? "FORGET" : "REFINE"} />
+            </>
+          }
+        >
+          {nearby.cards.length > 0 && <CardGrid cards={nearby.cards} />}
+        </Section>
+      )}
+      {ad(0)}
       {show.availableToday.length > 0 && (
         <Section title="Bugün müsait berberler" href="/ara?bugun=1">
           <CardGrid cards={show.availableToday.slice(0, 6)} />
@@ -59,6 +95,7 @@ export default async function HomePage() {
           <CardGrid cards={show.featured.slice(0, 6)} />
         </Section>
       )}
+      {ad(1)}
       {show.popular.length > 0 && (
         <Section title="Popüler berberler" href="/ara?sirala=puan">
           <CardGrid cards={show.popular.slice(0, 6)} />

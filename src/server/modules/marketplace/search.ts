@@ -43,6 +43,7 @@ export type BusinessCard = {
   name: string;
   district: string;
   province: string;
+  provinceId: number;
   logoUrl: string | null;
   coverUrl: string | null;
   ratingAvg: number;
@@ -91,6 +92,7 @@ export async function searchBusinesses(ex: Executor, f: SearchFilters, opts: { l
       name: businesses.name,
       district: districts.name,
       province: provinces.name,
+      provinceId: businesses.provinceId,
       logoUrl: businesses.logoUrl,
       coverUrl: businesses.coverUrl,
       ratingAvg: businesses.ratingAvg,

@@ -89,6 +89,8 @@ async function main() {
     buttonText: "Berber bul",
   });
 
+  await seedDemoAds(db, s, processAndStoreImage, cover);
+
   const types = await db.select().from(s.serviceTypes);
   const typeId = (name: string) => types.find((t) => t.name === name)?.id ?? null;
   const district = async (province: string, name: string) => {
@@ -314,6 +316,21 @@ async function main() {
   console.log("Demo verisi yüklendi: 6 işletme, 11 müşteri, yorumlar ve randevular.");
   console.log("Yönetici: demo-admin@ornek.local / DemoAdmin2026!  ·  İşletme: demo-isletme / DemoIsletme2026  ·  Müşteri: demo-musteri@ornek.local / DemoMusteri2026");
   process.exit(0);
+}
+
+/** Örnek reklam alanları (işletme listelerinin arası): biri herkese, biri yalnızca İstanbul'a. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function seedDemoAds(db: any, s: any, store: any, cover: (i: number) => Promise<Buffer>) {
+  const ads = [
+    { title: "Erkek bakımında yeni sezon: %20 indirim", subtitle: "Seçili berberlerde sakal bakım paketi bu ay indirimli.", buttonText: "İncele", linkUrl: "/ara?hizmet=sakal-tirasi", provinceId: null, sortOrder: 0, img: 2 },
+    { title: "İstanbul'da bugün boş saat var", subtitle: "Beklemeden randevu al, sıra bekleme.", buttonText: "Bugün müsait olanlar", linkUrl: "/ara?bugun=1&il=34", provinceId: 34, sortOrder: 1, img: 3 },
+  ];
+  for (const a of ads) {
+    const img = await store(await cover(a.img), "banner", "banners");
+    const { img: _i, ...rest } = a;
+    void _i;
+    await db.insert(s.banners).values({ ...rest, placement: "LISTING", imageKey: img.key, imageUrl: img.url, imageWidth: img.width, imageHeight: img.height });
+  }
 }
 
 main().catch((e) => {

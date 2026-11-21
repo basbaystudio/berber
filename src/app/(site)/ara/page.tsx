@@ -3,6 +3,8 @@ import { connection } from "next/server";
 import { db } from "@/server/db/client";
 import { enrichCards, listServiceTypesPublic, PAGE_SIZE, searchBusinesses, searchSchema } from "@/server/modules/marketplace/search";
 import { getSetting } from "@/server/modules/platform/settings";
+import { getActiveBanners, rotateAds } from "@/server/modules/admin/banners";
+import { getVisitorLocation } from "@/server/modules/marketplace/location";
 import { getLocations } from "@/server/modules/reference/locations";
 import { CardGrid } from "@/components/marketplace/business-card";
 import { SearchFilters } from "@/components/marketplace/filters";
@@ -14,7 +16,10 @@ export const metadata: Metadata = { title: "Berber bul", description: "İl, ilç
 export default async function SearchPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   await connection();
   const raw = await searchParams;
-  const f = searchSchema.parse(raw);
+  const parsed = searchSchema.parse(raw);
+  // Konum verilmemiş ve il/ilçe seçilmemişse ziyaretçinin konumu öneri sırasına katılır (mesafe de kartta görünür)
+  const loc = parsed.lat == null && !parsed.il && !parsed.ilce ? await getVisitorLocation() : null;
+  const f = loc ? { ...parsed, lat: loc.lat, lng: loc.lng } : parsed;
   const [locations, types] = [await getLocations(), await listServiceTypesPublic()];
   let cards;
   let total;
@@ -30,6 +35,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
     total = r.total;
     cards = await enrichCards(r.cards);
   }
+  const ads = rotateAds(await getActiveBanners(db, { placement: "LISTING", provinceId: f.il ?? (loc ? cards[0]?.provinceId : null) ?? null }));
   const qs = (p: number) => {
     const u = new URLSearchParams();
     for (const [k, v] of Object.entries(raw)) if (v && k !== "sayfa") u.set(k, v);
@@ -55,7 +61,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
             <EmptyState title="Sonuç bulunamadı" description="Filtreleri genişleterek tekrar deneyin." />
           </div>
         ) : (
-          <CardGrid cards={cards} />
+          <CardGrid cards={cards} ads={ads} adEvery={6} />
         )}
         <div className="overflow-hidden rounded-2xl border border-stone-200/80 bg-white empty:hidden">
           <Pagination page={f.sayfa} pageSize={PAGE_SIZE} total={total} hrefFor={qs} />

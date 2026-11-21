@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { slugify } from "@/lib/slug";
+import { inTurkey, parseLocationCookie } from "@/server/modules/marketplace/location";
 import { formatTrPhone, normalizeTrPhone } from "@/lib/phone";
 import { generateTempPassword, passwordSchema } from "@/server/auth/password";
 import { businessProfileSchema, slugSchema } from "@/lib/validation/business";
@@ -94,4 +95,17 @@ describe("giriş sonrası yönlendirme güvenliği", () => {
     ["/isletme/panel", "/hesabim"],
     [undefined, "/hesabim"],
   ])("%s → %s", (v, out) => expect(safeNext(v)).toBe(out));
+});
+
+
+describe("ziyaretçi konumu", () => {
+  it("çerez biçimi doğrulanır ve Türkiye dışı reddedilir", () => {
+    expect(parseLocationCookie("41.012,28.976")).toEqual({ lat: 41.012, lng: 28.976 });
+    expect(parseLocationCookie("51.5,-0.12")).toBeNull();
+    expect(parseLocationCookie("41.0;28.9")).toBeNull();
+    expect(parseLocationCookie("41,29")).toBeNull();
+    expect(parseLocationCookie(undefined)).toBeNull();
+    expect(inTurkey(39.9, 32.8)).toBe(true);
+    expect(inTurkey(NaN, 32.8)).toBe(false);
+  });
 });

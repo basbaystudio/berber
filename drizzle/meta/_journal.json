@@ -92,6 +92,13 @@
       "when": 1795272820648,
       "tag": "0012_yearly_billing",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1795280015556,
+      "tag": "0013_banner_placement",
+      "breakpoints": true
     }
   ]
 }

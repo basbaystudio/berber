@@ -1,8 +1,9 @@
-import { boolean, check, date, index, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, date, index, integer, jsonb, numeric, pgTable, smallint, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { notificationStatusEnum, paymentMethodEnum, paymentStatusEnum, realmEnum } from "./enums";
 import { businesses } from "./business";
 import { platformAdmins } from "./identity";
+import { provinces } from "./reference";
 import { appointments } from "./booking";
 
 const ts = (name: string) => timestamp(name, { withTimezone: true });
@@ -194,6 +195,11 @@ export const banners = pgTable(
     imageHeight: integer("image_height").notNull(),
     linkUrl: text("link_url"),
     buttonText: text("button_text"),
+    /** HERO: ana sayfa üst alanı · LISTING: işletme listelerinin arasında reklam alanı */
+    placement: text("placement").notNull().default("HERO"),
+    /** Yalnızca bu ildeki ziyaretçilere göster (boşsa herkese). */
+    provinceId: smallint("province_id").references(() => provinces.id),
+    clickCount: integer("click_count").notNull().default(0),
     sortOrder: integer("sort_order").notNull().default(0),
     isActive: boolean("is_active").notNull().default(true),
     startsAt: ts("starts_at"),
@@ -203,6 +209,7 @@ export const banners = pgTable(
   },
   (t) => [
     index("banners_active_idx").on(t.isActive, t.sortOrder),
+    check("banners_placement_ck", sql`${t.placement} IN ('HERO', 'LISTING')`),
     check("banners_range_ck", sql`${t.startsAt} IS NULL OR ${t.endsAt} IS NULL OR ${t.startsAt} < ${t.endsAt}`),
   ],
 );

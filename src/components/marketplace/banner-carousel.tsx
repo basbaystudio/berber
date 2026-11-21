@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -45,12 +44,12 @@ export function BannerCarousel({ banners }: { banners: HomeBanner[] }) {
                 {b.subtitle && <p className="text-sm text-white/85 sm:text-base">{b.subtitle}</p>}
                 {b.linkUrl && b.buttonText && (
                   <div className="pt-1">
-                    <Link
-                      href={b.linkUrl}
+                    <a
+                      href={`/r/${b.id}`}
                       className="inline-flex h-10 items-center rounded-xl bg-white px-5 text-sm font-medium text-stone-900 transition-colors hover:bg-stone-100"
                     >
                       {b.buttonText}
-                    </Link>
+                    </a>
                   </div>
                 )}
               </div>

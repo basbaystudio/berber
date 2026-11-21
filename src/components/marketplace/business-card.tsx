@@ -67,12 +67,42 @@ export function BusinessCardView({ c }: { c: EnrichedCard }) {
   );
 }
 
-export function CardGrid({ cards }: { cards: EnrichedCard[] }) {
+export type AdBanner = { id: string; title: string; subtitle: string | null; imageUrl: string; buttonText: string | null };
+
+/** İşletme listelerinin arasındaki reklam alanı. "Reklam" etiketiyle açıkça ayrılır; tıklama /r/<id> üzerinden sayılır. */
+export function AdCard({ ad }: { ad: AdBanner }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {cards.map((c) => (
-        <BusinessCardView key={c.id} c={c} />
-      ))}
-    </div>
+    <a
+      href={`/r/${ad.id}`}
+      rel="sponsored noopener"
+      className="group relative col-span-full block overflow-hidden rounded-3xl border border-stone-200/80 bg-stone-900"
+    >
+      <div className="relative aspect-[16/7] sm:aspect-[4/1]">
+        <span className="absolute right-3 top-3 z-10 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-medium text-stone-700">Reklam</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={ad.imageUrl} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-[1.02]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-stone-950/75 via-stone-950/35 to-transparent" />
+        <div className="absolute inset-y-0 left-0 flex max-w-lg flex-col justify-center gap-1.5 p-5 text-white sm:p-8">
+          <p className="text-lg font-semibold leading-snug tracking-tight sm:text-2xl">{ad.title}</p>
+          {ad.subtitle && <p className="line-clamp-2 text-sm text-white/85">{ad.subtitle}</p>}
+          {ad.buttonText && (
+            <span className="mt-1 inline-flex w-fit items-center rounded-xl bg-white px-4 py-2 text-sm font-medium text-stone-900">{ad.buttonText}</span>
+          )}
+        </div>
+      </div>
+    </a>
   );
+}
+
+/** Kart ızgarası; reklam verilirse her `adEvery` karttan sonra sıradaki reklam eklenir (sonda değil, her reklam bir kez). */
+export function CardGrid({ cards, ads = [], adEvery = 6 }: { cards: EnrichedCard[]; ads?: AdBanner[]; adEvery?: number }) {
+  const items: React.ReactNode[] = [];
+  cards.forEach((c, i) => {
+    items.push(<BusinessCardView key={c.id} c={c} />);
+    const n = i + 1;
+    // Her reklam sayfada en fazla bir kez
+    const ad = n % adEvery === 0 && n < cards.length ? ads[n / adEvery - 1] : undefined;
+    if (ad) items.push(<AdCard key={`ad-${ad.id}`} ad={ad} />);
+  });
+  return <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{items}</div>;
 }

@@ -1,7 +1,24 @@
 import { expect, type Browser, type Page, type TestInfo } from "@playwright/test";
+import { Pool } from "pg";
 import { E2E_ADMIN } from "./global-setup";
 
+const DB = process.env.E2E_DATABASE_URL ?? "postgres://berber:berber@localhost:5432/berber_e2e";
+
+/**
+ * Testlerin hepsi aynı IP'den çok sayıda giriş yapar; uygulamanın giriş sınırı (15 dakikada 20) doğru çalışıp
+ * sonraki testleri engellemesin diye giriş sayaçları sıfırlanır. Yalnızca test veritabanında.
+ */
+export async function resetLoginLimits() {
+  const pool = new Pool({ connectionString: DB });
+  try {
+    await pool.query("delete from rate_limits where key like 'login:%'");
+  } finally {
+    await pool.end();
+  }
+}
+
 export async function adminLogin(page: Page) {
+  await resetLoginLimits();
   await page.goto("/admin");
   await page.getByLabel("E-posta").fill(E2E_ADMIN.email);
   await page.getByLabel("Şifre").fill(E2E_ADMIN.password);
@@ -32,6 +49,7 @@ export async function createBusinessViaAdmin(page: Page, name: string, login: st
 
 /** İşletme olarak giriş yapar ve zorunlu şifre değişimini tamamlar. */
 export async function businessFirstLogin(browser: Browser, testInfo: TestInfo, login: string, tempPassword: string, newPassword = "Makas2026kesim") {
+  await resetLoginLimits();
   const ctx = await browser.newContext({ ...testInfo.project.use });
   const bp = await ctx.newPage();
   await bp.goto("/isletme");

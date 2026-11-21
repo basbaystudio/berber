@@ -15,7 +15,7 @@ const NAV: NavItem[] = [
   { href: "/admin/yorumlar", label: "Yorum Şikâyetleri", icon: "reviews" },
   { href: "/admin/ayin-isletmesi", label: "Ayın İşletmesi", icon: "award" },
   { href: "/admin/abonelikler", label: "Abonelikler", icon: "billing" },
-  { href: "/admin/bannerlar", label: "Bannerlar", icon: "banners" },
+  { href: "/admin/bannerlar", label: "Banner ve Reklam", icon: "banners" },
   { href: "/admin/hizmet-turleri", label: "Hizmet Türleri", icon: "tags" },
   { href: "/admin/tatiller", label: "Resmî Tatiller", icon: "holidays" },
   { href: "/admin/kayitlar", label: "Denetim Kayıtları", icon: "logs" },
