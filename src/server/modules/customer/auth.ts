@@ -17,7 +17,7 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&
 function mail(title: string, lines: string[], link: { url: string; label: string }) {
   const html = `<!doctype html><html lang="tr"><body style="margin:0;background:#fafaf9;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#292524"><div style="max-width:560px;margin:0 auto;padding:32px 20px"><div style="background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:28px"><h1 style="font-size:18px;margin:0 0 16px">${esc(title)}</h1>${lines
     .map((l) => `<p style="margin:0 0 12px;line-height:1.6">${esc(l)}</p>`)
-    .join("")}<p style="margin:20px 0"><a href="${esc(link.url)}" style="background:#1c1917;color:#fff;text-decoration:none;padding:10px 18px;border-radius:12px;display:inline-block">${esc(link.label)}</a></p><p style="font-size:12px;color:#a8a29e;word-break:break-all">${esc(link.url)}</p></div></div></body></html>`;
+    .join("")}<p style="margin:20px 0"><a href="${esc(link.url)}" style="background:#001d48;color:#fff;text-decoration:none;padding:10px 18px;border-radius:12px;display:inline-block">${esc(link.label)}</a></p><p style="font-size:12px;color:#a8a29e;word-break:break-all">${esc(link.url)}</p></div></div></body></html>`;
   return { subject: title, text: `${lines.join("\n\n")}\n\n${link.label}: ${link.url}`, html };
 }
 

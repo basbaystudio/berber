@@ -25,7 +25,7 @@ export async function SiteHeader() {
               <Link href="/giris" className="rounded-xl px-3 py-2 text-stone-700 hover:bg-stone-100">
                 Giriş yap
               </Link>
-              <Link href="/kayit" className="rounded-xl bg-stone-900 px-3 py-2 text-white hover:bg-stone-800">
+              <Link href="/kayit" className="rounded-xl bg-brand-900 px-3 py-2 text-white hover:bg-brand-800">
                 Kayıt ol
               </Link>
             </>

@@ -73,7 +73,7 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
           // eslint-disable-next-line @next/next/no-img-element
           <img src={p.logoUrl} alt="" className="relative z-10 -mt-10 size-20 shrink-0 rounded-3xl border-4 border-stone-50 object-cover" />
         ) : (
-          <span className="relative z-10 -mt-10 grid size-20 shrink-0 place-items-center rounded-3xl border-4 border-stone-50 bg-stone-900 text-2xl font-semibold text-white">{p.name.slice(0, 1)}</span>
+          <span className="relative z-10 -mt-10 grid size-20 shrink-0 place-items-center rounded-3xl border-4 border-stone-50 bg-brand-900 text-2xl font-semibold text-white">{p.name.slice(0, 1)}</span>
         )}
         <div className="min-w-0 flex-1 space-y-1 pb-1">
           <h1 className="break-words text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl">{p.name}</h1>
@@ -111,7 +111,7 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
               ["yorumlar", `Yorumlar (${p.ratingCount})`],
               ["bilgiler", "Bilgiler"],
             ].map(([id, label]) => (
-              <a key={id} href={`#${id}`} className="shrink-0 border-b-2 border-transparent pb-3 text-stone-500 hover:border-stone-900 hover:text-stone-900">
+              <a key={id} href={`#${id}`} className="shrink-0 border-b-2 border-transparent pb-3 text-stone-500 hover:border-brand-900 hover:text-stone-900">
                 {label}
               </a>
             ))}

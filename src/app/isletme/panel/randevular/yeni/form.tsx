@@ -157,7 +157,7 @@ export function NewAppointmentForm({
                   value={s.id}
                   checked={svcIds.includes(s.id)}
                   onChange={(e) => setSvcIds(e.target.checked ? [...svcIds, s.id] : svcIds.filter((x) => x !== s.id))}
-                  className="size-4 accent-stone-900"
+                  className="size-4 accent-brand-900"
                 />
                 <span className="flex-1">
                   <span className="block text-stone-900">{s.name}</span>

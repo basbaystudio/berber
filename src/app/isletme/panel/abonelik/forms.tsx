@@ -20,8 +20,8 @@ export function MethodForm({ action, current }: { action: (p: ActionState, fd: F
       {state.status === "success" && <Alert tone="success">{state.message}</Alert>}
       <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Ödeme yöntemi">
         {opts.map(({ v, label, desc, Icon }) => (
-          <label key={v} className={cn("flex cursor-pointer gap-3 rounded-2xl border p-4 has-[:checked]:border-stone-900", "border-stone-200")}>
-            <input type="radio" name="method" value={v} defaultChecked={current === v} className="mt-1 accent-stone-900" />
+          <label key={v} className={cn("flex cursor-pointer gap-3 rounded-2xl border p-4 has-[:checked]:border-brand-900", "border-stone-200")}>
+            <input type="radio" name="method" value={v} defaultChecked={current === v} className="mt-1 accent-brand-900" />
             <span>
               <span className="flex items-center gap-2 font-medium text-stone-900">
                 <Icon className="size-4 text-stone-500" aria-hidden /> {label}
@@ -61,8 +61,8 @@ export function CycleForm({
       {state.status === "success" && <Alert tone="success">{state.message}</Alert>}
       <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Ödeme dönemi">
         {opts.map(({ v, label, price, note }) => (
-          <label key={v} className="flex cursor-pointer gap-3 rounded-2xl border border-stone-200 p-4 has-[:checked]:border-stone-900">
-            <input type="radio" name="cycle" value={v} defaultChecked={current === v} className="mt-1 accent-stone-900" />
+          <label key={v} className="flex cursor-pointer gap-3 rounded-2xl border border-stone-200 p-4 has-[:checked]:border-brand-900">
+            <input type="radio" name="cycle" value={v} defaultChecked={current === v} className="mt-1 accent-brand-900" />
             <span>
               <span className="block font-medium text-stone-900">{label}</span>
               <span className="mt-0.5 block text-sm tabular-nums text-stone-700">{price}</span>

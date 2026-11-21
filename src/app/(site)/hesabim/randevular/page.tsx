@@ -38,7 +38,7 @@ export default async function MyAppointmentsPage({ searchParams }: { searchParam
           </Card>
         ) : (
           upcoming.map((a) => (
-            <Card key={a.id} className={`p-5 ${sp.yeni === a.id ? "border-stone-900" : ""}`}>
+            <Card key={a.id} className={`p-5 ${sp.yeni === a.id ? "border-brand-900" : ""}`}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="text-sm">
                   <Link href={`/berber/${a.businessSlug}`} className="text-base font-semibold text-stone-900 hover:text-accent-600">

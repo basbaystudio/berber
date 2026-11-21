@@ -54,7 +54,7 @@ function CheckList({
                 setSel(next);
                 onChange?.(next);
               }}
-              className="size-4 accent-stone-900"
+              className="size-4 accent-brand-900"
             />
             <span>
               <span className="block text-stone-900">{it.label}</span>

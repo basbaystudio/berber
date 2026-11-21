@@ -36,7 +36,7 @@ export function Gallery({ photos, categories }: { photos: Photo[]; categories: {
               key={c.id ?? "all"}
               type="button"
               onClick={() => setCat(c.id)}
-              className={cn("rounded-full px-3 py-1 text-sm", cat === c.id ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200")}
+              className={cn("rounded-full px-3 py-1 text-sm", cat === c.id ? "bg-brand-900 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200")}
             >
               {c.name}
             </button>

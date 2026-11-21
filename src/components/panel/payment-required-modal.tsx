@@ -50,7 +50,7 @@ export function PaymentRequiredModal({ title, feeText, logoutAction }: { title: 
         aria-labelledby="payment-required-title"
         className="w-full max-w-md rounded-3xl border border-stone-200/80 bg-white p-6 text-sm text-stone-600 outline-none sm:p-8"
       >
-        <span className="mb-4 grid size-11 place-items-center rounded-2xl bg-stone-900 text-white">
+        <span className="mb-4 grid size-11 place-items-center rounded-2xl bg-brand-900 text-white">
           <CreditCard className="size-5" aria-hidden />
         </span>
         <h2 id="payment-required-title" className="mb-2 text-lg font-semibold text-stone-900">

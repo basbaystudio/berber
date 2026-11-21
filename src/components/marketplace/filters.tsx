@@ -70,7 +70,7 @@ export function SearchFilters({ locations, types, values }: { locations: Loc[]; 
         </select>
       </label>
       <label className="flex items-center gap-2 text-stone-700">
-        <input type="checkbox" name="bugun" value="1" defaultChecked={values.bugun === "1"} className="size-4 accent-stone-900" /> Yalnızca bugün müsait olanlar
+        <input type="checkbox" name="bugun" value="1" defaultChecked={values.bugun === "1"} className="size-4 accent-brand-900" /> Yalnızca bugün müsait olanlar
       </label>
       <label className="block space-y-1">
         <span className="text-stone-600">Sırala</span>

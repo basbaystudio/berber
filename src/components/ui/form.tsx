@@ -82,7 +82,7 @@ export function Field({
 export function Checkbox({ label, className, ...props }: ComponentProps<"input"> & { label: ReactNode }) {
   return (
     <label className={cn("inline-flex cursor-pointer items-center gap-2 text-sm text-stone-700", className)}>
-      <input type="checkbox" className="size-4 rounded border-stone-300 accent-stone-900" {...props} />
+      <input type="checkbox" className="size-4 rounded border-stone-300 accent-brand-900" {...props} />
       {label}
     </label>
   );

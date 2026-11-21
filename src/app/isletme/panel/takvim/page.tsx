@@ -266,7 +266,7 @@ function MonthView({ from, month, rows, today, staffId }: { from: string; month:
               href={href("gun", d, staffId)}
               className={cn("min-h-20 border-b border-r border-stone-100 p-2 text-sm hover:bg-stone-50", !d.startsWith(month) && "bg-stone-50/60 text-stone-500")}
             >
-              <span className={cn("inline-grid size-6 place-items-center rounded-full text-xs", d === today && "bg-stone-900 text-white")}>{Number(d.slice(8))}</span>
+              <span className={cn("inline-grid size-6 place-items-center rounded-full text-xs", d === today && "bg-brand-900 text-white")}>{Number(d.slice(8))}</span>
               {list.length > 0 && <span className="mt-1 block text-xs text-stone-700">{list.length} randevu</span>}
               {pending > 0 && <span className="block text-xs text-amber-700">{pending} onay bekliyor</span>}
             </Link>
