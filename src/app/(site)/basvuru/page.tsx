@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { Camera, Gift, Sparkles } from "lucide-react";
+import { Gift, Percent, Sparkles } from "lucide-react";
 import { db } from "@/server/db/client";
 import { getApplicationOffer } from "@/server/modules/applications";
 import { getLocations } from "@/server/modules/reference/locations";
@@ -13,7 +13,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/basvuru" },
 };
 
-export default async function ApplicationPage() {
+const DONEM = { aylik: "MONTHLY", yillik: "YEARLY", "tek-seferlik": "LIFETIME" } as const;
+
+export default async function ApplicationPage({ searchParams }: { searchParams: Promise<{ donem?: string }> }) {
+  const { donem } = await searchParams;
+  const initialCycle = donem && donem in DONEM ? DONEM[donem as keyof typeof DONEM] : undefined;
   await connection();
   const [offer, locations] = [await getApplicationOffer(db), await getLocations()];
   const early = offer.early.remaining > 0;
@@ -41,8 +45,8 @@ export default async function ApplicationPage() {
             </p>
             <ul className="grid gap-3 pt-1 text-sm sm:grid-cols-3">
               <li className="flex items-center gap-2"><Gift className="size-4 text-accent-500" aria-hidden /> {offer.early.months} ay ücretsiz kullanım</li>
-              <li className="flex items-center gap-2"><Camera className="size-4 text-accent-500" aria-hidden /> Profesyonel dükkan çekimi</li>
               <li className="flex items-center gap-2"><Sparkles className="size-4 text-accent-500" aria-hidden /> İlk ay 2 kampanya tasarımı</li>
+              <li className="flex items-center gap-2"><Percent className="size-4 text-accent-500" aria-hidden /> Randevu başına komisyon yok</li>
             </ul>
           </>
         ) : (
@@ -55,7 +59,7 @@ export default async function ApplicationPage() {
       {offer.plans.length === 0 ? (
         <p className="text-stone-600">Başvurular şu an kapalı. Lütfen daha sonra tekrar deneyin.</p>
       ) : (
-        <ApplicationForm action={submitApplicationAction} plans={offer.plans} locations={locations} freeMonths={offer.currentFreeMonths} />
+        <ApplicationForm action={submitApplicationAction} plans={offer.plans} locations={locations} freeMonths={offer.currentFreeMonths} initialCycle={initialCycle} />
       )}
     </main>
   );

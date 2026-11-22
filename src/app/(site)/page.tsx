@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
-import { ArrowRight, Store } from "lucide-react";
+import { ArrowRight, Store, Tag } from "lucide-react";
 import { SITE_NAME, siteUrl } from "@/lib/site";
 import { getApplicationOffer } from "@/server/modules/applications";
 import { db } from "@/server/db/client";
@@ -135,9 +135,14 @@ export default async function HomePage() {
             {offer.early.remaining > 0 ? `İlk ${offer.early.limit} işletmeye özel · kalan kontenjan ${offer.early.remaining}. ` : ""}Türkiye'nin her yerinden başvurabilirsiniz. Komisyon yok.
           </p>
         </div>
-        <Link href="/basvuru" className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-accent-600 px-6 font-semibold text-white hover:bg-[#9a4000]">
-          <Store className="size-5" aria-hidden /> İşletmeni ekle
-        </Link>
+        <div className="flex shrink-0 flex-wrap gap-3">
+          <Link href="/fiyatlandirma" className="inline-flex h-12 items-center gap-2 rounded-xl border border-white/40 px-6 font-semibold text-white hover:bg-white/10">
+            <Tag className="size-5" aria-hidden /> Fiyatlandırma
+          </Link>
+          <Link href="/basvuru" className="inline-flex h-12 items-center gap-2 rounded-xl bg-accent-600 px-6 font-semibold text-white hover:bg-[#9a4000]">
+            <Store className="size-5" aria-hidden /> İşletmeni ekle
+          </Link>
+        </div>
       </section>
     </main>
   );

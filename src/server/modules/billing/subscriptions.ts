@@ -9,7 +9,7 @@ import { getSetting, setSetting } from "@/server/modules/platform/settings";
 import { addDaysStr, maxDateStr, periodEnd, todayTR } from "@/lib/dates";
 import { checkbox, optionalText, trimmed } from "@/lib/validation/common";
 import { parseTLToKurus } from "@/lib/money";
-import { computeSubscriptionStatus } from "./status";
+import { computeSubscriptionStatus, LIFETIME_UNTIL } from "./status";
 
 type Actor = { adminId: string; ip?: string | null };
 
@@ -30,6 +30,7 @@ export const planSchema = z.object({
   description: optionalText(500, "Açıklama"),
   monthlyPriceKurus: priceField,
   yearlyPriceKurus: z.preprocess((v) => (v === "" || v == null ? null : typeof v === "string" ? parseTLToKurus(v) : v), z.number({ error: "Geçerli bir yıllık fiyat girin." }).int().min(0).max(1_000_000_00).nullable()),
+  lifetimePriceKurus: z.preprocess((v) => (v === "" || v == null ? null : typeof v === "string" ? parseTLToKurus(v) : v), z.number({ error: "Geçerli bir tek seferlik fiyat girin." }).int().min(0).max(1_000_000_00).nullable()),
   highlights: z.preprocess(
     (v) => (typeof v === "string" ? v.split("\n").map((x) => x.trim()).filter(Boolean) : v),
     z.array(z.string().max(120, "Her madde en fazla 120 karakter olabilir.")).max(12, "En fazla 12 madde."),
@@ -111,6 +112,7 @@ export async function assignInitialSubscription(tx: Executor, businessId: string
       planId: plan.id,
       monthlyFeeKurus: plan.monthlyPriceKurus,
       yearlyFeeKurus: plan.yearlyPriceKurus,
+      lifetimeFeeKurus: plan.lifetimePriceKurus,
       trialMonths,
       isEarlyAdopter,
       // Ücretlendirme kapalıyken deneme süresi başlamaz; açıldığı gün başlar.
@@ -198,6 +200,8 @@ export const changePlanSchema = z.object({
   planId: z.string().uuid("Paket seçin."),
   customFee: z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? undefined : v), z.string().optional()),
   customYearlyFee: z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? undefined : v), z.string().optional()),
+  customLifetimeFee: z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? undefined : v), z.string().optional()),
+  billingCycle: z.enum(["MONTHLY", "YEARLY", "LIFETIME"]).optional(),
   trialMonths: z.coerce.number().int().min(0).max(36, "En fazla 36 ay."),
   note: optionalText(500, "Not"),
 });
@@ -222,6 +226,17 @@ export async function updateBusinessSubscription(db: DB, actor: Actor, businessI
       if (k === null || k < 0) throw new AppError("VALIDATION", "Geçerli bir yıllık ücret girin.", { customYearlyFee: "Geçerli bir ücret girin." });
       yearlyFee = k;
     }
+    let lifetimeFee = plan.lifetimePriceKurus;
+    if (input.customLifetimeFee !== undefined) {
+      const k = parseTLToKurus(input.customLifetimeFee);
+      if (k === null || k < 0) throw new AppError("VALIDATION", "Geçerli bir tek seferlik ücret girin.", { customLifetimeFee: "Geçerli bir ücret girin." });
+      lifetimeFee = k;
+    }
+    const wanted = input.billingCycle ?? sub.billingCycle;
+    if (input.billingCycle === "YEARLY" && yearlyFee == null) throw new AppError("VALIDATION", "Bu pakette yıllık ücret yok.", { billingCycle: "Yıllık ücret tanımlı değil." });
+    if (input.billingCycle === "LIFETIME" && lifetimeFee == null) throw new AppError("VALIDATION", "Bu pakette tek seferlik ücret yok.", { billingCycle: "Tek seferlik ücret tanımlı değil." });
+    // Paket seçili dönemi sunmuyorsa aylığa döner
+    const cycle = (wanted === "YEARLY" && yearlyFee == null) || (wanted === "LIFETIME" && lifetimeFee == null) ? "MONTHLY" : wanted;
     const trialEndsOn = sub.trialStartsOn
       ? input.trialMonths > 0
         ? periodEnd(sub.trialStartsOn, input.trialMonths)
@@ -233,8 +248,9 @@ export async function updateBusinessSubscription(db: DB, actor: Actor, businessI
         planId: plan.id,
         monthlyFeeKurus: fee,
         yearlyFeeKurus: yearlyFee,
-        // Paket yıllık sunmuyorsa aylığa döner
-        billingCycle: yearlyFee == null ? "MONTHLY" : sub.billingCycle,
+        lifetimeFeeKurus: lifetimeFee,
+        // Paket seçili dönemi sunmuyorsa aylığa döner
+        billingCycle: cycle,
         trialMonths: input.trialMonths,
         trialEndsOn,
         note: input.note ?? null,
@@ -248,7 +264,7 @@ export async function updateBusinessSubscription(db: DB, actor: Actor, businessI
       action: "subscription.update",
       entity: "subscription",
       entityId: sub.id,
-      meta: { plan: plan.code, feeKurus: fee, trialMonths: input.trialMonths },
+      meta: { plan: plan.code, feeKurus: fee, cycle, trialMonths: input.trialMonths },
       ip: actor.ip,
     });
   });
@@ -284,8 +300,12 @@ export async function recordPayment(
       .for("update");
     if (!sub || !sub.trialEndsOn) throw notFound("Aktif abonelik");
     const lastCovered = maxDateStr(sub.paidThrough, sub.trialEndsOn)!;
+    if (lastCovered >= LIFETIME_UNTIL) throw new AppError("VALIDATION", "Bu işletme tek seferlik ödeme yaptı; süresiz kullanımda. Yeni ödeme gerekmez.");
     const coversFrom = addDaysStr(lastCovered, 1);
-    const coversTo = periodEnd(coversFrom, input.months);
+    // Tek seferlik ödeme: süresiz kullanım (ay sayısı 0 olarak kaydedilir)
+    const lifetime = sub.billingCycle === "LIFETIME";
+    const months = lifetime ? 0 : input.months;
+    const coversTo = lifetime ? LIFETIME_UNTIL : periodEnd(coversFrom, input.months);
     try {
       const [p] = await tx
         .insert(subscriptionPayments)
@@ -294,7 +314,7 @@ export async function recordPayment(
           subscriptionId: sub.id,
           planId: sub.planId,
           amountKurus,
-          months: input.months,
+          months,
           coversFrom,
           coversTo,
           method: input.method,

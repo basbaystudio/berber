@@ -32,6 +32,6 @@ export async function setCycleAction(_p: ActionState, fd: FormData): Promise<Act
     const { cycle } = parseInput(cycleSchema, formToObject(fd));
     await setBillingCycle(db, biz, cycle);
     revalidatePath("/isletme/panel", "layout");
-    return { status: "success", message: cycle === "YEARLY" ? "Ödeme dönemi: yıllık. Bir sonraki ödemeden itibaren geçerli." : "Ödeme dönemi: aylık. Bir sonraki ödemeden itibaren geçerli." };
+    return { status: "success", message: cycle === "LIFETIME" ? "Tek seferlik ödeme seçildi. Bir sonraki ödemede tek seferlik ücret alınır; sonrasında ödeme yok." : cycle === "YEARLY" ? "Ödeme dönemi: yıllık. Bir sonraki ödemeden itibaren geçerli." : "Ödeme dönemi: aylık. Bir sonraki ödemeden itibaren geçerli." };
   });
 }

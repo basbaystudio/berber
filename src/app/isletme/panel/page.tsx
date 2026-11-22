@@ -155,8 +155,10 @@ export default async function BusinessHome({ searchParams }: { searchParams: Pro
                   : sub.status.kind === "TRIAL"
                     ? `Ücretsiz deneme · ${formatDateStr(sub.status.coveredUntil)} tarihine kadar`
                     : sub.status.kind === "PAID"
-                      ? `${formatTL(currentFee(sub.sub).kurus)} / ${currentFee(sub.sub).unit} · ${formatDateStr(sub.status.coveredUntil)} tarihine kadar ödendi`
-                      : `${formatTL(currentFee(sub.sub).kurus)} / ${currentFee(sub.sub).unit} · ödeme bekleniyor`}
+                      ? sub.status.lifetime
+                        ? `${currentFee(sub.sub).text} · süresiz kullanım`
+                        : `${currentFee(sub.sub).text} · ${formatDateStr(sub.status.coveredUntil)} tarihine kadar ödendi`
+                      : `${currentFee(sub.sub).text} · ödeme bekleniyor`}
               </p>
             </>
           ) : (

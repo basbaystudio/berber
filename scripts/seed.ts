@@ -95,6 +95,7 @@ await db.transaction(async (tx) => {
       description: "Online randevu, işletme paneli ve pazaryeri profili.",
       monthlyPriceKurus: 69990,
       yearlyPriceKurus: 699000,
+      lifetimePriceKurus: 1499900,
       highlights: ["Pazaryerinde işletme profili", "Online randevu ve takvim", "Çalışan ve hizmet yönetimi", "30 fotoğraflık portfolyo"],
       isDefault: true,
     });

@@ -69,6 +69,8 @@ export const subscriptionPlans = pgTable(
     monthlyPriceKurus: integer("monthly_price_kurus").notNull(),
     /** Yıllık ödeme fiyatı (boşsa pakette yıllık seçenek yoktur). */
     yearlyPriceKurus: integer("yearly_price_kurus"),
+    /** Tek seferlik (süresiz kullanım) fiyatı (boşsa bu seçenek yoktur). */
+    lifetimePriceKurus: integer("lifetime_price_kurus"),
     highlights: jsonb("highlights").$type<string[]>().notNull().default([]),
     capabilities: jsonb("capabilities").$type<Record<string, unknown>>().notNull().default({}),
     isActive: boolean("is_active").notNull().default(true),
@@ -80,7 +82,7 @@ export const subscriptionPlans = pgTable(
   (t) => [
     uniqueIndex("subscription_plans_code_uq").on(t.code),
     uniqueIndex("subscription_plans_default_uq").on(t.isDefault).where(sql`${t.isDefault}`),
-    check("subscription_plans_price_ck", sql`${t.monthlyPriceKurus} >= 0 AND (${t.yearlyPriceKurus} IS NULL OR ${t.yearlyPriceKurus} >= 0)`),
+    check("subscription_plans_price_ck", sql`${t.monthlyPriceKurus} >= 0 AND (${t.yearlyPriceKurus} IS NULL OR ${t.yearlyPriceKurus} >= 0) AND (${t.lifetimePriceKurus} IS NULL OR ${t.lifetimePriceKurus} >= 0)`),
   ],
 );
 
@@ -103,7 +105,9 @@ export const businessSubscriptions = pgTable(
     monthlyFeeKurus: integer("monthly_fee_kurus").notNull(),
     /** Yıllık ödemede kilitlenen ücret (paket yıllık sunmuyorsa boş). */
     yearlyFeeKurus: integer("yearly_fee_kurus"),
-    /** Ödeme dönemi: MONTHLY (aylık) ya da YEARLY (yıllık). */
+    /** Tek seferlik ödemede kilitlenen ücret (paket sunmuyorsa boş). */
+    lifetimeFeeKurus: integer("lifetime_fee_kurus"),
+    /** Ödeme dönemi: MONTHLY (aylık), YEARLY (yıllık) ya da LIFETIME (tek seferlik, süresiz). */
     billingCycle: text("billing_cycle").notNull().default("MONTHLY"),
     trialMonths: integer("trial_months").notNull(),
     trialStartsOn: date("trial_starts_on"),
@@ -131,7 +135,7 @@ export const businessSubscriptions = pgTable(
   (t) => [
     uniqueIndex("business_subscriptions_business_uq").on(t.businessId),
     uniqueIndex("business_subscriptions_provider_sub_uq").on(t.paymentProvider, t.providerSubscriptionRef).where(sql`${t.providerSubscriptionRef} IS NOT NULL`),
-    check("business_subscriptions_cycle_ck", sql`${t.billingCycle} IN ('MONTHLY', 'YEARLY') AND (${t.billingCycle} = 'MONTHLY' OR ${t.yearlyFeeKurus} IS NOT NULL)`),
+    check("business_subscriptions_cycle_ck", sql`${t.billingCycle} IN ('MONTHLY', 'YEARLY', 'LIFETIME') AND (${t.billingCycle} <> 'YEARLY' OR ${t.yearlyFeeKurus} IS NOT NULL) AND (${t.billingCycle} <> 'LIFETIME' OR ${t.lifetimeFeeKurus} IS NOT NULL)`),
     check("business_subscriptions_method_ck", sql`${t.preferredMethod} IN ('CARD', 'BANK_TRANSFER')`),
     check("business_subscriptions_last4_ck", sql`${t.cardLast4} IS NULL OR ${t.cardLast4} ~ '^[0-9]{4}$'`),
     check("business_subscriptions_fee_ck", sql`${t.monthlyFeeKurus} >= 0`),
@@ -177,7 +181,7 @@ export const subscriptionPayments = pgTable(
     index("subscription_payments_invoice_pending_idx").on(t.paidAt).where(sql`${t.invoiceKey} IS NULL`),
     uniqueIndex("subscription_payments_provider_ref_uq").on(t.provider, t.providerRef).where(sql`${t.providerRef} IS NOT NULL`),
     check("subscription_payments_amount_ck", sql`${t.amountKurus} >= 0`),
-    check("subscription_payments_months_ck", sql`${t.months} BETWEEN 1 AND 36`),
+    check("subscription_payments_months_ck", sql`${t.months} BETWEEN 0 AND 36`),
     check("subscription_payments_range_ck", sql`${t.coversFrom} < ${t.coversTo}`),
   ],
 );
@@ -268,7 +272,7 @@ export const businessApplications = pgTable(
   (t) => [
     index("business_applications_status_idx").on(t.status, t.createdAt),
     check("business_applications_status_ck", sql`${t.status} IN ('NEW', 'APPROVED', 'REJECTED')`),
-    check("business_applications_cycle_ck", sql`${t.billingCycle} IN ('MONTHLY', 'YEARLY')`),
+    check("business_applications_cycle_ck", sql`${t.billingCycle} IN ('MONTHLY', 'YEARLY', 'LIFETIME')`),
     check("business_applications_staff_ck", sql`${t.staffCount} BETWEEN 1 AND 100`),
   ],
 );

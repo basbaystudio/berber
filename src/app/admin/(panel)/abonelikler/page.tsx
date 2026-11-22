@@ -132,7 +132,7 @@ export default async function SubscriptionsPage() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-stone-900">{p.name}</p>
-                  <span className="text-sm text-stone-500">{formatTL(p.monthlyPriceKurus)} / ay{p.yearlyPriceKurus != null ? ` · ${formatTL(p.yearlyPriceKurus)} / yıl` : ""}</span>
+                  <span className="text-sm text-stone-500">{formatTL(p.monthlyPriceKurus)} / ay{p.yearlyPriceKurus != null ? ` · ${formatTL(p.yearlyPriceKurus)} / yıl` : ""}{p.lifetimePriceKurus != null ? ` · ${formatTL(p.lifetimePriceKurus)} tek seferlik` : ""}</span>
                   {p.isDefault && <Badge tone="blue">Varsayılan</Badge>}
                   {!p.isActive && <Badge>Pasif</Badge>}
                 </div>
@@ -151,6 +151,7 @@ export default async function SubscriptionsPage() {
                       description: p.description,
                       monthlyPriceKurus: p.monthlyPriceKurus,
                       yearlyPriceKurus: p.yearlyPriceKurus,
+                      lifetimePriceKurus: p.lifetimePriceKurus,
                       highlights: p.highlights,
                       isActive: p.isActive,
                       sortOrder: p.sortOrder,
@@ -194,12 +195,12 @@ export default async function SubscriptionsPage() {
                       {s.sub.isEarlyAdopter && <span className="ml-2 text-xs text-accent-600">Kampanyalı</span>}
                     </td>
                     <td className="px-6 py-3 text-stone-600">{s.plan.name}</td>
-                    <td className="px-6 py-3 text-stone-600">{formatTL(currentFee(s.sub).kurus)} / {currentFee(s.sub).unit}</td>
+                    <td className="px-6 py-3 text-stone-600">{currentFee(s.sub).text}</td>
                     <td className="px-6 py-3">
                       <SubscriptionBadge status={s.status} />
                     </td>
                     <td className="px-6 py-3 text-stone-600">
-                      {s.status.coveredUntil ? formatDateStr(s.status.coveredUntil) : `${s.sub.trialMonths} ay deneme (başlamadı)`}
+                      {s.status.lifetime ? "Süresiz" : s.status.coveredUntil ? formatDateStr(s.status.coveredUntil) : `${s.sub.trialMonths} ay deneme (başlamadı)`}
                     </td>
                   </tr>
                 ))}

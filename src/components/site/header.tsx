@@ -16,10 +16,13 @@ export async function SiteHeader() {
           <img src="/brand/logo-isaret.png" alt="Dijital Berber" width={173} height={120} className="h-7 w-auto sm:hidden" />
         </Link>
         <nav className="flex items-center gap-1 text-xs sm:text-sm" aria-label="Site menüsü">
-          <Link href="/ara" className="hidden rounded-xl px-3 py-2 text-stone-600 hover:bg-stone-100 hover:text-stone-900 sm:block">
+          <Link href="/ara" className="hidden rounded-xl px-3 py-2 text-stone-600 hover:bg-stone-100 hover:text-stone-900 md:block">
             Berber bul
           </Link>
-          <Link href="/basvuru" className="hidden rounded-xl px-3 py-2 font-medium text-accent-600 hover:bg-stone-100 md:block">
+          <Link href="/fiyatlandirma" className="hidden rounded-xl px-3 py-2 text-stone-600 hover:bg-stone-100 hover:text-stone-900 sm:block">
+            Fiyatlandırma
+          </Link>
+          <Link href="/basvuru" className="hidden rounded-xl px-3 py-2 font-medium text-accent-600 hover:bg-stone-100 lg:block">
             İşletmeni ekle
           </Link>
           {ctx ? (
@@ -75,6 +78,9 @@ export async function SiteFooter() {
           </Link>
           <Link href="/kullanim-kosullari" className="hover:text-stone-900">
             Kullanım Koşulları
+          </Link>
+          <Link href="/fiyatlandirma" className="hover:text-stone-900">
+            Fiyatlandırma
           </Link>
           <Link href="/basvuru" className="font-medium text-stone-700 hover:text-stone-900">
             İşletmeni ekle

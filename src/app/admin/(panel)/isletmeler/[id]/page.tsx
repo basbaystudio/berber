@@ -191,8 +191,10 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                   plans={plans}
                   defaults={{
                     planId: subscription.sub.planId,
+                    billingCycle: subscription.sub.billingCycle,
                     monthlyFeeKurus: subscription.sub.monthlyFeeKurus,
                     yearlyFeeKurus: subscription.sub.yearlyFeeKurus,
+                    lifetimeFeeKurus: subscription.sub.lifetimeFeeKurus,
                     trialMonths: subscription.sub.trialMonths,
                     note: subscription.sub.note,
                   }}
@@ -223,7 +225,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                     <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 px-6 py-3 text-sm">
                       <div>
                         <p className="font-medium text-stone-900">
-                          {formatTL(p.amountKurus)} · {p.months} ay {planName ? `· ${planName}` : ""}
+                          {formatTL(p.amountKurus)} · {p.months === 0 ? "tek seferlik" : `${p.months} ay`} {planName ? `· ${planName}` : ""}
                         </p>
                         <p className="text-stone-500">
                           {formatDateStr(p.coversFrom)} – {formatDateStr(p.coversTo)} · {METHOD[p.method]}
@@ -252,7 +254,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
             <Card>
               <CardHeader
                 title="Abonelik"
-                description={`${subscription.plan.name} · ${formatTL(currentFee(subscription.sub).kurus)} / ${currentFee(subscription.sub).unit}${subscription.sub.isEarlyAdopter ? " · Kampanyalı" : ""}`}
+                description={`${subscription.plan.name} · ${currentFee(subscription.sub).text}${subscription.sub.isEarlyAdopter ? " · Kampanyalı" : ""}`}
                 actions={<SubscriptionBadge status={subscription.status} />}
               />
               <div className="space-y-1 px-6 py-4 text-sm text-stone-600">

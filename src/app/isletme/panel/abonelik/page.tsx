@@ -31,11 +31,12 @@ export default async function BillingPage() {
       )}
       <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Card>
-          <CardHeader title={b.plan.name} description={`${fee.label} ödeme · ${formatTL(fee.kurus)} / ${fee.unit}`} actions={<Badge tone={st.kind === "PAST_DUE" ? "red" : st.kind === "PAID" ? "green" : "gray"}>{st.label}</Badge>} />
+          <CardHeader title={b.plan.name} description={`${fee.label} ödeme · ${fee.text}`} actions={<Badge tone={st.kind === "PAST_DUE" ? "red" : st.kind === "PAID" ? "green" : "gray"}>{st.label}</Badge>} />
           <div className="space-y-2 p-6 text-sm text-stone-600">
             {st.kind === "FREE_PERIOD" && <p>Şu an ücretsiz dönemdesiniz; ödeme alınmıyor. {b.sub.trialMonths} aylık ücretsiz deneme süreniz, ücretlendirme başladığında işlemeye başlayacak.</p>}
             {st.kind === "TRIAL" && <p>Ücretsiz deneme süreniz {formatDateStr(st.coveredUntil)} tarihinde bitiyor ({st.days} gün kaldı).</p>}
-            {st.kind === "PAID" && <p>Aboneliğiniz {formatDateStr(st.coveredUntil)} tarihine kadar ödendi.</p>}
+            {st.kind === "PAID" && st.lifetime && <p>Tek seferlik ödemeniz alındı; süresiz kullanımdasınız. Başka ödeme yok.</p>}
+            {st.kind === "PAID" && !st.lifetime && <p>Aboneliğiniz {formatDateStr(st.coveredUntil)} tarihine kadar ödendi.</p>}
             {st.kind === "PAST_DUE" && <p>Son ödenen gün: {formatDateStr(st.coveredUntil)} ({st.days} gün gecikme).</p>}
             {b.plan.highlights.length > 0 && (
               <ul className="list-inside list-disc pt-2 text-stone-500">
@@ -69,15 +70,16 @@ export default async function BillingPage() {
         </Card>
       </div>
 
-      {b.sub.yearlyFeeKurus != null && (
+      {(b.sub.yearlyFeeKurus != null || b.sub.lifetimeFeeKurus != null) && !st.lifetime && (
         <Card className="mb-6">
-          <CardHeader title="Ödeme dönemi" description="Aylık ya da yıllık ödeyebilirsiniz." />
+          <CardHeader title="Ödeme dönemi" description="Aylık, yıllık ya da tek seferlik ödeyebilirsiniz." />
           <div className="p-6">
             <CycleForm
               action={setCycleAction}
-              current={b.sub.billingCycle === "YEARLY" ? "YEARLY" : "MONTHLY"}
+              current={b.sub.billingCycle as "MONTHLY" | "YEARLY" | "LIFETIME"}
               monthlyKurus={b.sub.monthlyFeeKurus}
               yearlyKurus={b.sub.yearlyFeeKurus}
+              lifetimeKurus={b.sub.lifetimeFeeKurus}
             />
           </div>
         </Card>
@@ -126,7 +128,7 @@ export default async function BillingPage() {
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-3 text-sm">
                 <div>
                   <p className="font-medium text-stone-900">
-                    {formatTL(p.amountKurus)} · {p.months} ay · {METHOD[p.method]}
+                    {formatTL(p.amountKurus)} · {p.months === 0 ? "tek seferlik" : `${p.months} ay`} · {METHOD[p.method]}
                   </p>
                   <p className="text-stone-500">
                     {formatDateStr(p.coversFrom)} – {formatDateStr(p.coversTo)} · {formatDateTime(p.paidAt)}

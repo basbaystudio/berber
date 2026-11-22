@@ -15,6 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     { url: `${base}/`, changeFrequency: "daily", priority: 1 },
     { url: `${base}/basvuru`, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${base}/fiyatlandirma`, changeFrequency: "monthly", priority: 0.6 },
     ...provincesSet.map((p) => ({ url: `${base}/berberler/${p}`, changeFrequency: "daily" as const, priority: 0.8 })),
     ...pairs.map((x) => ({ url: `${base}/berberler/${x.province}/${x.district}`, changeFrequency: "daily" as const, priority: 0.8 })),
     ...list.map((b) => ({ url: `${base}/berber/${b.slug}`, lastModified: b.updatedAt, changeFrequency: "weekly" as const, priority: 0.7 })),

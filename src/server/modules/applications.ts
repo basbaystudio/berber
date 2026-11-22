@@ -31,7 +31,7 @@ export const applicationSchema = z.object({
   addressLine: trimmed(5, 300, "Adres"),
   staffCount: z.coerce.number({ error: "Çalışan sayısı girin." }).int("Çalışan sayısı tam sayı olmalı.").min(1, "En az 1 olmalı.").max(100, "En fazla 100."),
   planId: z.string({ error: "Paket seçin." }).uuid("Paket seçin."),
-  billingCycle: z.enum(["MONTHLY", "YEARLY"], { error: "Ödeme dönemi seçin." }),
+  billingCycle: z.enum(["MONTHLY", "YEARLY", "LIFETIME"], { error: "Ödeme dönemi seçin." }),
   note: optionalText(500, "Not"),
   kvkk: checkbox.refine((v) => v, "Devam etmek için aydınlatma metnini onaylayın."),
   /** Bot tuzağı: gerçek kullanıcı bu alanı görmez, doldurmaz */
@@ -39,10 +39,12 @@ export const applicationSchema = z.object({
 });
 export type ApplicationInput = z.infer<typeof applicationSchema>;
 
+export const CYCLE_LABEL: Record<string, string> = { MONTHLY: "Aylık", YEARLY: "Yıllık", LIFETIME: "Tek seferlik" };
+
 /** Başvuru sayfasındaki teklif: aktif paketler ve şu an başvurana verilecek ücretsiz süre. */
 export async function getApplicationOffer(db: Executor) {
   const plans = await db
-    .select({ id: subscriptionPlans.id, name: subscriptionPlans.name, description: subscriptionPlans.description, monthly: subscriptionPlans.monthlyPriceKurus, yearly: subscriptionPlans.yearlyPriceKurus, highlights: subscriptionPlans.highlights, isDefault: subscriptionPlans.isDefault })
+    .select({ id: subscriptionPlans.id, name: subscriptionPlans.name, description: subscriptionPlans.description, monthly: subscriptionPlans.monthlyPriceKurus, yearly: subscriptionPlans.yearlyPriceKurus, lifetime: subscriptionPlans.lifetimePriceKurus, highlights: subscriptionPlans.highlights, isDefault: subscriptionPlans.isDefault })
     .from(subscriptionPlans)
     .where(eq(subscriptionPlans.isActive, true))
     .orderBy(asc(subscriptionPlans.sortOrder), asc(subscriptionPlans.monthlyPriceKurus));
@@ -67,6 +69,7 @@ export async function submitApplication(db: DB, input: ApplicationInput, meta: {
   const [plan] = await db.select().from(subscriptionPlans).where(and(eq(subscriptionPlans.id, input.planId), eq(subscriptionPlans.isActive, true)));
   if (!plan) throw new AppError("VALIDATION", "Seçilen paket bulunamadı.", { planId: "Paket seçin." });
   if (input.billingCycle === "YEARLY" && plan.yearlyPriceKurus == null) throw new AppError("VALIDATION", "Bu pakette yıllık ödeme yok.", { billingCycle: "Aylık seçin." });
+  if (input.billingCycle === "LIFETIME" && plan.lifetimePriceKurus == null) throw new AppError("VALIDATION", "Bu pakette tek seferlik ödeme yok.", { billingCycle: "Aylık seçin." });
   const [dup] = await db
     .select({ id: businessApplications.id })
     .from(businessApplications)
@@ -97,7 +100,7 @@ export async function submitApplication(db: DB, input: ApplicationInput, meta: {
     .from(districts)
     .innerJoin(provinces, eq(provinces.id, districts.provinceId))
     .where(eq(districts.id, input.districtId));
-  const cycle = input.billingCycle === "YEARLY" ? "Yıllık" : "Aylık";
+  const cycle = CYCLE_LABEL[input.billingCycle];
   for (const to of await adminAlertRecipients(db)) {
     await sendEmail(db, {
       to,
@@ -190,10 +193,15 @@ export async function approveApplication(db: DB, actor: AdminActor, id: string) 
   if (!created) throw new AppError("CONFLICT", "Kullanıcı adı oluşturulamadı, tekrar deneyin.");
 
   const [plan] = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.id, a.planId));
-  const cycle = a.billingCycle === "YEARLY" && plan?.yearlyPriceKurus != null ? "YEARLY" : "MONTHLY";
+  const cycle =
+    a.billingCycle === "YEARLY" && plan?.yearlyPriceKurus != null
+      ? "YEARLY"
+      : a.billingCycle === "LIFETIME" && plan?.lifetimePriceKurus != null
+        ? "LIFETIME"
+        : "MONTHLY";
   const [sub] = await db
     .update(businessSubscriptions)
-    .set({ planId: a.planId, monthlyFeeKurus: plan!.monthlyPriceKurus, yearlyFeeKurus: plan!.yearlyPriceKurus, billingCycle: cycle, updatedAt: new Date() })
+    .set({ planId: a.planId, monthlyFeeKurus: plan!.monthlyPriceKurus, yearlyFeeKurus: plan!.yearlyPriceKurus, lifetimeFeeKurus: plan!.lifetimePriceKurus, billingCycle: cycle, updatedAt: new Date() })
     .where(eq(businessSubscriptions.businessId, created.businessId))
     .returning();
   await db

@@ -11,24 +11,30 @@ import { useFormAction } from "@/components/ui/use-action";
 import { formatTL } from "@/lib/money";
 import { cn } from "@/lib/cn";
 
-type Plan = { id: string; name: string; description: string | null; monthly: number; yearly: number | null; highlights: string[]; isDefault: boolean };
+type Cycle = "MONTHLY" | "YEARLY" | "LIFETIME";
+const CYCLE_TEXT: Record<Cycle, string> = { YEARLY: "Yıllık (avantajlı)", MONTHLY: "Aylık", LIFETIME: "Tek seferlik" };
+
+type Plan = { id: string; name: string; description: string | null; monthly: number; yearly: number | null; lifetime: number | null; highlights: string[]; isDefault: boolean };
 
 export function ApplicationForm({
   action,
   plans,
   locations,
   freeMonths,
+  initialCycle,
 }: {
   action: (p: ActionState, fd: FormData) => Promise<ActionState>;
   plans: Plan[];
   locations: LocationOption[];
   freeMonths: number;
+  initialCycle?: Cycle;
 }) {
   const { state, pending, onSubmit, fieldErrors: fe } = useFormAction(action);
   const [planId, setPlanId] = useState(plans.find((p) => p.isDefault)?.id ?? plans[0]?.id ?? "");
   const plan = plans.find((p) => p.id === planId);
-  const [cycle, setCycle] = useState<"MONTHLY" | "YEARLY">(plan?.yearly != null ? "YEARLY" : "MONTHLY");
-  const effCycle = plan?.yearly == null ? "MONTHLY" : cycle;
+  const [cycle, setCycle] = useState<Cycle>(initialCycle ?? (plan?.yearly != null ? "YEARLY" : "MONTHLY"));
+  const offered = (c: Cycle, p = plan) => c === "MONTHLY" || (c === "YEARLY" ? p?.yearly != null : p?.lifetime != null);
+  const effCycle: Cycle = offered(cycle) ? cycle : "MONTHLY";
 
   if (state.status === "success") {
     return (
@@ -51,18 +57,18 @@ export function ApplicationForm({
 
       <fieldset className="space-y-4 rounded-3xl border border-stone-200/80 bg-white p-6 sm:p-8">
         <legend className="px-1 text-lg font-semibold text-stone-900">1. Paketinizi seçin</legend>
-        <div role="radiogroup" aria-label="Ödeme dönemi" className="inline-flex rounded-xl bg-stone-100 p-1 text-sm">
-          {(["YEARLY", "MONTHLY"] as const).map((c) => (
+        <div role="radiogroup" aria-label="Ödeme dönemi" className="inline-flex flex-wrap rounded-xl bg-stone-100 p-1 text-sm">
+          {(["YEARLY", "MONTHLY", "LIFETIME"] as const).filter((c) => plans.some((p) => offered(c, p))).map((c) => (
             <button
               key={c}
               type="button"
               role="radio"
               aria-checked={effCycle === c}
-              disabled={c === "YEARLY" && plan?.yearly == null}
+              disabled={!offered(c)}
               onClick={() => setCycle(c)}
               className={cn("rounded-lg px-4 py-1.5 disabled:opacity-40", effCycle === c ? "bg-white font-medium text-stone-900 shadow-sm" : "text-stone-600")}
             >
-              {c === "YEARLY" ? "Yıllık (avantajlı)" : "Aylık"}
+              {CYCLE_TEXT[c]}
             </button>
           ))}
         </div>
@@ -70,6 +76,7 @@ export function ApplicationForm({
         <div className={cn("grid gap-3", plans.length > 1 && "sm:grid-cols-2")}>
           {plans.map((p) => {
             const yearly = effCycle === "YEARLY" && p.yearly != null;
+            const lifetime = effCycle === "LIFETIME" && p.lifetime != null;
             // Kuruş cinsinden günlük tutar, tam liraya yuvarlanır (≈19 ₺)
             const perDayKurus = Math.round((yearly ? p.yearly! / 365 : p.monthly / 30) / 100) * 100;
             return (
@@ -84,13 +91,25 @@ export function ApplicationForm({
                   </span>
                   <span className="rounded-full bg-accent-600 px-2.5 py-0.5 text-xs font-semibold text-white">{freeMonths} ay ücretsiz</span>
                 </span>
-                <span>
-                  <span className="text-3xl font-bold tracking-tight text-stone-900">≈{formatTL(perDayKurus)}</span>
-                  <span className="text-sm text-stone-600"> / gün</span>
-                </span>
-                <span className="text-sm text-stone-600">
-                  Ücretsiz süreden sonra {yearly ? `yılda ${formatTL(p.yearly!)} (aylık ${formatTL(Math.round(p.yearly! / 12))}'ye denk)` : `ayda ${formatTL(p.monthly)}`}
-                </span>
+                {lifetime ? (
+                  <>
+                    <span>
+                      <span className="text-3xl font-bold tracking-tight text-stone-900">{formatTL(p.lifetime!)}</span>
+                      <span className="text-sm text-stone-600"> bir kez</span>
+                    </span>
+                    <span className="text-sm text-stone-600">Ücretsiz süreden sonra tek ödeme; aylık ya da yıllık ücret yok, süresiz kullanım.</span>
+                  </>
+                ) : (
+                  <>
+                    <span>
+                      <span className="text-3xl font-bold tracking-tight text-stone-900">≈{formatTL(perDayKurus)}</span>
+                      <span className="text-sm text-stone-600"> / gün</span>
+                    </span>
+                    <span className="text-sm text-stone-600">
+                      Ücretsiz süreden sonra {yearly ? `yılda ${formatTL(p.yearly!)} (aylık ${formatTL(Math.round(p.yearly! / 12))}'ye denk)` : `ayda ${formatTL(p.monthly)}`}
+                    </span>
+                  </>
+                )}
                 {p.highlights.length > 0 && (
                   <ul className="list-inside list-disc text-sm text-stone-600">
                     {p.highlights.map((h) => (

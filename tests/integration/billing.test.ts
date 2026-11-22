@@ -102,13 +102,13 @@ describe("paketler", () => {
       code,
       description: "Öne çıkan listeleme",
       monthlyPriceKurus: 150000,
-      yearlyPriceKurus: null,
+      yearlyPriceKurus: null, lifetimePriceKurus: null,
       highlights: ["Öne çıkan"],
       isActive: true,
       sortOrder: 1,
     });
     await expect(
-      createPlan(db, { adminId: admin.id }, { name: "X", code, description: undefined, monthlyPriceKurus: 1, yearlyPriceKurus: null, highlights: [], isActive: true, sortOrder: 0 }),
+      createPlan(db, { adminId: admin.id }, { name: "X", code, description: undefined, monthlyPriceKurus: 1, yearlyPriceKurus: null, lifetimePriceKurus: null, highlights: [], isActive: true, sortOrder: 0 }),
     ).rejects.toMatchObject({ code: "CONFLICT" });
 
     const b = await makeBusiness(admin.id);
@@ -151,7 +151,7 @@ describe("aylık / yıllık dönem", () => {
       name: "Sadece aylık",
       code: `aylik-${uid()}`,
       monthlyPriceKurus: 50000,
-      yearlyPriceKurus: null,
+      yearlyPriceKurus: null, lifetimePriceKurus: null,
       highlights: [],
       isActive: true,
       sortOrder: 9,
@@ -165,5 +165,56 @@ describe("aylık / yıllık dönem", () => {
     await expect(
       db.update(businessSubscriptions).set({ billingCycle: "YEARLY" }).where(eq(businessSubscriptions.businessId, b.businessId)),
     ).rejects.toThrow();
+  });
+});
+
+describe("tek seferlik ödeme", () => {
+  it("işletme tek seferliği seçer; ödeme süresiz kapsar; sonrasında dönem değişmez ve yeni ödeme alınmaz", async () => {
+    const admin = await makeAdmin();
+    const b = await makeBusiness(admin.id);
+    const biz = { businessId: b.businessId, userId: b.userId };
+    expect((await sub(b.businessId)).lifetimeFeeKurus).toBe(1499900);
+
+    await setBillingCycle(db, biz, "LIFETIME");
+    const s1 = await sub(b.businessId);
+    expect(currentFee(s1)).toMatchObject({ kurus: 1499900, months: 0, label: "Tek seferlik" });
+
+    await enableBilling(db, { adminId: admin.id });
+    const p = await recordPayment(db, { adminId: admin.id }, b.businessId, { months: 1, amount: "14.999", method: "BANK_TRANSFER", paidOn: todayTR() });
+    expect(p).toMatchObject({ amountKurus: 1499900, months: 0, coversTo: "2099-12-31" });
+    const st = (await getBusinessSubscription(db, b.businessId))!.status;
+    expect(st).toMatchObject({ kind: "PAID", lifetime: true });
+
+    await expect(setBillingCycle(db, biz, "MONTHLY")).rejects.toMatchObject({ code: "VALIDATION" });
+    await expect(
+      recordPayment(db, { adminId: admin.id }, b.businessId, { months: 1, amount: "699,90", method: "BANK_TRANSFER", paidOn: todayTR() }),
+    ).rejects.toMatchObject({ code: "VALIDATION" });
+    await disableBilling(db, { adminId: admin.id });
+  });
+
+  it("tek seferlik fiyatı olmayan pakette seçilemez; admin dönemi değiştirebilir", async () => {
+    const admin = await makeAdmin();
+    const b = await makeBusiness(admin.id);
+    const biz = { businessId: b.businessId, userId: b.userId };
+    const [standart] = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.code, "standart"));
+    await updateBusinessSubscription(db, { adminId: admin.id }, b.businessId, { planId: standart!.id, trialMonths: 1, billingCycle: "LIFETIME", customLifetimeFee: "12.000" });
+    expect(await sub(b.businessId)).toMatchObject({ billingCycle: "LIFETIME", lifetimeFeeKurus: 1200000 });
+
+    const noLifetime = await createPlan(db, { adminId: admin.id }, {
+      name: "Tek seferliksiz",
+      code: `tsz-${uid()}`,
+      monthlyPriceKurus: 50000,
+      yearlyPriceKurus: null,
+      lifetimePriceKurus: null,
+      highlights: [],
+      isActive: true,
+      sortOrder: 9,
+    });
+    await updateBusinessSubscription(db, { adminId: admin.id }, b.businessId, { planId: noLifetime!.id, trialMonths: 1 });
+    expect(await sub(b.businessId)).toMatchObject({ billingCycle: "MONTHLY", lifetimeFeeKurus: null });
+    await expect(setBillingCycle(db, biz, "LIFETIME")).rejects.toMatchObject({ code: "VALIDATION" });
+    await expect(
+      updateBusinessSubscription(db, { adminId: admin.id }, b.businessId, { planId: noLifetime!.id, trialMonths: 1, billingCycle: "LIFETIME" }),
+    ).rejects.toMatchObject({ code: "VALIDATION" });
   });
 });

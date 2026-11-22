@@ -58,7 +58,7 @@ describe("işletme başvurusu", () => {
     expect(await code(submitApplication(db, wrongDistrict, { ip: ip() }))).toBe("VALIDATION");
 
     const admin = await makeAdmin();
-    const monthlyOnly = await createPlan(db, { adminId: admin.id }, { name: "Aylık paket", code: `ay-${uid()}`, monthlyPriceKurus: 50000, yearlyPriceKurus: null, highlights: [], isActive: true, sortOrder: 99 });
+    const monthlyOnly = await createPlan(db, { adminId: admin.id }, { name: "Aylık paket", code: `ay-${uid()}`, monthlyPriceKurus: 50000, yearlyPriceKurus: null, lifetimePriceKurus: null, highlights: [], isActive: true, sortOrder: 99 });
     expect(await code(submitApplication(db, await input({ planId: monthlyOnly!.id, billingCycle: "YEARLY" }), { ip: ip() }))).toBe("VALIDATION");
     await db.update(subscriptionPlans).set({ isActive: false }).where(eq(subscriptionPlans.id, monthlyOnly!.id));
   });
@@ -91,6 +91,12 @@ describe("işletme başvurusu", () => {
     expect(s1).toMatchObject({ billingCycle: "YEARLY", yearlyFeeKurus: 699000, monthlyFeeKurus: 69990 });
     const [s2] = await db.select().from(businessSubscriptions).where(eq(businessSubscriptions.businessId, r2.businessId));
     expect(s2!.billingCycle).toBe("MONTHLY");
+
+    // Tek seferlik seçen başvuru onaylanınca abonelik tek seferlik açılır
+    const a3 = await submitApplication(db, await input({ billingCycle: "LIFETIME" }), { ip: ip() });
+    const r3 = await approveApplication(db, actor, a3.id);
+    const [s3] = await db.select().from(businessSubscriptions).where(eq(businessSubscriptions.businessId, r3.businessId));
+    expect(s3).toMatchObject({ billingCycle: "LIFETIME", lifetimeFeeKurus: 1499900 });
 
     const [u] = await db.select().from(businessUsers).where(eq(businessUsers.businessId, r1.businessId));
     expect(u).toMatchObject({ login: r1.login, mustChangePassword: true });
