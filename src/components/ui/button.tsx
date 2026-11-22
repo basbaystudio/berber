@@ -3,7 +3,7 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/cn";
 
 const variants = {
-  primary: "bg-stone-900 text-white hover:bg-stone-800 disabled:bg-stone-900/40",
+  primary: "bg-brand-900 text-white hover:bg-brand-800 disabled:bg-stone-900/40",
   secondary: "bg-stone-100 text-stone-800 hover:bg-stone-200 disabled:text-stone-500",
   outline: "border border-stone-200 bg-white text-stone-800 hover:border-stone-300 hover:bg-stone-50 disabled:text-stone-500",
   ghost: "text-stone-700 hover:bg-stone-100 disabled:text-stone-500",

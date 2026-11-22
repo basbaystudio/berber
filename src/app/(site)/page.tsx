@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Store } from "lucide-react";
+import { SITE_NAME, siteUrl } from "@/lib/site";
+import { getApplicationOffer } from "@/server/modules/applications";
 import { db } from "@/server/db/client";
 import { getActiveBanners, rotateAds } from "@/server/modules/admin/banners";
 import { getHomeShowcases, listServiceTypesPublic } from "@/server/modules/marketplace/search";
@@ -13,9 +15,26 @@ import { LocationPrompt } from "@/components/marketplace/location-prompt";
 import { SearchBar } from "@/components/marketplace/search-bar";
 
 export const metadata: Metadata = {
-  title: { absolute: "Dijital Berber — Yakınındaki berberi bul, online randevu al" },
-  description: "Yakınındaki berberleri keşfet, hizmet ve fiyatları incele, anlık boş saatleri gör ve online randevu al.",
+  title: { absolute: "Online Berber Randevusu — Yakınındaki Berberi Bul | Dijital Berber" },
+  description: "Yakınındaki berberleri keşfet, hizmet ve fiyatları karşılaştır, anlık boş saatleri gör ve online berber randevusu al. Ödeme dükkanda.",
+  alternates: { canonical: "/" },
 };
+
+/** Ana sayfa yapılandırılmış verisi: site (Google'da site içi arama kutusu) ve kuruluş (logo). */
+function homeJsonLd() {
+  const url = siteUrl();
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: SITE_NAME,
+      url,
+      inLanguage: "tr-TR",
+      potentialAction: { "@type": "SearchAction", target: { "@type": "EntryPoint", urlTemplate: `${url}/ara?q={search_term_string}` }, "query-input": "required name=search_term_string" },
+    },
+    { "@context": "https://schema.org", "@type": "Organization", name: SITE_NAME, url, logo: `${url}/brand/logo.png` },
+  ];
+}
 
 function Section({ title, href, note, children }: { title: string; href?: string; note?: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -45,6 +64,7 @@ export default async function HomePage() {
     await getLocations(),
     await getVisitorLocation(),
   ];
+  const offer = await getApplicationOffer(db);
   const nearby = loc ? await getNearby(loc) : null;
   // Reklam alanları: ziyaretçinin iline hedeflenmiş olanlar + herkese açık olanlar
   const ads = rotateAds(await getActiveBanners(db, { placement: "LISTING", provinceId: nearby?.provinceId ?? null }));
@@ -54,6 +74,9 @@ export default async function HomePage() {
   const nearHref = loc ? `/ara?lat=${loc.lat.toFixed(3)}&lng=${loc.lng.toFixed(3)}&sirala=yakin` : undefined;
   return (
     <main className="mx-auto max-w-6xl space-y-12 px-4 pb-8 pt-6 sm:px-6">
+      {homeJsonLd().map((ld, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, "\\u003c") }} />
+      ))}
       <BannerCarousel banners={banners} />
       <section className="mx-auto max-w-3xl space-y-5 text-center">
         <h1 className="text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">Yakınındaki berberi bul, boş saati gör, randevunu al.</h1>
@@ -102,6 +125,20 @@ export default async function HomePage() {
         </Section>
       )}
       {empty && <p className="text-center text-stone-500">Platformdaki berberler çok yakında burada listelenecek.</p>}
+      <section aria-labelledby="isletme-basvuru" className="flex flex-col items-start gap-5 rounded-3xl bg-brand-900 p-6 text-white sm:flex-row sm:items-center sm:justify-between sm:p-10">
+        <div className="space-y-2">
+          <p className="text-sm font-semibold uppercase tracking-wider text-accent-500">Berber misiniz?</p>
+          <h2 id="isletme-basvuru" className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            Dükkanınızı ekleyin, {offer.currentFreeMonths} ay ücretsiz kullanın.
+          </h2>
+          <p className="text-brand-100">
+            {offer.early.remaining > 0 ? `İlk ${offer.early.limit} işletmeye özel · kalan kontenjan ${offer.early.remaining}. ` : ""}Türkiye'nin her yerinden başvurabilirsiniz. Komisyon yok.
+          </p>
+        </div>
+        <Link href="/basvuru" className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-accent-600 px-6 font-semibold text-white hover:bg-[#9a4000]">
+          <Store className="size-5" aria-hidden /> İşletmeni ekle
+        </Link>
+      </section>
     </main>
   );
 }

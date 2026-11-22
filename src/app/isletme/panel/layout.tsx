@@ -27,6 +27,7 @@ const NAV: NavItem[] = [
   { href: "/isletme/panel/calisanlar", label: "Çalışanlar", icon: "users" },
   { href: "/isletme/panel/hizmetler", label: "Hizmetler", icon: "scissors" },
   { href: "/isletme/panel/paketler", label: "Paketler", icon: "package" },
+  { href: "/isletme/panel/dukkan-fotograflari", label: "Dükkan Fotoğrafları", icon: "camera" },
   { href: "/isletme/panel/portfolyo", label: "Portfolyo", icon: "images" },
   { href: "/isletme/panel/belgeler", label: "Belgelerim", icon: "documents" },
   { href: "/isletme/panel/sozlesmeler", label: "Sözleşmeler", icon: "contracts" },
@@ -79,7 +80,7 @@ export default async function BusinessPanelLayout({ children }: { children: Reac
             >
               <Bell className="size-4" aria-hidden />
               Bildirimler
-              {unread > 0 && <span className="rounded-full bg-stone-900 px-1.5 text-xs font-medium text-white tabular-nums">{unread}</span>}
+              {unread > 0 && <span className="rounded-full bg-brand-900 px-1.5 text-xs font-medium text-white tabular-nums">{unread}</span>}
             </Link>
           </div>
           {mustPay && sub && (

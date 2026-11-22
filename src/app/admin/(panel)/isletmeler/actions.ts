@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/server/db/client";
 import { requireAdmin } from "@/server/auth/guards";
-import { enforce, RATE_LIMITS } from "@/server/auth/rate-limit";
+import { enforce, hit, RATE_LIMITS } from "@/server/auth/rate-limit";
+import { deleteShopPhoto, moveShopPhoto, setShopPhotoKind, shopPhotoKind, uploadShopPhoto } from "@/server/modules/shop-photos";
+import { geocodeAddress, geocodeSchema, type GeocodeResult } from "@/server/modules/geo/geocode";
 import { formToObject, parseInput, runAction, type ActionState } from "@/server/lib/action";
 import { getRequestMeta } from "@/server/lib/request";
 import {
@@ -117,5 +119,64 @@ export async function removeBusinessImageAction(businessId: string, kind: "logo"
     await removeBusinessImage(db, a, id.parse(businessId), imageKind.parse(kind));
     revalidatePath(`/admin/isletmeler/${businessId}`);
     return { status: "success", message: "Kaldırıldı." };
+  });
+}
+
+/** Adresten harita konumu (yönetici formunda adres girilince otomatik çağrılır). */
+export async function geocodeAction(input: { address: string; district?: string; province?: string }): Promise<GeocodeResult> {
+  const ctx = await requireAdmin();
+  const parsed = geocodeSchema.safeParse(input);
+  if (!parsed.success) return null;
+  // Harita servisinin kullanım kuralı gereği seyrek: yönetici başına dakikada 20 istek
+  const rl = await hit(db, `geocode:${ctx.admin.id}`, { limit: 20, windowSec: 60 });
+  if (!rl.allowed) return null;
+  return geocodeAddress(parsed.data);
+}
+
+// ---- Dükkan fotoğrafları (yönetici) ----
+async function shopActor() {
+  const ctx = await requireAdmin();
+  await enforce(db, `upload:admin:${ctx.admin.id}`, RATE_LIMITS.upload);
+  return { realm: "ADMIN" as const, adminId: ctx.admin.id, ip: (await getRequestMeta()).ip };
+}
+const shopRefresh = (businessId: string) => revalidatePath(`/admin/isletmeler/${businessId}`);
+
+export async function adminUploadShopPhotoAction(businessId: string, fd: FormData): Promise<ActionState<{ used: number }>> {
+  return runAction(async () => {
+    const a = await shopActor();
+    const bid = id.parse(businessId);
+    const r = await uploadShopPhoto(db, a, bid, shopPhotoKind.parse(fd.get("kind")), await readUpload(fd.get("file"), "Fotoğraf"));
+    shopRefresh(bid);
+    return { status: "success", data: { used: r.used } };
+  });
+}
+
+export async function adminDeleteShopPhotoAction(businessId: string, photoId: string): Promise<ActionState> {
+  return runAction(async () => {
+    const a = await shopActor();
+    const bid = id.parse(businessId);
+    await deleteShopPhoto(db, a, bid, id.parse(photoId));
+    shopRefresh(bid);
+    return { status: "success" };
+  });
+}
+
+export async function adminSetShopPhotoKindAction(businessId: string, photoId: string, kind: "INTERIOR" | "EXTERIOR"): Promise<ActionState> {
+  return runAction(async () => {
+    const a = await shopActor();
+    const bid = id.parse(businessId);
+    await setShopPhotoKind(db, a, bid, id.parse(photoId), shopPhotoKind.parse(kind));
+    shopRefresh(bid);
+    return { status: "success" };
+  });
+}
+
+export async function adminMoveShopPhotoAction(businessId: string, photoId: string, dir: "up" | "down"): Promise<ActionState> {
+  return runAction(async () => {
+    await shopActor();
+    const bid = id.parse(businessId);
+    await moveShopPhoto(db, bid, id.parse(photoId), z.enum(["up", "down"]).parse(dir));
+    shopRefresh(bid);
+    return { status: "success" };
   });
 }

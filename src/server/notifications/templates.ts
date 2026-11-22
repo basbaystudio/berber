@@ -4,7 +4,7 @@ import { formatDateStr } from "@/lib/dates";
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 /** Sade, her e-posta istemcisinde düzgün görünen tek sütunlu şablon. */
-function layout(title: string, paragraphs: string[]) {
+export function layout(title: string, paragraphs: string[]) {
   const body = paragraphs.map((p) => `<p style="margin:0 0 14px;line-height:1.6">${esc(p)}</p>`).join("");
   return `<!doctype html><html lang="tr"><body style="margin:0;background:#fafaf9;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#292524">
 <div style="max-width:560px;margin:0 auto;padding:32px 20px"><div style="background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:28px">

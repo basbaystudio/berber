@@ -7,7 +7,7 @@ export default function StaticMapInner({ lat, lng }: { lat: number; lng: number 
   return (
     <MapContainer center={{ lat, lng }} zoom={16} scrollWheelZoom={false} dragging className="h-64 w-full rounded-2xl" style={{ zIndex: 0 }}>
       <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> katkıcıları' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      <CircleMarker center={{ lat, lng }} radius={9} pathOptions={{ color: "#1c1917", fillColor: "#b08d57", fillOpacity: 0.95, weight: 3 }} />
+      <CircleMarker center={{ lat, lng }} radius={9} pathOptions={{ color: "#001d48", fillColor: "#fe7001", fillOpacity: 0.95, weight: 3 }} />
     </MapContainer>
   );
 }

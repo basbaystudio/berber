@@ -78,7 +78,7 @@ export function SlotPicker({
                   }}
                   className={cn(
                     "h-9 rounded-xl border text-sm tabular-nums transition-colors",
-                    time === s.time ? "border-stone-900 bg-stone-900 text-white" : "border-stone-200 bg-white text-stone-700 hover:border-stone-400",
+                    time === s.time ? "border-brand-900 bg-brand-900 text-white" : "border-stone-200 bg-white text-stone-700 hover:border-stone-400",
                   )}
                 >
                   {s.time}

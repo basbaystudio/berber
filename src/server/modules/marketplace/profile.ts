@@ -1,4 +1,5 @@
 import "server-only";
+import { listShopPhotos } from "@/server/modules/shop-photos";
 import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import type { Executor } from "@/server/db/client";
 import { businesses, districts, favorites, monthlyAwards, portfolioCategories, portfolioPhotos, provinces, reviews, serviceTypes, services, staff, customers } from "@/server/db/schema";
@@ -11,7 +12,7 @@ import { publicCondition } from "./search";
 /** Herkese açık işletme profili (yalnızca yayındaki ve aktif işletmeler). */
 export async function getPublicProfile(db: Executor, slug: string, customerId?: string | null) {
   const [row] = await db
-    .select({ b: businesses, province: provinces.name, district: districts.name })
+    .select({ b: businesses, province: provinces.name, district: districts.name, provinceSlug: provinces.slug, districtSlug: districts.slug })
     .from(businesses)
     .innerJoin(provinces, eq(provinces.id, businesses.provinceId))
     .innerJoin(districts, eq(districts.id, businesses.districtId))
@@ -68,6 +69,8 @@ export async function getPublicProfile(db: Executor, slug: string, customerId?: 
     addressLine: b.addressLine,
     province: row.province,
     district: row.district,
+    provinceSlug: row.provinceSlug,
+    districtSlug: row.districtSlug,
     latitude: b.latitude,
     longitude: b.longitude,
     logoUrl: b.logoUrl,
@@ -78,6 +81,7 @@ export async function getPublicProfile(db: Executor, slug: string, customerId?: 
     packages: pkgs.map((p) => ({ id: p.id, name: p.name, description: p.description, priceKurus: p.priceKurus, durationMin: p.durationMin, items: p.items.map((i) => i.name) })),
     staff: team,
     photos,
+    shopPhotos: (await listShopPhotos(db, b.id)).map((x) => ({ id: x.id, url: x.url, caption: null, categoryId: x.kind })),
     categories: cats,
     weekly,
     exceptions,

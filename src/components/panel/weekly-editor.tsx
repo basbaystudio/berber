@@ -65,7 +65,7 @@ export function WeeklyEditor({
                     onChange={(e) => setDay(d.value, e.target.checked ? [defaultRange] : [])}
                     aria-label={`${d.label} ${activeLabel.toLocaleLowerCase("tr-TR")}`}
                   />
-                  <span className={cn("relative h-5 w-9 rounded-full transition-colors", on ? "bg-stone-900" : "bg-stone-200")}>
+                  <span className={cn("relative h-5 w-9 rounded-full transition-colors", on ? "bg-brand-900" : "bg-stone-200")}>
                     <span className={cn("absolute top-0.5 size-4 rounded-full bg-white transition-all", on ? "left-[18px]" : "left-0.5")} />
                   </span>
                   <span className="w-14">{on ? activeLabel : emptyLabel}</span>

@@ -2,23 +2,24 @@
 
 /*
  * Tasarım dili: göz yormayan, minimalist.
- * Sıcak nötr zemin (stone), mürekkep tonunda ana renk, tek ve ölçülü bir pirinç vurgu.
+ * Sıcak nötr zemin (stone), logodan gelen lacivert ana renk ve ölçülü turuncu vurgu.
  */
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
-  /* "brand" = mürekkep (ana eylemler, aktif öğeler) */
-  --color-brand-50: oklch(0.975 0.004 75);
-  --color-brand-100: oklch(0.945 0.006 75);
-  --color-brand-200: oklch(0.89 0.008 75);
-  --color-brand-500: oklch(0.62 0.07 65);
-  --color-brand-600: oklch(0.27 0.01 60);
-  --color-brand-700: oklch(0.2 0.008 60);
-  --color-brand-900: oklch(0.25 0.01 60);
+  /* "brand" = logonun laciverti (ana düğmeler, seçili öğeler) */
+  --color-brand-50: #f2f5fa;
+  --color-brand-100: #e6ebf3;
+  --color-brand-200: #c9d3e4;
+  --color-brand-500: #3d5a8c;
+  --color-brand-600: #24406f;
+  --color-brand-700: #14305e;
+  --color-brand-800: #0a2655;
+  --color-brand-900: #001d48;
 
-  /* Vurgu: yumuşak pirinç */
-  --color-accent-500: oklch(0.68 0.09 70);
-  --color-accent-600: oklch(0.5 0.09 62);
+  /* Vurgu: logonun turuncusu. 500 = süs (yıldız, ikon); 600 = yazı (beyaz zeminde okunur koyu ton) */
+  --color-accent-500: #fe7001;
+  --color-accent-600: #b84d00;
 }
 
 @layer base {
@@ -30,7 +31,7 @@
     font-feature-settings: "cv11", "ss01";
   }
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-accent-500;
+    @apply outline-2 outline-offset-2 outline-accent-600;
   }
   ::selection {
     @apply bg-accent-500/25;

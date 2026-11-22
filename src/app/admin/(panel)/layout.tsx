@@ -9,6 +9,7 @@ export const metadata: Metadata = { title: { default: "Yönetim", template: "%s 
 
 const NAV: NavItem[] = [
   { href: "/admin", label: "Gösterge Paneli", icon: "dashboard", exact: true },
+  { href: "/admin/basvurular", label: "Başvurular", icon: "inbox" },
   { href: "/admin/isletmeler", label: "İşletmeler", icon: "businesses" },
   { href: "/admin/belgeler", label: "Belgeler", icon: "documents" },
   { href: "/admin/sozlesmeler", label: "Sözleşmeler", icon: "contracts" },

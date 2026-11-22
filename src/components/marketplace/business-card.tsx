@@ -75,7 +75,7 @@ export function AdCard({ ad }: { ad: AdBanner }) {
     <a
       href={`/r/${ad.id}`}
       rel="sponsored noopener"
-      className="group relative col-span-full block overflow-hidden rounded-3xl border border-stone-200/80 bg-stone-900"
+      className="group relative col-span-full block overflow-hidden rounded-3xl border border-stone-200/80 bg-brand-900"
     >
       <div className="relative aspect-[16/7] sm:aspect-[4/1]">
         <span className="absolute right-3 top-3 z-10 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-medium text-stone-700">Reklam</span>

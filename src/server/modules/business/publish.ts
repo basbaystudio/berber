@@ -5,7 +5,11 @@ import { businessDocuments, businessHours, businesses, documentTypes, services, 
 import { pendingContractVersions } from "./contracts";
 import { notFound } from "@/server/lib/errors";
 
-export type PublishCheck = { key: string; label: string; ok: boolean };
+/**
+ * required: yayına almayı engeller (profil gerçekten randevu alabilmeli).
+ * required=false: bilgi amaçlı; işletmenin panelinde eksik olarak görünür, yönetici yine de yayına alabilir.
+ */
+export type PublishCheck = { key: string; label: string; ok: boolean; required: boolean };
 
 /** Yayına alma ön koşulları: profil gerçekten randevu alabilecek durumda olmalı. */
 export async function getPublishChecklist(db: Executor, businessId: string): Promise<PublishCheck[]> {
@@ -30,13 +34,13 @@ export async function getPublishChecklist(db: Executor, businessId: string): Pro
   const docsOk = required.every((r) => approved.some((a) => a.typeId === r.id));
   const contractsOk = (await pendingContractVersions(db, businessId)).length === 0;
   return [
-    { key: "active", label: "İşletme aktif durumda", ok: b.status === "ACTIVE" },
-    { key: "location", label: "Harita konumu girilmiş", ok: b.latitude !== null && b.longitude !== null },
-    { key: "hours", label: "Çalışma saatleri tanımlanmış", ok: (hours?.n ?? 0) > 0 },
-    { key: "staff", label: "En az bir aktif çalışan var", ok: (activeStaff?.n ?? 0) > 0 },
-    { key: "services", label: "En az bir aktif hizmet var", ok: (activeServices?.n ?? 0) > 0 },
-    { key: "documents", label: "Zorunlu belgeler onaylandı", ok: docsOk },
-    { key: "contracts", label: "Güncel sözleşmeler onaylandı", ok: contractsOk },
+    { key: "active", required: true, label: "İşletme aktif durumda", ok: b.status === "ACTIVE" },
+    { key: "location", required: true, label: "Harita konumu girilmiş", ok: b.latitude !== null && b.longitude !== null },
+    { key: "hours", required: true, label: "Çalışma saatleri tanımlanmış", ok: (hours?.n ?? 0) > 0 },
+    { key: "staff", required: true, label: "En az bir aktif çalışan var", ok: (activeStaff?.n ?? 0) > 0 },
+    { key: "services", required: true, label: "En az bir aktif hizmet var", ok: (activeServices?.n ?? 0) > 0 },
+    { key: "documents", required: false, label: "Zorunlu belgeler onaylandı", ok: docsOk },
+    { key: "contracts", required: true, label: "Güncel sözleşmeler onaylandı", ok: contractsOk },
   ];
 }
 

@@ -12,7 +12,7 @@ export function AdminLoginScreen() {
       </a>
       <div className="w-full max-w-sm rounded-3xl border border-stone-200/80 bg-white p-6 sm:p-10">
         <div className="mb-6 flex items-center gap-3">
-          <span className="grid size-10 place-items-center rounded-2xl bg-stone-900 text-white">
+          <span className="grid size-10 place-items-center rounded-2xl bg-brand-900 text-white">
             <ShieldCheck className="size-5" aria-hidden />
           </span>
           <div>

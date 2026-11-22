@@ -116,7 +116,7 @@ export function BookingWizard({
   const step = "rounded-3xl border border-stone-200/80 bg-white p-5 sm:p-6";
   const stepTitle = (n: number, t: string, done: boolean) => (
     <h2 className="mb-4 flex items-center gap-3 font-semibold text-stone-900">
-      <span className={cn("grid size-7 place-items-center rounded-full text-sm", done ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-500")}>{done ? <Check className="size-4" /> : n}</span>
+      <span className={cn("grid size-7 place-items-center rounded-full text-sm", done ? "bg-brand-900 text-white" : "bg-stone-100 text-stone-500")}>{done ? <Check className="size-4" /> : n}</span>
       {t}
     </h2>
   );
@@ -137,7 +137,7 @@ export function BookingWizard({
                   setPkgId(undefined);
                   setSvcIds(on ? svcIds.filter((x) => x !== s.id) : [...svcIds, s.id]);
                 }}
-                className={cn("flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left text-sm transition-colors", on ? "border-stone-900 bg-stone-50" : "border-stone-200 hover:border-stone-400")}
+                className={cn("flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left text-sm transition-colors", on ? "border-brand-900 bg-stone-50" : "border-stone-200 hover:border-stone-400")}
               >
                 <span>
                   <span className="block font-medium text-stone-900">{s.name}</span>
@@ -163,7 +163,7 @@ export function BookingWizard({
                       setSvcIds([]);
                       setPkgId(on ? undefined : p.id);
                     }}
-                    className={cn("flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left text-sm", on ? "border-stone-900 bg-stone-50" : "border-stone-200 hover:border-stone-400")}
+                    className={cn("flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left text-sm", on ? "border-brand-900 bg-stone-50" : "border-stone-200 hover:border-stone-400")}
                   >
                     <span>
                       <span className="block font-medium text-stone-900">{p.name}</span>
@@ -183,7 +183,7 @@ export function BookingWizard({
       <section className={cn(step, !hasSel && "opacity-50")} inert={!hasSel}>
         {stepTitle(2, "Çalışan", hasSel)}
         <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Çalışan">
-          <button type="button" role="radio" aria-checked={!effStaff} disabled={!hasSel} onClick={() => setStaffId("")} className={cn("rounded-full border px-4 py-2 text-sm", !effStaff ? "border-stone-900 bg-stone-900 text-white" : "border-stone-200 text-stone-700")}>
+          <button type="button" role="radio" aria-checked={!effStaff} disabled={!hasSel} onClick={() => setStaffId("")} className={cn("rounded-full border px-4 py-2 text-sm", !effStaff ? "border-brand-900 bg-brand-900 text-white" : "border-stone-200 text-stone-700")}>
             Fark etmez
           </button>
           {staff
@@ -196,7 +196,7 @@ export function BookingWizard({
                 aria-checked={effStaff === s.id}
                 disabled={!hasSel}
                 onClick={() => setStaffId(s.id)}
-                className={cn("rounded-full border px-4 py-2 text-sm", effStaff === s.id ? "border-stone-900 bg-stone-900 text-white" : "border-stone-200 text-stone-700 hover:border-stone-400")}
+                className={cn("rounded-full border px-4 py-2 text-sm", effStaff === s.id ? "border-brand-900 bg-brand-900 text-white" : "border-stone-200 text-stone-700 hover:border-stone-400")}
               >
                 {s.name}
               </button>
@@ -216,7 +216,7 @@ export function BookingWizard({
               aria-checked={date === d}
               disabled={!hasSel}
               onClick={() => setDate(d)}
-              className={cn("shrink-0 rounded-2xl border px-3 py-2 text-center text-sm", date === d ? "border-stone-900 bg-stone-900 text-white" : "border-stone-200 text-stone-700 hover:border-stone-400")}
+              className={cn("shrink-0 rounded-2xl border px-3 py-2 text-center text-sm", date === d ? "border-brand-900 bg-brand-900 text-white" : "border-stone-200 text-stone-700 hover:border-stone-400")}
             >
               {d === today ? "Bugün" : dayLabel(d)}
             </button>
@@ -242,7 +242,7 @@ export function BookingWizard({
                   role="radio"
                   aria-checked={time === s.time}
                   onClick={() => setTime(s.time)}
-                  className={cn("h-10 rounded-xl border text-sm tabular-nums", time === s.time ? "border-stone-900 bg-stone-900 text-white" : "border-stone-200 text-stone-700 hover:border-stone-400")}
+                  className={cn("h-10 rounded-xl border text-sm tabular-nums", time === s.time ? "border-brand-900 bg-brand-900 text-white" : "border-stone-200 text-stone-700 hover:border-stone-400")}
                 >
                   {s.time}
                 </button>
@@ -274,7 +274,7 @@ export function BookingWizard({
           <div className="space-y-2">
             <p className="text-sm text-stone-600">Randevu almak için giriş yapmanız gerekiyor. Seçimleriniz korunacak.</p>
             <div className="flex flex-wrap gap-2">
-              <Link href={`/giris?next=${encodeURIComponent(`${pathname}?${qs}`)}`} className={cn("inline-flex h-11 items-center rounded-xl bg-stone-900 px-5 text-sm font-medium text-white hover:bg-stone-800", !slotOk && "pointer-events-none opacity-40")} aria-disabled={!slotOk}>
+              <Link href={`/giris?next=${encodeURIComponent(`${pathname}?${qs}`)}`} className={cn("inline-flex h-11 items-center rounded-xl bg-brand-900 px-5 text-sm font-medium text-white hover:bg-brand-800", !slotOk && "pointer-events-none opacity-40")} aria-disabled={!slotOk}>
                 Giriş yap ve onayla
               </Link>
               <Link href={`/kayit?next=${encodeURIComponent(`${pathname}?${qs}`)}`} className={cn("inline-flex h-11 items-center rounded-xl border border-stone-200 px-5 text-sm text-stone-800 hover:bg-stone-50", !slotOk && "pointer-events-none opacity-40")} aria-disabled={!slotOk}>

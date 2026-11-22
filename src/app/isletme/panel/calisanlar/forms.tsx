@@ -93,7 +93,7 @@ export function StaffServicesForm({
       <div className="grid gap-2 sm:grid-cols-2">
         {services.map((s) => (
           <label key={s.id} className="flex cursor-pointer items-center gap-3 rounded-xl border border-stone-200/80 px-3 py-2.5 text-sm hover:bg-stone-50 has-[:checked]:border-stone-400">
-            <input type="checkbox" name="serviceIds" value={s.id} defaultChecked={selected.includes(s.id)} className="size-4 accent-stone-900" />
+            <input type="checkbox" name="serviceIds" value={s.id} defaultChecked={selected.includes(s.id)} className="size-4 accent-brand-900" />
             <span className="flex-1">
               <span className="block text-stone-900">{s.name}</span>
               <span className="text-xs text-stone-500">

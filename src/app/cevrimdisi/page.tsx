@@ -12,7 +12,7 @@ export default function OfflinePage() {
         <h1 className="text-2xl font-semibold tracking-tight text-stone-900">İnternet bağlantısı yok</h1>
         <p className="text-stone-600">Randevu bilgileri her zaman güncel olmalı; bu yüzden sayfalar bağlantı olmadan gösterilmez. Bağlantınız gelince tekrar deneyin.</p>
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a href="/" className="inline-flex rounded-xl bg-stone-900 px-5 py-2.5 text-sm font-medium text-white">
+        <a href="/" className="inline-flex rounded-xl bg-brand-900 px-5 py-2.5 text-sm font-medium text-white">
           Tekrar dene
         </a>
       </div>

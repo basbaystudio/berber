@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/server/db/client";
 import { auditLogs, businessSettings, businessUsers, businesses, districts } from "@/server/db/schema";
 import { AppError } from "@/server/lib/errors";
@@ -12,6 +12,7 @@ import {
   updateBusinessProfile,
   updateOwnerAccount,
 } from "@/server/modules/admin/businesses";
+import { acceptContract, pendingContractVersions } from "@/server/modules/business/contracts";
 import { anyDistrict, makeAdmin, makeBusiness, uid } from "../helpers/factory";
 
 async function err(p: Promise<unknown>) {
@@ -83,6 +84,27 @@ describe("admin: durum ve yayın", () => {
     expect(checklist.find((c) => c.key === "staff")?.ok).toBe(false);
     const e = await err(setPublished(db, { adminId: admin.id }, r.businessId, true));
     expect(e.message).toMatch(/eksikler/);
+  });
+
+  it("eksik belge yöneticiyi engellemez; diğer eksikler engeller", async () => {
+    const admin = await makeAdmin();
+    const r = await makeBusiness(admin.id);
+    await setBusinessStatus(db, { adminId: admin.id }, r.businessId, "ACTIVE");
+    // Randevu alabilecek kadar hazır profil, ama hiç belge yok
+    await db.update(businesses).set({ latitude: 41, longitude: 29 }).where(eq(businesses.id, r.businessId));
+    await db.execute(sql`insert into business_hours (business_id, weekday, start_time, end_time) values (${r.businessId}, 1, '09:00', '18:00')`);
+    const st = (await db.execute<{ id: string }>(sql`insert into staff (business_id, name) values (${r.businessId}, 'Usta') returning id`)).rows[0]!;
+    const sv = (await db.execute<{ id: string }>(sql`insert into services (business_id, name, price_kurus, duration_min) values (${r.businessId}, 'Kesim', 40000, 30) returning id`)).rows[0]!;
+    await db.execute(sql`insert into staff_services (business_id, staff_id, service_id) values (${r.businessId}, ${st.id}, ${sv.id})`);
+
+    // Başka testlerin yayınladığı sözleşmeler varsa işletme onaylasın
+    for (const v of await pendingContractVersions(db, r.businessId)) await acceptContract(db, { businessId: r.businessId, userId: r.userId }, v.id, {});
+
+    const checklist = await getPublishChecklist(db, r.businessId);
+    expect(checklist.find((c) => c.key === "documents")).toMatchObject({ ok: false, required: false });
+    expect(checklist.filter((c) => c.required).every((c) => c.ok)).toBe(true);
+    await setPublished(db, { adminId: admin.id }, r.businessId, true);
+    expect((await db.select().from(businesses).where(eq(businesses.id, r.businessId)))[0]?.isPublished).toBe(true);
   });
 
   it("veritabanı da yayındaki işletmenin aktif olmasını zorunlu tutar", async () => {

@@ -9,6 +9,7 @@ import { Field, Input, SubmitButton, Textarea } from "@/components/ui/form";
 import { Button, ButtonLink, buttonClass } from "@/components/ui/button";
 import { useFormAction } from "@/components/ui/use-action";
 import { LocationPicker } from "@/components/map/location-picker";
+import { geocodeAction } from "./actions";
 import { ProvinceDistrictSelect, type LocationOption } from "@/components/map/province-district-select";
 import { formatTrPhone } from "@/lib/phone";
 import type { CreatedBusiness } from "./actions";
@@ -68,7 +69,7 @@ function ProfileFields({ d, fe, locations, isEdit }: { d: BusinessFormDefaults; 
       <Field label="Açık adres" name="addressLine" error={fe?.addressLine} required>
         <Textarea id="addressLine" name="addressLine" rows={2} maxLength={300} defaultValue={d.addressLine} required aria-invalid={!!fe?.addressLine} />
       </Field>
-      <LocationPicker defaultLat={d.latitude} defaultLng={d.longitude} errors={fe} />
+      <LocationPicker defaultLat={d.latitude} defaultLng={d.longitude} errors={fe} geocode={geocodeAction} />
     </div>
   );
 }

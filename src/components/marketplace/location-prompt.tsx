@@ -76,7 +76,7 @@ export function LocationPrompt({ mode }: { mode: "ASK" | "REFINE" | "FORGET" }) 
         type="button"
         onClick={share}
         disabled={busy}
-        className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-stone-900 px-4 text-sm font-medium text-white hover:bg-stone-800 disabled:opacity-60"
+        className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-brand-900 px-4 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-60"
       >
         <LocateFixed className="size-4" aria-hidden /> {busy ? "Konum alınıyor…" : "Konumumu paylaş"}
       </button>

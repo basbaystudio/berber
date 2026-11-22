@@ -31,7 +31,7 @@ export default function LocationPickerMap({ value, onPick }: { value: LatLng | n
       <ClickHandler onPick={onPick} />
       {value && (
         <>
-          <CircleMarker center={value} radius={9} pathOptions={{ color: "#1d4ed8", fillColor: "#3b82f6", fillOpacity: 0.9, weight: 3 }} />
+          <CircleMarker center={value} radius={9} pathOptions={{ color: "#001d48", fillColor: "#fe7001", fillOpacity: 0.95, weight: 3 }} />
           <Recenter center={value} zoom={15} />
         </>
       )}
