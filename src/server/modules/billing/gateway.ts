@@ -6,6 +6,7 @@ import { audit } from "@/server/lib/audit";
 import { logger } from "@/server/lib/logger";
 import { recordPayment } from "./subscriptions";
 import { notifyAdminPaymentReceived } from "./invoices";
+import type { BillingCycle } from "./status";
 
 /**
  * Otomatik yenilenen kart aboneliği için ödeme sağlayıcısı arayüzü (iyzico, PayTR vb.).
@@ -19,10 +20,10 @@ import { notifyAdminPaymentReceived } from "./invoices";
  */
 export interface PaymentGateway {
   readonly name: string;
-  startCardSetup(input: { businessId: string; email: string; planCode: string; billingCycle: "MONTHLY" | "YEARLY"; feeKurus: number; returnUrl: string }): Promise<{ redirectUrl: string }>;
+  startCardSetup(input: { businessId: string; email: string; planCode: string; billingCycle: BillingCycle; feeKurus: number; returnUrl: string }): Promise<{ redirectUrl: string }>;
   cancelSubscription(providerSubscriptionRef: string): Promise<void>;
   /** Ödeme dönemi değişince sağlayıcıdaki tekrarlayan tutarı/aralığı günceller (bir sonraki çekimden itibaren). */
-  updateSubscription(providerSubscriptionRef: string, input: { billingCycle: "MONTHLY" | "YEARLY"; feeKurus: number }): Promise<void>;
+  updateSubscription(providerSubscriptionRef: string, input: { billingCycle: BillingCycle; feeKurus: number }): Promise<void>;
   /** İmza doğrulaması yapmalı; doğrulanamayan istek için hata fırlatmalı. */
   parseWebhook(req: Request): Promise<GatewayEvent>;
 }

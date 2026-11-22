@@ -17,7 +17,7 @@ type Ctx = { businessName: string; coveredUntil: string; feeKurus: number; feeUn
 export function pastDueForBusiness(c: Ctx) {
   const lines = [
     `Merhaba, ${c.businessName} işletmesinin abonelik ödemesi ${formatDateStr(c.coveredUntil)} itibarıyla gecikti.`,
-    `${c.feeUnit === "yıl" ? "Yıllık" : "Aylık"} ücret: ${formatTL(c.feeKurus)}. Ödeme ${c.graceDays} gün içinde yapılmazsa işletmeniz otomatik olarak askıya alınacak ve profiliniz yayından kalkacaktır.`,
+    `${c.feeUnit === "yıl" ? "Yıllık" : c.feeUnit === "tek seferlik" ? "Tek seferlik" : "Aylık"} ücret: ${formatTL(c.feeKurus)}. Ödeme ${c.graceDays} gün içinde yapılmazsa işletmeniz otomatik olarak askıya alınacak ve profiliniz yayından kalkacaktır.`,
     c.contactLine,
   ];
   return { subject: "Abonelik ödemeniz gecikti", text: lines.join("\n\n"), html: layout("Abonelik ödemeniz gecikti", lines) };
@@ -26,7 +26,7 @@ export function pastDueForBusiness(c: Ctx) {
 export function pastDueForAdmin(c: Ctx) {
   const lines = [
     `${c.businessName} işletmesinin abonelik ödemesi gecikti (son ödenen gün: ${formatDateStr(c.coveredUntil)}).`,
-    `${c.feeUnit === "yıl" ? "Yıllık" : "Aylık"} ücret: ${formatTL(c.feeKurus)}. Ödeme kaydedilmezse ${c.graceDays}. günde otomatik askıya alınacak.`,
+    `${c.feeUnit === "yıl" ? "Yıllık" : c.feeUnit === "tek seferlik" ? "Tek seferlik" : "Aylık"} ücret: ${formatTL(c.feeKurus)}. Ödeme kaydedilmezse ${c.graceDays}. günde otomatik askıya alınacak.`,
   ];
   return { subject: `Ödeme gecikti: ${c.businessName}`, text: lines.join("\n\n"), html: layout("Abonelik ödemesi gecikti", lines) };
 }

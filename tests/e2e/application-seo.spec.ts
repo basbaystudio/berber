@@ -73,6 +73,7 @@ test("SEO: başlık etiketleri, yapılandırılmış veri, şehir sayfaları, si
 
   const sm = await (await request.get("/sitemap.xml")).text();
   expect(sm).toContain("/basvuru");
+  expect(sm).toContain("/fiyatlandirma");
   const robots = await (await request.get("/robots.txt")).text();
   expect(robots).toContain("Sitemap:");
 });
@@ -102,4 +103,21 @@ test("üst menü: Müşteri Girişi, Müşteri Kayıt, İşletme Girişi; işlet
   await bp.getByRole("button", { name: "Giriş yap" }).click();
   await expect(bp).toHaveURL(/\/isletme\/sifre-degistir$/);
   await b.close();
+});
+
+test("fiyatlandırma: ana sayfa butonu → aylık, yıllık, tek seferlik → başvuruda seçili gelir", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("main").getByRole("link", { name: "Fiyatlandırma" }).click();
+  await expect(page).toHaveURL(/\/fiyatlandirma$/);
+  await expect(page.getByRole("heading", { level: 2, name: "Aylık" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Yıllık" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Tek seferlik" })).toBeVisible();
+  await expect(page.getByText("₺14.999", { exact: true })).toBeVisible();
+  await expect(page.getByText(/fotoğraf çekim/i)).toHaveCount(0);
+
+  await page.getByRole("link", { name: "Tek seferlik ile başvur" }).click();
+  await expect(page).toHaveURL(/\/basvuru\?donem=tek-seferlik$/);
+  await expect(page.getByRole("radio", { name: "Tek seferlik" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByText("bir kez", { exact: false }).first()).toBeVisible();
+  await expect(page.getByText(/dükkan çekimi/i)).toHaveCount(0);
 });

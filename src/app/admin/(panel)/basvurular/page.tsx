@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAdminPage } from "@/server/auth/guards";
 import { db } from "@/server/db/client";
-import { getApplicationOffer, listApplications } from "@/server/modules/applications";
+import { CYCLE_LABEL, getApplicationOffer, listApplications } from "@/server/modules/applications";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/feedback";
 import { formatTrPhone } from "@/lib/phone";
 import { formatDateTime } from "@/lib/time";
@@ -58,7 +58,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge tone="blue">
-                      {planName} · {a.billingCycle === "YEARLY" ? "Yıllık" : "Aylık"}
+                      {planName} · {CYCLE_LABEL[a.billingCycle] ?? "Aylık"}
                     </Badge>
                     {a.status === "APPROVED" && <Badge tone="green">Onaylandı</Badge>}
                     {a.status === "REJECTED" && <Badge tone="red">Reddedildi</Badge>}

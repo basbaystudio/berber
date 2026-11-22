@@ -1,4 +1,5 @@
 import { diffDays } from "@/lib/dates";
+import { formatTL } from "@/lib/money";
 
 export type SubscriptionStatusKind = "FREE_PERIOD" | "TRIAL" | "PAID" | "PAST_DUE" | "CANCELLED";
 
@@ -9,7 +10,14 @@ export type SubscriptionStatus = {
   days?: number;
   /** Bir sonraki ödemenin vadesi (dahil son günden sonraki gün değil, son kapsanan gün) */
   coveredUntil?: string | null;
+  /** Tek seferlik ödeme yapılmış: süresiz kullanım */
+  lifetime?: boolean;
 };
+
+export type BillingCycle = "MONTHLY" | "YEARLY" | "LIFETIME";
+
+/** Tek seferlik ödemede kapsanan son gün (süresiz kullanım). */
+export const LIFETIME_UNTIL = "2099-12-31";
 
 /**
  * Abonelik durumunu tarihlerden hesaplar (saklanmaz, böylece zamanlanmış görev gerektirmez).
@@ -22,6 +30,7 @@ export function computeSubscriptionStatus(
 ): SubscriptionStatus {
   if (sub.cancelledAt) return { kind: "CANCELLED", label: "İptal edildi" };
   if (!billingEnabled || !sub.trialEndsOn) return { kind: "FREE_PERIOD", label: "Ücretsiz dönem" };
+  if (sub.paidThrough && sub.paidThrough >= LIFETIME_UNTIL) return { kind: "PAID", label: "Süresiz (tek seferlik)", lifetime: true, coveredUntil: sub.paidThrough };
   if (today <= sub.trialEndsOn)
     return { kind: "TRIAL", label: "Ücretsiz deneme", days: diffDays(sub.trialEndsOn, today) + 1, coveredUntil: sub.trialEndsOn };
   if (sub.paidThrough && today <= sub.paidThrough)
@@ -47,9 +56,10 @@ export function needsPaymentSetup(
 }
 
 /** Abonelik dönemine göre geçerli ücret. */
-export function currentFee(sub: { billingCycle: string; monthlyFeeKurus: number; yearlyFeeKurus: number | null }) {
-  const yearly = sub.billingCycle === "YEARLY" && sub.yearlyFeeKurus != null;
-  return yearly
-    ? { kurus: sub.yearlyFeeKurus!, months: 12, unit: "yıl", label: "Yıllık" as const }
-    : { kurus: sub.monthlyFeeKurus, months: 1, unit: "ay", label: "Aylık" as const };
+export function currentFee(sub: { billingCycle: string; monthlyFeeKurus: number; yearlyFeeKurus: number | null; lifetimeFeeKurus?: number | null }) {
+  if (sub.billingCycle === "LIFETIME" && sub.lifetimeFeeKurus != null)
+    return { kurus: sub.lifetimeFeeKurus, months: 0, unit: "tek seferlik", label: "Tek seferlik" as const, text: `${formatTL(sub.lifetimeFeeKurus)} tek seferlik` };
+  if (sub.billingCycle === "YEARLY" && sub.yearlyFeeKurus != null)
+    return { kurus: sub.yearlyFeeKurus, months: 12, unit: "yıl", label: "Yıllık" as const, text: `${formatTL(sub.yearlyFeeKurus)} / yıl` };
+  return { kurus: sub.monthlyFeeKurus, months: 1, unit: "ay", label: "Aylık" as const, text: `${formatTL(sub.monthlyFeeKurus)} / ay` };
 }

@@ -74,7 +74,7 @@ test("erişilebilirlik ve duyarlı yerleşim: herkese açık sayfalar, işletme 
 
   const guest = await browser.newContext({ ...testInfo.project.use });
   const gp = await guest.newPage();
-  for (const p of ["/", "/ara", `/berber/${slug}`, `/berber/${slug}/randevu`, "/giris", "/kayit", "/sifremi-unuttum", "/admin", "/isletme", "/kvkk-aydinlatma", "/basvuru", "/berberler/istanbul"]) {
+  for (const p of ["/", "/ara", `/berber/${slug}`, `/berber/${slug}/randevu`, "/giris", "/kayit", "/sifremi-unuttum", "/admin", "/isletme", "/kvkk-aydinlatma", "/basvuru", "/fiyatlandirma", "/berberler/istanbul"]) {
     await check(gp, p);
   }
   await guest.close();

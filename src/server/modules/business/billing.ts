@@ -7,7 +7,7 @@ import { AppError, notFound } from "@/server/lib/errors";
 import { audit } from "@/server/lib/audit";
 import { getSetting } from "@/server/modules/platform/settings";
 import { getPaymentGateway } from "@/server/modules/billing/gateway";
-import { computeSubscriptionStatus, currentFee } from "@/server/modules/billing/status";
+import { computeSubscriptionStatus, currentFee, LIFETIME_UNTIL, type BillingCycle } from "@/server/modules/billing/status";
 import { todayTR } from "@/lib/dates";
 import { bizAudit, type Biz } from "./context";
 
@@ -83,7 +83,7 @@ export async function startCardSetup(db: DB, biz: Biz, returnUrl: string) {
     businessId: biz.businessId,
     email: row.email,
     planCode: row.plan.code,
-    billingCycle: row.sub.billingCycle === "YEARLY" ? "YEARLY" : "MONTHLY",
+    billingCycle: row.sub.billingCycle as BillingCycle,
     feeKurus: currentFee(row.sub).kurus,
     returnUrl,
   });
@@ -91,13 +91,15 @@ export async function startCardSetup(db: DB, biz: Biz, returnUrl: string) {
   return redirectUrl;
 }
 
-export const cycleSchema = z.object({ cycle: z.enum(["MONTHLY", "YEARLY"], { error: "Ödeme dönemi seçin." }) });
+export const cycleSchema = z.object({ cycle: z.enum(["MONTHLY", "YEARLY", "LIFETIME"], { error: "Ödeme dönemi seçin." }) });
 
-/** Aylık ↔ yıllık ödeme dönemi değişikliği (bir sonraki ödemeden itibaren geçerli). */
-export async function setBillingCycle(db: DB, biz: Biz, cycle: "MONTHLY" | "YEARLY") {
+/** Aylık / yıllık / tek seferlik ödeme dönemi değişikliği (bir sonraki ödemeden itibaren geçerli). */
+export async function setBillingCycle(db: DB, biz: Biz, cycle: BillingCycle) {
   const [sub] = await db.select().from(businessSubscriptions).where(eq(businessSubscriptions.businessId, biz.businessId));
   if (!sub) throw notFound("Abonelik");
   if (cycle === "YEARLY" && sub.yearlyFeeKurus == null) throw new AppError("VALIDATION", "Paketinizde yıllık ödeme seçeneği yok.");
+  if (cycle === "LIFETIME" && sub.lifetimeFeeKurus == null) throw new AppError("VALIDATION", "Paketinizde tek seferlik ödeme seçeneği yok.");
+  if (sub.paidThrough && sub.paidThrough >= LIFETIME_UNTIL) throw new AppError("VALIDATION", "Tek seferlik ödemeniz yapıldı; ödeme dönemi değiştirilemez.");
   if (sub.billingCycle === cycle) return;
   const gw = getPaymentGateway();
   if (gw && sub.providerSubscriptionRef && sub.autoRenew) {
