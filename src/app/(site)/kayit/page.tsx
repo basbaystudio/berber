@@ -8,7 +8,7 @@ import { Alert } from "@/components/ui/feedback";
 import { safeNext } from "@/lib/safe-next";
 import { registerAction } from "../auth-actions";
 
-export const metadata: Metadata = { title: "Kayıt ol" };
+export const metadata: Metadata = { title: "Müşteri kayıt" };
 
 export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const sp = await searchParams;
@@ -16,7 +16,7 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
   if (await getCustomer()) redirect(next);
   return (
     <AuthCard
-      title="Hesap oluştur"
+      title="Müşteri hesabı oluştur"
       description={
         <>
           Zaten hesabınız var mı?{" "}

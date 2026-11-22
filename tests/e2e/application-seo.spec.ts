@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { adminLogin, resetLoginLimits } from "./helpers";
+import { adminLogin, createBusinessViaAdmin, resetLoginLimits } from "./helpers";
 
 test("başvuru: ana sayfadan form → yönetici onayı → işletme girişi", async ({ page, browser }, testInfo) => {
   test.setTimeout(150_000);
@@ -46,7 +46,7 @@ test("başvuru: ana sayfadan form → yönetici onayı → işletme girişi", as
   const b = await browser.newContext({ ...testInfo.project.use });
   const bp = await b.newPage();
   await bp.goto("/isletme");
-  await bp.getByLabel("Kullanıcı adı").fill(login);
+  await bp.getByLabel("E-posta veya kullanıcı adı").fill(login);
   await bp.getByLabel("Şifre").fill(temp);
   await bp.getByRole("button", { name: "Giriş yap" }).click();
   await expect(bp).toHaveURL(/\/isletme\/sifre-degistir$/);
@@ -75,4 +75,31 @@ test("SEO: başlık etiketleri, yapılandırılmış veri, şehir sayfaları, si
   expect(sm).toContain("/basvuru");
   const robots = await (await request.get("/robots.txt")).text();
   expect(robots).toContain("Sitemap:");
+});
+
+test("üst menü: Müşteri Girişi, Müşteri Kayıt, İşletme Girişi; işletme e-postayla giriş yapar", async ({ page, browser }, testInfo) => {
+  test.setTimeout(120_000);
+  await page.goto("/");
+  const nav = page.getByRole("navigation", { name: "Site menüsü" });
+  await expect(nav.getByRole("link", { name: "Müşteri Girişi" })).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Müşteri Kayıt" })).toBeVisible();
+  await nav.getByRole("link", { name: "İşletme Girişi" }).click();
+  await expect(page).toHaveURL(/\/isletme$/);
+  await expect(page.getByLabel("E-posta veya kullanıcı adı")).toBeVisible();
+
+  // Yönetici işletme oluşturur; işletme e-postasıyla giriş
+  const suffix = `${testInfo.project.name}-${Date.now().toString(36)}`;
+  const login = `eposta-${suffix}`;
+  await adminLogin(page);
+  const { tempPassword } = await createBusinessViaAdmin(page, `E-posta Berber ${suffix}`, login);
+  await resetLoginLimits();
+  const b = await browser.newContext({ ...testInfo.project.use });
+  const bp = await b.newPage();
+  await bp.goto("/");
+  await bp.getByRole("navigation", { name: "Site menüsü" }).getByRole("link", { name: "İşletme Girişi" }).click();
+  await bp.getByLabel("E-posta veya kullanıcı adı").fill(`${login}@test.local`);
+  await bp.getByLabel("Şifre").fill(tempPassword);
+  await bp.getByRole("button", { name: "Giriş yap" }).click();
+  await expect(bp).toHaveURL(/\/isletme\/sifre-degistir$/);
+  await b.close();
 });

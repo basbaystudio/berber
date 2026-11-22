@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db/client";
-import { businessUsers, sessions } from "@/server/db/schema";
+import { businessUsers, businesses, sessions } from "@/server/db/schema";
 import { login } from "@/server/auth/login";
 import { createSession, invalidateAllSessions, validateSession } from "@/server/auth/session";
 import { hashPassword, verifyPassword } from "@/server/auth/password";
@@ -167,5 +167,23 @@ describe("işletme hesabı yaşam döngüsü", () => {
     await invalidateAllSessions(db, "BUSINESS", admin.id);
     expect(await validateSession(db, "ADMIN", s.token)).not.toBeNull();
     expect(await validateSession(db, "BUSINESS", other.token)).toBeNull();
+  });
+});
+
+describe("işletme girişi e-postayla", () => {
+  it("işletmenin e-postası (büyük/küçük harf fark etmez) ve şifresiyle giriş yapılır; yanlış şifre ve ortak e-posta reddedilir", async () => {
+    const admin = await makeAdmin();
+    const biz = await makeBusiness(admin.id);
+    const [b] = await db.select({ email: businesses.email }).from(businesses).where(eq(businesses.id, biz.businessId));
+    const r = await login(db, "BUSINESS", b!.email!.toUpperCase(), biz.tempPassword, meta);
+    expect((await validateSession(db, "BUSINESS", r.token))?.principalId).toBe(biz.userId);
+    await expect(login(db, "BUSINESS", b!.email!, "yanlis-sifre-123", meta)).rejects.toMatchObject({ code: "INVALID_CREDENTIALS" });
+
+    // İki işletme aynı e-postayı kullanıyorsa e-postayla giriş belirsizdir: kullanıcı adı gerekir
+    const other = await makeBusiness(admin.id);
+    await db.update(businesses).set({ email: b!.email }).where(eq(businesses.id, other.businessId));
+    await clearRateLimits();
+    await expect(login(db, "BUSINESS", b!.email!, biz.tempPassword, meta)).rejects.toMatchObject({ code: "INVALID_CREDENTIALS" });
+    expect((await login(db, "BUSINESS", biz.login, biz.tempPassword, meta)).principalId).toBe(biz.userId);
   });
 });

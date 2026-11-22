@@ -93,7 +93,7 @@ test("admin işletme oluşturur, işletme ilk girişte şifresini değiştirir",
   const biz = await browser.newContext({ ...testInfo.project.use });
   const bp = await biz.newPage();
   await bp.goto("/isletme");
-  await bp.getByLabel("Kullanıcı adı").fill(login.toUpperCase());
+  await bp.getByLabel("E-posta veya kullanıcı adı").fill(login.toUpperCase());
   await bp.getByLabel("Şifre").fill(tempPassword);
   await bp.getByRole("button", { name: "Giriş yap" }).click();
   await expect(bp).toHaveURL(/\/isletme\/sifre-degistir$/);
@@ -130,7 +130,7 @@ test("admin işletme oluşturur, işletme ilk girişte şifresini değiştirir",
   const biz2 = await browser.newContext({ ...testInfo.project.use });
   const bp2 = await biz2.newPage();
   await bp2.goto("/isletme");
-  await bp2.getByLabel("Kullanıcı adı").fill(login);
+  await bp2.getByLabel("E-posta veya kullanıcı adı").fill(login);
   await bp2.getByLabel("Şifre").fill("Makas2026kesim");
   await bp2.getByRole("button", { name: "Giriş yap" }).click();
   await expect(bp2.getByRole("alert").filter({ hasText: /\S/ })).toContainText("askıya alınmış");

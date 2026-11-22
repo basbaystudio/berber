@@ -213,7 +213,7 @@ export async function approveApplication(db: DB, actor: AdminActor, id: string) 
       `Merhaba ${a.ownerName},`,
       `${a.businessName} artık Dijital Berber'de. ${sub!.trialMonths} ay ücretsiz kullanım hakkınız tanımlandı.`,
       `Giriş adresi: ${loginUrl}`,
-      `Kullanıcı adı: ${created.login}`,
+      `Giriş için e-posta adresiniz (${a.email}) ya da kullanıcı adınız (${created.login}) ile geçici şifrenizi kullanın.`,
       `Geçici şifre: ${created.tempPassword}`,
       `İlk girişte şifrenizi değiştirmeniz istenecek. Ardından çalışma saatlerinizi, çalışanlarınızı ve hizmetlerinizi ekleyin; profiliniz yayına hazır olsun.`,
     ]),

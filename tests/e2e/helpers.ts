@@ -53,7 +53,7 @@ export async function businessFirstLogin(browser: Browser, testInfo: TestInfo, l
   const ctx = await browser.newContext({ ...testInfo.project.use });
   const bp = await ctx.newPage();
   await bp.goto("/isletme");
-  await bp.getByLabel("Kullanıcı adı").fill(login);
+  await bp.getByLabel("E-posta veya kullanıcı adı").fill(login);
   await bp.getByLabel("Şifre").fill(tempPassword);
   await bp.getByRole("button", { name: "Giriş yap" }).click();
   await expect(bp).toHaveURL(/\/isletme\/sifre-degistir$/);

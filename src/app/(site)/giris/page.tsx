@@ -8,7 +8,7 @@ import { Alert } from "@/components/ui/feedback";
 import { safeNext } from "@/lib/safe-next";
 import { customerLoginAction } from "../auth-actions";
 
-export const metadata: Metadata = { title: "Giriş yap" };
+export const metadata: Metadata = { title: "Müşteri girişi" };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; sifre?: string }> }) {
   const sp = await searchParams;
@@ -17,13 +17,19 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const fromBooking = next.includes("/randevu");
   return (
     <AuthCard
-      title="Giriş yap"
+      title="Müşteri girişi"
       description={
         <>
           Hesabınız yok mu?{" "}
           <Link href={`/kayit?next=${encodeURIComponent(next)}`} className="font-medium text-stone-900 underline underline-offset-4">
             Kayıt olun
           </Link>
+          <span className="mt-1 block">
+            İşletme sahibi misiniz?{" "}
+            <Link href="/isletme" className="font-medium text-stone-900 underline underline-offset-4">
+              İşletme girişi
+            </Link>
+          </span>
         </>
       }
     >
