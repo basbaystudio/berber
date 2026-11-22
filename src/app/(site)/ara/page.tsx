@@ -11,7 +11,17 @@ import { SearchFilters } from "@/components/marketplace/filters";
 import { Pagination } from "@/components/ui/pagination";
 import { EmptyState } from "@/components/ui/feedback";
 
-export const metadata: Metadata = { title: "Berber bul", description: "İl, ilçe, hizmet, fiyat ve puana göre berber arayın; bugün müsait olanları görün." };
+export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }): Promise<Metadata> {
+  const sp = await searchParams;
+  const filtered = Object.values(sp).some(Boolean);
+  return {
+    title: "Berber bul",
+    description: "İl, ilçe, hizmet, fiyat ve puana göre berber arayın; bugün müsait olanları görün ve online randevu alın.",
+    alternates: { canonical: "/ara" },
+    // Filtreli arama sonuçları çok sayıda kopya sayfa üretir; dizine yalnızca şehir/ilçe sayfaları eklenir
+    robots: filtered ? { index: false, follow: true } : undefined,
+  };
+}
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   await connection();

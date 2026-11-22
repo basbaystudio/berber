@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { siteUrl } from "@/lib/site";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
@@ -24,10 +25,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const p = await getPublicProfile(db, slug);
   if (!p) return { title: "Berber bulunamadı" };
+  const minPrice = p.services.length ? Math.min(...p.services.map((s) => s.priceKurus)) : null;
+  const desc =
+    `${p.name}, ${p.district} ${p.province} berberi. ` +
+    (p.ratingCount ? `${p.ratingAvg.toFixed(1)} puan (${p.ratingCount} yorum). ` : "") +
+    (minPrice != null ? `Fiyatlar ${formatTL(minPrice)}'den başlıyor. ` : "") +
+    "Boş saatleri gör, online randevu al.";
   return {
-    title: `${p.name} · ${p.district}, ${p.province}`,
-    description: p.description?.slice(0, 160) ?? `${p.name} — hizmetler, fiyatlar, boş saatler ve online randevu.`,
-    openGraph: { images: p.coverUrl ? [p.coverUrl] : undefined },
+    title: `${p.name} — ${p.district} Berber, Online Randevu`,
+    description: desc.slice(0, 160),
+    alternates: { canonical: `/berber/${p.slug}` },
+    openGraph: { title: `${p.name} · ${p.district}, ${p.province}`, description: desc.slice(0, 200), url: `/berber/${p.slug}`, images: p.coverUrl ? [p.coverUrl] : undefined },
   };
 }
 
@@ -54,12 +62,53 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
     telephone: p.phone,
     address: { "@type": "PostalAddress", streetAddress: p.addressLine, addressLocality: p.district, addressRegion: p.province, addressCountry: "TR" },
     ...(p.latitude != null ? { geo: { "@type": "GeoCoordinates", latitude: p.latitude, longitude: p.longitude } } : {}),
-    ...(p.ratingCount ? { aggregateRating: { "@type": "AggregateRating", ratingValue: p.ratingAvg.toFixed(1), reviewCount: p.ratingCount } } : {}),
+    ...(p.ratingCount ? { aggregateRating: { "@type": "AggregateRating", ratingValue: p.ratingAvg.toFixed(1), reviewCount: p.ratingCount, bestRating: 5 } } : {}),
+    url: `${siteUrl()}/berber/${p.slug}`,
+    ...(p.coverUrl || p.logoUrl ? { image: [p.coverUrl, p.logoUrl].filter(Boolean) } : {}),
+    ...(p.description ? { description: p.description.slice(0, 300) } : {}),
+    priceRange: "₺₺",
+    openingHoursSpecification: Object.entries(p.weekly).flatMap(([wd, ranges]) =>
+      (ranges as { start: string; end: string }[]).map((r) => ({
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: `https://schema.org/${["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][Number(wd) - 1]}`,
+        opens: r.start,
+        closes: r.end,
+      })),
+    ),
+    makesOffer: p.services.slice(0, 20).map((s) => ({
+      "@type": "Offer",
+      itemOffered: { "@type": "Service", name: s.name },
+      price: (s.priceKurus / 100).toFixed(2),
+      priceCurrency: "TRY",
+    })),
+  };
+  const crumbs = [
+    { name: "Ana sayfa", url: "/" },
+    { name: `${p.province} berberleri`, url: `/berberler/${p.provinceSlug}` },
+    { name: `${p.district} berberleri`, url: `/berberler/${p.provinceSlug}/${p.districtSlug}` },
+    { name: p.name, url: `/berber/${p.slug}` },
+  ];
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: crumbs.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: c.name, item: `${siteUrl()}${c.url}` })),
   };
 
   return (
     <main className="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd).replace(/</g, "\\u003c") }} />
+      <nav aria-label="Konum" className="mb-3 flex flex-wrap items-center gap-1.5 text-sm text-stone-500">
+        {crumbs.slice(0, -1).map((c) => (
+          <span key={c.url} className="flex items-center gap-1.5">
+            <Link href={c.url} className="hover:text-stone-900">
+              {c.name}
+            </Link>
+            <span aria-hidden>›</span>
+          </span>
+        ))}
+        <span className="text-stone-700">{p.name}</span>
+      </nav>
       <div className="relative overflow-hidden rounded-3xl bg-stone-200">
         {p.coverUrl ? (
           // eslint-disable-next-line @next/next/no-img-element

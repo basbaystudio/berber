@@ -53,7 +53,7 @@ test("erişilebilirlik ve duyarlı yerleşim: herkese açık sayfalar, işletme 
   const { tempPassword } = await createBusinessViaAdmin(page, `Erişim Berber ${suffix}`, login);
   const slug = await publish(login);
 
-  for (const p of ["/admin", "/admin/isletmeler", "/admin/abonelikler", "/admin/belgeler", "/admin/yorumlar", "/admin/ayarlar"]) {
+  for (const p of ["/admin", "/admin/basvurular", "/admin/isletmeler", "/admin/abonelikler", "/admin/belgeler", "/admin/yorumlar", "/admin/ayarlar"]) {
     await check(page, p);
   }
 
@@ -74,7 +74,7 @@ test("erişilebilirlik ve duyarlı yerleşim: herkese açık sayfalar, işletme 
 
   const guest = await browser.newContext({ ...testInfo.project.use });
   const gp = await guest.newPage();
-  for (const p of ["/", "/ara", `/berber/${slug}`, `/berber/${slug}/randevu`, "/giris", "/kayit", "/sifremi-unuttum", "/admin", "/isletme", "/kvkk-aydinlatma"]) {
+  for (const p of ["/", "/ara", `/berber/${slug}`, `/berber/${slug}/randevu`, "/giris", "/kayit", "/sifremi-unuttum", "/admin", "/isletme", "/kvkk-aydinlatma", "/basvuru", "/berberler/istanbul"]) {
     await check(gp, p);
   }
   await guest.close();

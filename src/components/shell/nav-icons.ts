@@ -1,4 +1,4 @@
-import { Building2, ClipboardList, LayoutDashboard, Tags, CalendarDays, Users, Scissors, Clock, Images, Settings, CreditCard, GalleryHorizontal, Store, Package, CalendarOff, FileCheck2, ScrollText, ListChecks, Contact, MessageSquareText, Award, Camera } from "lucide-react";
+import { Building2, ClipboardList, LayoutDashboard, Tags, CalendarDays, Users, Scissors, Clock, Images, Settings, CreditCard, GalleryHorizontal, Store, Package, CalendarOff, FileCheck2, ScrollText, ListChecks, Contact, MessageSquareText, Award, Camera, Inbox } from "lucide-react";
 
 /** Sunucu bileşenlerinden istemciye ikon bileşeni geçirilemediği için isimle eşlenir. */
 export const NAV_ICONS = {
@@ -24,6 +24,7 @@ export const NAV_ICONS = {
   reviews: MessageSquareText,
   award: Award,
   camera: Camera,
+  inbox: Inbox,
 } as const;
 
 export type NavIconName = keyof typeof NAV_ICONS;

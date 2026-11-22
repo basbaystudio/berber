@@ -238,3 +238,37 @@ export const businessTrustHistory = pgTable(
   },
   (t) => [uniqueIndex("business_trust_history_day_uq").on(t.businessId, t.computedOn)],
 );
+
+/** İşletme başvurusu (ana sayfadaki "İşletmeni ekle" formu). Yönetici onaylayınca işletme ve hesabı oluşturulur. */
+export const businessApplications = pgTable(
+  "business_applications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    businessName: text("business_name").notNull(),
+    ownerName: text("owner_name").notNull(),
+    phone: text("phone").notNull(),
+    email: text("email").notNull(),
+    provinceId: smallint("province_id").notNull().references(() => provinces.id),
+    districtId: integer("district_id").notNull(),
+    addressLine: text("address_line").notNull(),
+    staffCount: smallint("staff_count").notNull(),
+    planId: uuid("plan_id").notNull().references(() => subscriptionPlans.id),
+    billingCycle: text("billing_cycle").notNull(),
+    note: text("note"),
+    kvkkConsentAt: ts("kvkk_consent_at").notNull(),
+    /** NEW: incelenmedi · APPROVED: işletme oluşturuldu · REJECTED: reddedildi */
+    status: text("status").notNull().default("NEW"),
+    businessId: uuid("business_id").references(() => businesses.id, { onDelete: "set null" }),
+    reviewedByAdminId: uuid("reviewed_by_admin_id").references(() => platformAdmins.id),
+    reviewedAt: ts("reviewed_at"),
+    rejectReason: text("reject_reason"),
+    ip: text("ip"),
+    createdAt: ts("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("business_applications_status_idx").on(t.status, t.createdAt),
+    check("business_applications_status_ck", sql`${t.status} IN ('NEW', 'APPROVED', 'REJECTED')`),
+    check("business_applications_cycle_ck", sql`${t.billingCycle} IN ('MONTHLY', 'YEARLY')`),
+    check("business_applications_staff_ck", sql`${t.staffCount} BETWEEN 1 AND 100`),
+  ],
+);

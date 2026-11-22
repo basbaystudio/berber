@@ -12,7 +12,7 @@ import { publicCondition } from "./search";
 /** Herkese açık işletme profili (yalnızca yayındaki ve aktif işletmeler). */
 export async function getPublicProfile(db: Executor, slug: string, customerId?: string | null) {
   const [row] = await db
-    .select({ b: businesses, province: provinces.name, district: districts.name })
+    .select({ b: businesses, province: provinces.name, district: districts.name, provinceSlug: provinces.slug, districtSlug: districts.slug })
     .from(businesses)
     .innerJoin(provinces, eq(provinces.id, businesses.provinceId))
     .innerJoin(districts, eq(districts.id, businesses.districtId))
@@ -69,6 +69,8 @@ export async function getPublicProfile(db: Executor, slug: string, customerId?: 
     addressLine: b.addressLine,
     province: row.province,
     district: row.district,
+    provinceSlug: row.provinceSlug,
+    districtSlug: row.districtSlug,
     latitude: b.latitude,
     longitude: b.longitude,
     logoUrl: b.logoUrl,

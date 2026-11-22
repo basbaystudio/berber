@@ -22,7 +22,7 @@ Hepsi ücretsiz açılır. Vercel'e GitHub hesabınızla girin; Neon ve Blob'u V
 
 | Değişken | Değer |
 |---|---|
-| `APP_URL` | `https://dijitalberber.com` |
+| `APP_URL` | `https://www.dijitalberber.com` |
 | `CRON_SECRET` | 40+ karakterlik rastgele bir metin (bir şifre üreticiden alın) |
 | `RESEND_API_KEY` | Resend → API Keys'ten alınan anahtar (4. adım) |
 | `EMAIL_FROM` | `Dijital Berber <bildirim@dijitalberber.com>` |
@@ -93,7 +93,9 @@ Altyapı hazırdır; kart bilgisi hiçbir zaman bizim sunucumuza gelmez.
 - [ ] Telefon tarayıcısında "Ana ekrana ekle" ile uygulama kurulabiliyor mu? Çevrimdışıyken uyarı sayfası geliyor mu?
 - [ ] `https://dijitalberber.com/robots.txt` ve `/sitemap.xml` doğru adresi gösteriyor mu?
 - [ ] Vercel → Logs: hata kaydı yok mu? Ertesi sabah cron çalıştı mı (Logs → `/api/cron/daily`, 200)?
-- [ ] Google Search Console'a alan adını ve site haritasını ekleyin.
+- [ ] **Google Search Console:** search.google.com/search-console → "Mülk ekle" → "URL ön eki" → `https://www.dijitalberber.com` → doğrulama yöntemi **"HTML etiketi"** → verilen kodun yalnızca `content="..."` içindeki değerini Vercel'e `GOOGLE_SITE_VERIFICATION` olarak ekleyin, yeniden yayınlayın, "Doğrula"ya basın.
+- [ ] Search Console → **Site haritaları** → `sitemap.xml` gönderin.
+- [ ] **Google İşletme Profili** (Google Haritalar) açın: kendi markanız için. Her berbere de kendi Google İşletme Profili'ne dijitalberber.com profil bağlantısını "randevu bağlantısı" olarak eklemesini önerin.
 
 ## 10. Ücretsiz katman sınırları (özet)
 
