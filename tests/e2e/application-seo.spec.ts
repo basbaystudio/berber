@@ -12,7 +12,10 @@ test("başvuru: ana sayfadan form → yönetici onayı → işletme girişi", as
   await expect(gp.getByRole("heading", { level: 1 })).toContainText("İşletmenizi");
   await gp.waitForLoadState("networkidle");
 
+  // Günlük fiyat: yıllık 6.990 ₺ ≈ 19 ₺/gün, aylık 699,90 ₺ ≈ 23 ₺/gün
+  await expect(gp.getByText("≈₺19", { exact: true })).toBeVisible();
   await gp.getByRole("radio", { name: "Aylık", exact: true }).click();
+  await expect(gp.getByText("≈₺23", { exact: true })).toBeVisible();
   await gp.getByLabel("İşletme adı").fill(`Uzak Berber ${suffix}`);
   await gp.getByLabel("Çalışan sayısı").fill("3");
   await gp.getByRole("combobox", { name: "İl", exact: true }).selectOption({ label: "Trabzon" });

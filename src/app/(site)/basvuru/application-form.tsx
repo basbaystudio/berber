@@ -70,7 +70,8 @@ export function ApplicationForm({
         <div className={cn("grid gap-3", plans.length > 1 && "sm:grid-cols-2")}>
           {plans.map((p) => {
             const yearly = effCycle === "YEARLY" && p.yearly != null;
-            const perDay = yearly ? p.yearly! / 365 : p.monthly / 30;
+            // Kuruş cinsinden günlük tutar, tam liraya yuvarlanır (≈19 ₺)
+            const perDayKurus = Math.round((yearly ? p.yearly! / 365 : p.monthly / 30) / 100) * 100;
             return (
               <label
                 key={p.id}
@@ -84,7 +85,7 @@ export function ApplicationForm({
                   <span className="rounded-full bg-accent-600 px-2.5 py-0.5 text-xs font-semibold text-white">{freeMonths} ay ücretsiz</span>
                 </span>
                 <span>
-                  <span className="text-3xl font-bold tracking-tight text-stone-900">≈{formatTL(Math.round(perDay) * 100)}</span>
+                  <span className="text-3xl font-bold tracking-tight text-stone-900">≈{formatTL(perDayKurus)}</span>
                   <span className="text-sm text-stone-600"> / gün</span>
                 </span>
                 <span className="text-sm text-stone-600">
