@@ -201,6 +201,12 @@ async function main() {
       await db.insert(s.staffServices).values(svcRows.map((sv) => ({ businessId: bid, staffId: st!.id, serviceId: sv.id })));
     }
 
+    // Dükkan fotoğrafları (dış cephe + iç mekân örnekleri)
+    for (const [k, kind] of (["EXTERIOR", "INTERIOR", "INTERIOR", "INTERIOR"] as const).entries()) {
+      const img = await processAndStoreImage(await cover(i + k + 1), "portfolio", `businesses/${bid}/shop`);
+      await db.insert(s.shopPhotos).values({ businessId: bid, kind, storageKey: img.key, url: img.url, width: img.width, height: img.height, sizeBytes: img.sizeBytes, sortOrder: k, uploadedBy: "ADMIN" });
+    }
+
     // Portfolyo
     for (let p = 0; p < 6; p++) {
       const img = await processAndStoreImage(await portfolio(i + p), "portfolio", `businesses/${bid}/portfolio`);
