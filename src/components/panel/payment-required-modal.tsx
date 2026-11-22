@@ -28,7 +28,7 @@ export function PaymentRequiredModal({ title, feeText, logoutAction }: { title: 
 
   const body = (
     <>
-      <p>Hizmetinizin kesintisiz devam etmesi için lütfen kart bilgilerinizi girin.</p>
+      <p>Hizmetinizin kesintisiz devam etmesi için lütfen kart bilgilerinizi girin ya da havale / EFT ile ödeme yapın.</p>
       <p className="mt-1 font-medium text-stone-900">{feeText}</p>
     </>
   );
@@ -59,7 +59,7 @@ export function PaymentRequiredModal({ title, feeText, logoutAction }: { title: 
         {body}
         <div className="mt-6 flex flex-col gap-2 sm:flex-row-reverse">
           <Link href="/isletme/panel/abonelik" className={buttonClass({ size: "lg" }, "flex-1")}>
-            Kart bilgisi gir
+            Ödeme yap
           </Link>
           <form action={logoutAction} className="flex-1">
             <button type="submit" className={buttonClass({ variant: "ghost", size: "lg" }, "w-full")}>

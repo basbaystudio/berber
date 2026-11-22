@@ -64,7 +64,7 @@ En kolay yol: alan adının **ad sunucularını Vercel'e yönlendirmek**. Böyle
 - [ ] **Ayarlar → yasal metinler:** KVKK aydınlatma metni ve kullanım koşulları. Bu metinleri bir hukukçuya kontrol ettirin.
 - [ ] **Sözleşmeler:** işletme sözleşmesini yayınlayın; işletmeler panelde onaylar.
 - [ ] **Belge türleri:** vergi levhası ve işyeri açma ruhsatı zorunlu olarak tanımlıdır; gerekirse düzenleyin.
-- [ ] **Abonelikler:** paket fiyatlarını kontrol edin (varsayılan 699,90 TL/ay, 6.990 TL/yıl). Kampanya ayarlarında ilk 20 işletmeye 3 ay, diğerlerine 1 ay ücretsiz tanımlıdır.
+- [ ] **Abonelikler:** paket fiyatlarını kontrol edin (varsayılan 349,90 TL/ay, 3.490 TL/yıl, tek seferlik 14.999 TL). Kampanya ayarlarında ilk 20 işletmeye 3 ay, diğerlerine 1 ay ücretsiz tanımlıdır.
   **Ücretlendirme anahtarı kapalı** başlar: açtığınız gün deneme süreleri işlemeye başlar.
 - [ ] **Bannerlar, hizmet türleri, resmî tatiller:** gözden geçirin.
 

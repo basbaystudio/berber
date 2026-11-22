@@ -40,10 +40,10 @@ export function PlanForm({ action, defaults }: { action: Action; defaults?: Plan
           <Input name="code" id="code" defaultValue={defaults?.code} placeholder="premium-plus" maxLength={40} />
         </Field>
         <Field label="Aylık ücret (TL)" name="monthlyPriceKurus" error={fe?.monthlyPriceKurus} required>
-          <Input name="monthlyPriceKurus" id="monthlyPriceKurus" inputMode="decimal" defaultValue={kurusToInput(defaults?.monthlyPriceKurus)} placeholder="699,90" />
+          <Input name="monthlyPriceKurus" id="monthlyPriceKurus" inputMode="decimal" defaultValue={kurusToInput(defaults?.monthlyPriceKurus)} placeholder="349,90" />
         </Field>
         <Field label="Yıllık ücret (TL)" name="yearlyPriceKurus" error={fe?.yearlyPriceKurus} hint="Boşsa yıllık seçenek sunulmaz.">
-          <Input name="yearlyPriceKurus" id="yearlyPriceKurus" inputMode="decimal" defaultValue={kurusToInput(defaults?.yearlyPriceKurus ?? undefined)} placeholder="6.990" />
+          <Input name="yearlyPriceKurus" id="yearlyPriceKurus" inputMode="decimal" defaultValue={kurusToInput(defaults?.yearlyPriceKurus ?? undefined)} placeholder="3.490" />
         </Field>
         <Field label="Tek seferlik ücret (TL)" name="lifetimePriceKurus" error={fe?.lifetimePriceKurus} hint="Süresiz kullanım. Boşsa sunulmaz.">
           <Input name="lifetimePriceKurus" id="lifetimePriceKurus" inputMode="decimal" defaultValue={kurusToInput(defaults?.lifetimePriceKurus ?? undefined)} placeholder="14.999" />

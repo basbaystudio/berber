@@ -77,7 +77,7 @@ export function ApplicationForm({
           {plans.map((p) => {
             const yearly = effCycle === "YEARLY" && p.yearly != null;
             const lifetime = effCycle === "LIFETIME" && p.lifetime != null;
-            // Kuruş cinsinden günlük tutar, tam liraya yuvarlanır (≈19 ₺)
+            // Kuruş cinsinden günlük tutar, tam liraya yuvarlanır (yıllıkta ≈10 ₺)
             const perDayKurus = Math.round((yearly ? p.yearly! / 365 : p.monthly / 30) / 100) * 100;
             return (
               <label
@@ -122,7 +122,27 @@ export function ApplicationForm({
           })}
         </div>
         {fe?.planId && <p className="text-sm text-red-600">{fe.planId}</p>}
-        <p className="text-sm text-stone-500">Ücretsiz süre boyunca kart bilgisi istenmez, ödeme alınmaz. Randevu başına komisyon yoktur.</p>
+        <div role="radiogroup" aria-label="Ödeme yöntemi" className="space-y-2">
+          <p className="text-sm font-medium text-stone-700">Ödeme yöntemi</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {(
+              [
+                { v: "CARD", label: "Kartla otomatik ödeme", desc: "Ücret dönem başında kartınızdan çekilir." },
+                { v: "BANK_TRANSFER", label: "Havale / EFT", desc: "Ödemeyi banka hesabımıza kendiniz gönderirsiniz." },
+              ] as const
+            ).map((m) => (
+              <label key={m.v} className="flex cursor-pointer gap-3 rounded-2xl border border-stone-200 p-4 has-[:checked]:border-brand-900 has-[:checked]:bg-brand-50">
+                <input type="radio" name="preferredMethod" value={m.v} defaultChecked={m.v === "CARD"} className="mt-1 accent-brand-900" />
+                <span>
+                  <span className="block font-medium text-stone-900">{m.label}</span>
+                  <span className="mt-0.5 block text-sm text-stone-600">{m.desc}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+          {fe?.preferredMethod && <p className="text-sm text-red-600">{fe.preferredMethod}</p>}
+        </div>
+        <p className="text-sm text-stone-500">Fiyatlara KDV dahildir. Ücretsiz süre boyunca kart bilgisi istenmez, ödeme alınmaz. Randevu başına komisyon yoktur.</p>
       </fieldset>
 
       <fieldset className="space-y-4 rounded-3xl border border-stone-200/80 bg-white p-6 sm:p-8">

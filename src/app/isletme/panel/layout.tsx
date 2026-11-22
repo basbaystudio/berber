@@ -88,10 +88,10 @@ export default async function BusinessPanelLayout({ children }: { children: Reac
               title={sub.sub.isEarlyAdopter || sub.sub.trialMonths > 0 ? "Ücretsiz deneme süreniz sona erdi" : "Ücretsiz kullanım süreniz sona erdi"}
               feeText={
                 currentFee(sub.sub).months === 0
-                  ? `Tek seferlik ödemeniz: ${formatTL(currentFee(sub.sub).kurus)}`
+                  ? `Tek seferlik ödemeniz: ${formatTL(currentFee(sub.sub).kurus)} (KDV dahil)`
                   : currentFee(sub.sub).months === 12
-                    ? `Bu aydan itibaren yıllık ödemeniz: ${formatTL(currentFee(sub.sub).kurus)}`
-                    : `Bu aydan itibaren aylık ödemeniz: ${formatTL(currentFee(sub.sub).kurus)}`
+                    ? `Bu aydan itibaren yıllık ödemeniz: ${formatTL(currentFee(sub.sub).kurus)} (KDV dahil)`
+                    : `Bu aydan itibaren aylık ödemeniz: ${formatTL(currentFee(sub.sub).kurus)} (KDV dahil)`
               }
               logoutAction={businessLogoutAction}
             />

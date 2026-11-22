@@ -36,7 +36,7 @@ describe("kampanya: ilk N işletme", () => {
     expect(subs.filter((s) => s.isEarlyAdopter).every((s) => s.trialMonths === 3)).toBe(true);
     expect(subs.filter((s) => !s.isEarlyAdopter).every((s) => s.trialMonths === 1)).toBe(true);
     // Fiyat paketten kilitlenir
-    expect(subs.every((s) => s.monthlyFeeKurus === 69990 && s.yearlyFeeKurus === 699000)).toBe(true);
+    expect(subs.every((s) => s.monthlyFeeKurus === 34990 && s.yearlyFeeKurus === 349000)).toBe(true);
   });
 
   it("ücretlendirme kapalıyken deneme süresi başlamaz; açılınca bugün başlar", async () => {
@@ -134,16 +134,16 @@ describe("aylık / yıllık dönem", () => {
     const admin = await makeAdmin();
     const b = await makeBusiness(admin.id);
     const biz = { businessId: b.businessId, userId: b.userId };
-    expect(currentFee(await sub(b.businessId))).toMatchObject({ kurus: 69990, months: 1 });
+    expect(currentFee(await sub(b.businessId))).toMatchObject({ kurus: 34990, months: 1 });
 
     await setBillingCycle(db, biz, "YEARLY");
     const s1 = await sub(b.businessId);
     expect(s1.billingCycle).toBe("YEARLY");
-    expect(currentFee(s1)).toMatchObject({ kurus: 699000, months: 12, unit: "yıl" });
+    expect(currentFee(s1)).toMatchObject({ kurus: 349000, months: 12, unit: "yıl" });
 
     await enableBilling(db, { adminId: admin.id });
-    const p = await recordPayment(db, { adminId: admin.id }, b.businessId, { months: 12, amount: "6.990", method: "BANK_TRANSFER", paidOn: todayTR() });
-    expect(p.amountKurus).toBe(699000);
+    const p = await recordPayment(db, { adminId: admin.id }, b.businessId, { months: 12, amount: "3.490", method: "BANK_TRANSFER", paidOn: todayTR() });
+    expect(p.amountKurus).toBe(349000);
     expect(p.coversTo).toBe(periodEnd(p.coversFrom, 12));
 
     // Yıllık fiyatı olmayan pakete geçince dönem aylığa döner ve yıllık seçilemez
@@ -187,7 +187,7 @@ describe("tek seferlik ödeme", () => {
 
     await expect(setBillingCycle(db, biz, "MONTHLY")).rejects.toMatchObject({ code: "VALIDATION" });
     await expect(
-      recordPayment(db, { adminId: admin.id }, b.businessId, { months: 1, amount: "699,90", method: "BANK_TRANSFER", paidOn: todayTR() }),
+      recordPayment(db, { adminId: admin.id }, b.businessId, { months: 1, amount: "349,90", method: "BANK_TRANSFER", paidOn: todayTR() }),
     ).rejects.toMatchObject({ code: "VALIDATION" });
     await disableBilling(db, { adminId: admin.id });
   });
