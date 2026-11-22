@@ -10,9 +10,12 @@ export async function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link href="/" className="flex shrink-0 items-center" aria-label="Dijital Berber ana sayfa">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/logo.png" alt="Dijital Berber" width={834} height={151} className="h-7 w-auto sm:h-8" />
+          <img src="/brand/logo.png" alt="Dijital Berber" width={834} height={151} className="hidden h-8 w-auto sm:block" />
+          {/* Dar ekranda yalnızca işaret: üç giriş düğmesine yer kalsın */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/logo-isaret.png" alt="Dijital Berber" width={173} height={120} className="h-7 w-auto sm:hidden" />
         </Link>
-        <nav className="flex items-center gap-1 text-sm" aria-label="Site menüsü">
+        <nav className="flex items-center gap-1 text-xs sm:text-sm" aria-label="Site menüsü">
           <Link href="/ara" className="hidden rounded-xl px-3 py-2 text-stone-600 hover:bg-stone-100 hover:text-stone-900 sm:block">
             Berber bul
           </Link>
@@ -26,11 +29,14 @@ export async function SiteHeader() {
             </Link>
           ) : (
             <>
-              <Link href="/giris" className="rounded-xl px-3 py-2 text-stone-700 hover:bg-stone-100">
-                Giriş yap
+              <Link href="/giris" className="whitespace-nowrap rounded-xl px-2 py-2 text-stone-700 hover:bg-stone-100 sm:px-3">
+                Müşteri Girişi
               </Link>
-              <Link href="/kayit" className="rounded-xl bg-brand-900 px-3 py-2 text-white hover:bg-brand-800">
-                Kayıt ol
+              <Link href="/kayit" className="whitespace-nowrap rounded-xl bg-brand-900 px-2 py-2 text-white hover:bg-brand-800 sm:px-3">
+                Müşteri Kayıt
+              </Link>
+              <Link href="/isletme" className="whitespace-nowrap rounded-xl border border-stone-300 px-2 py-2 text-stone-800 hover:bg-stone-100 sm:px-3">
+                İşletme Girişi
               </Link>
             </>
           )}

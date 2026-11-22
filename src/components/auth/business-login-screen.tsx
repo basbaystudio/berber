@@ -34,10 +34,10 @@ export async function BusinessLoginScreen({ slug }: { slug?: string }) {
           </span>
           <div className="min-w-0">
             <h1 className="truncate text-lg font-semibold">{businessName ?? "İşletme Paneli"}</h1>
-            <p className="text-sm text-stone-500">İşletme hesabınızla giriş yapın.</p>
+            <p className="text-sm text-stone-500">İşletme e-postanız ve şifrenizle giriş yapın.</p>
           </div>
         </div>
-        <LoginForm action={businessLoginAction} identifierLabel="Kullanıcı adı" />
+        <LoginForm action={businessLoginAction} identifierLabel="E-posta veya kullanıcı adı" identifierAutoComplete="username" />
         <p className="mt-6 text-center text-xs text-stone-500">
           Giriş bilgilerinizi platform yönetimi verir. Şifrenizi unuttuysanız platform yönetimiyle iletişime geçin.
         </p>

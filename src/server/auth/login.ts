@@ -26,19 +26,33 @@ async function findPrincipal(db: Executor, realm: Realm, identifier: string): Pr
       .innerJoin(businesses, eq(businesses.id, businessUsers.businessId))
       .where(eq(sql`lower(${businessUsers.login})`, ident))
       .limit(1);
-    if (!row) return null;
-    if (row.status === "SUSPENDED")
+    let found = row;
+    // Kullanıcı adı yoksa işletmenin e-postasıyla da giriş yapılabilir (tek işletmeye ait e-postaysa)
+    if (!found && ident.includes("@")) {
+      const byEmail = await db
+        .select({ u: businessUsers, status: businesses.status, reason: businesses.suspendedReason })
+        .from(businessUsers)
+        .innerJoin(businesses, eq(businesses.id, businessUsers.businessId))
+        .where(eq(sql`lower(${businesses.email})`, ident))
+        .orderBy(businessUsers.createdAt)
+        .limit(20);
+      const businessIds = new Set(byEmail.map((r) => r.u.businessId));
+      if (businessIds.size === 1) found = byEmail[0];
+    }
+    if (!found) return null;
+    const row2 = found;
+    if (row2.status === "SUSPENDED")
       return {
-        id: row.u.id,
-        passwordHash: row.u.passwordHash,
+        id: row2.u.id,
+        passwordHash: row2.u.passwordHash,
         active: false,
-        businessId: row.u.businessId,
+        businessId: row2.u.businessId,
         disabledMessage:
-          row.reason === "BILLING"
+          row2.reason === "BILLING"
             ? "İşletme hesabınız abonelik ödemesi gecikmesi nedeniyle askıya alınmış. Ödeme alındığında hesabınız otomatik olarak açılır; lütfen platform yönetimiyle iletişime geçin."
             : "İşletme hesabınız askıya alınmış. Lütfen platform yönetimiyle iletişime geçin.",
       };
-    return { id: row.u.id, passwordHash: row.u.passwordHash, active: row.u.isActive, businessId: row.u.businessId };
+    return { id: row2.u.id, passwordHash: row2.u.passwordHash, active: row2.u.isActive, businessId: row2.u.businessId };
   }
   const [c] = await db.select().from(customers).where(eq(sql`lower(${customers.email})`, ident)).limit(1);
   return c ? { id: c.id, passwordHash: c.passwordHash, active: c.deletedAt === null } : null;
