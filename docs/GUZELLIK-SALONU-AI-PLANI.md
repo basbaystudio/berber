@@ -54,13 +54,10 @@ Salonun müşterisi WhatsApp'tan ya da Instagram'dan yazar. Yazılan mesaj bizim
 - **Asistan Ayarları:** Salon bilgileri, sık sorulan sorular, konuşma üslubu ("siz" mi "sen" mi, emoji olsun mu).
 - **Kanallar:** "WhatsApp'ı Bağla", "Instagram'ı Bağla", Google yorum bağlantısı.
 - **Raporlar:** Kaç randevuyu asistan aldı, iptal oranı, kampanya dönüşleri, bu ayki AI ve WhatsApp harcaması.
-- **Web Sitesi:** Salonun herkese açık sayfası (aşağıya bakın).
 
-### Salonun web sitesi (+++)
+### Web sitesi YOK (karar)
 
-- `lara.senindomain.com` adresine panel girişi olmayan biri gelirse **salonun tanıtım sitesini** görür: hizmetler, fotoğraflar, "Randevu Al" butonu.
-- Panel `lara.senindomain.com/panel` adresinde durur.
-- Salon isterse kendi alan adını (`laraguzellik.com`) siteye bağlar.
+Salona web sitesi verilmez. `lara.senindomain.com` adresi **sadece salonun yönetim paneline** açılır (giriş ekranı → panel).
 
 ---
 
@@ -141,7 +138,7 @@ Bizim Meta Business Portfolio'muz  ← bizim kredi kartımız burada (tek kart)
 
 | Konu | Açıklama | Ne yapacağız |
 |---|---|---|
-| **Görünen ad onayı** | Meta, WhatsApp'ta görünen adın ("Lara Güzellik") gerçek bir işletmeye ait olduğunu görmek ister. Ad bizim şirket adımızla aynı değil. | Her salonun `lara.senindomain.com` sitesinde salon adı + WhatsApp numarası yazar. Meta bu bağı görür. Reddedilirse salonun vergi levhası ile itiraz edilir. |
+| **Görünen ad onayı** | Meta, WhatsApp'ta görünen adın ("Lara Güzellik") gerçek bir işletmeye ait olduğunu görmek ister. Ad bizim şirket adımızla aynı değil. | Salonun kendi Google İşletme profili ve Instagram profilinde salon adı + WhatsApp numarası yazılı olur. Meta bu bağı görür. Reddedilirse salonun vergi levhası ile itiraz edilir. |
 | **Numara sayısı sınırı** | Bir portföye başta az sayıda numara eklenebilir. İşletme doğrulamasından sonra limit artar. Daha fazlası için Meta'dan artış istenir. | Salon sayısı arttıkça artış talep edilir. |
 | **Gönderim limiti portföy bazında olabilir** | Meta son düzenlemelerle günlük "kaç kişiye ilk mesaj" limitini tüm portföy için ortak saymaya başladı. Başlangıç limiti doğrulanmış hesapta günde 2.000 kişi, sonra 10 bin, 100 bin. | Salon başına ayda 100 mesajla 20 salon, günde ortalama ~70 mesaj eder, limite çok uzak. Kalite yüksek tutulursa limit kendiliğinden büyür. |
 | **Bir salon herkesi etkileyebilir** | Bir salon spam atıp şikâyet alırsa portföyün kalite puanı düşebilir. | Kampanyalar sadece izinli müşterilere gider. Kota ve sıklık sınırı uygulanır. Kalite puanı admin panelde izlenir. |
@@ -264,9 +261,9 @@ Sahibe otomatik bir e-posta gider: "Şifreni belirle". Artık `lara.senindomain.
 
 ### Adım 2 — WhatsApp'ı bağlayın (salon sahibi, 10 dk)
 
-1. Sahip `lara.senindomain.com/panel` adresine girer → **Kanallar → "WhatsApp'ı Bağla"**
+1. Sahip `lara.senindomain.com` adresine girer → **Kanallar → "WhatsApp'ı Bağla"**
 2. Meta'nın küçük penceresi açılır. Sahip **kendi Facebook hesabıyla** giriş yapar.
-3. "İşletme seç / oluştur" ekranında salon adını, web sitesini ve adresini yazar.
+3. "İşletme seç / oluştur" ekranında salon adını ve adresini yazar (web sitesi yerine salonun Instagram ya da Google Haritalar bağlantısı).
 4. **Numara seçimi** gelir. Burada üç yol var:
    - **(Önerilen) Mevcut WhatsApp Business numarası:** Salonun bilinen numarası aynen kalır. Telefondaki WhatsApp Business uygulamasında çıkan onay ekranı onaylanır. Salon telefondan da yazmaya devam edebilir.
    - **Yeni numara:** SMS ile gelen 6 haneli kod girilir.
@@ -321,7 +318,7 @@ Asistan cevapları **kendisi göndermez**, panelde taslak olarak hazırlar. Çal
 | 4-5 | WhatsApp bağlama, gelen kutusu, Claude asistanı, randevu açma |
 | 6-7 | Otomasyonlar: hatırlatma, Google yorum, tekrar işlem, yan ürün önerisi, boş saat doldurma |
 | 8-9 | Kampanyalar, kuponlar, müşteri grupları, raporlar |
-| 10 | Instagram DM, salon web sitesi |
+| 10 | Instagram DM |
 | 11-12 | 2-3 pilot salonla deneme, düzeltmeler, fiyatın netleşmesi |
 
 ---
