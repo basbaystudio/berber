@@ -404,3 +404,28 @@ Sistem kampanya göndermez. Salon kampanyayı **kendi WhatsApp Business uygulama
 | **Meta kaynaklı** (numara kısıtlandı, şablon reddedildi, görünen ad onaylanmadı, Meta'nın genel kesintisi) | **Anında çözülemez.** Saatler ile günler arası sürer. Meta destek talebi açılır. → Önlem: Her şablonun yedek bir versiyonu önceden onaylı tutulur. Kalite puanı izlenir. |
 
 **Gerçekçi beklenti:** Bizim tarafımızdaki sorunların çoğu dakikalar içinde çözülür. Meta tarafındaki sorunlar bizim elimizde değildir. Onlar için önlem almak, sonradan çözmekten daha önemlidir.
+
+---
+
+## 12. KARAR: Salonun kendi yazdığı mesajlar kotadan düşmez
+
+**Kural:** Kotadan sadece **sistemin otomatik gönderdiği ücretli mesajlar** düşer. Örnek: süresi geçmiş müşteriye randevu hatırlatması.
+
+| Mesaj | Kotadan düşer mi? | Neden |
+|---|---|---|
+| Salonun **telefondaki WhatsApp Business uygulamasından** yazdığı her şey (kampanya, sohbet, yayın listesi) | **Hayır** | Uygulamadan gönderilen mesajlara Meta ücret almaz. Sistem bunları görür ve gelen kutusunda gösterir, ama sayaca **hiç eklemez.** |
+| Asistanın ya da çalışanın, müşteri yazdıktan sonra **24 saat içinde** verdiği cevaplar | **Hayır** | Meta ücret almaz |
+| Çalışanın **panelden** elle yazdığı mesaj (24 saat içinde) | **Hayır** | Meta ücret almaz |
+| Sistemin otomatik attığı hatırlatma (müşteri son 24 saatte yazmadıysa) | **Evet** | Meta ücret alır |
+
+**Teknik garanti:** Sayaç iki şarta birlikte bakar:
+1. Mesaj **sistemin API'si** üzerinden gönderilmiş olmalı.
+2. Meta o mesaj için **"ücretli" (billable: true)** demiş olmalı.
+
+Telefondan atılan mesajlar API'den gitmediği için sayaca giremez.
+
+**Panelde 24 saat dışı yazma:** Panelden 24 saat penceresi dışında serbest mesaj yazılamaz, Meta izin vermez. O durumda panel "Bu müşteriye telefonunuzdaki WhatsApp'tan yazın (ücretsiz)" uyarısını gösterir. Böylece salon farkında olmadan ücretli şablon harcamaz.
+
+**Not:** Telefondaki uygulamada 24 saat kuralı **yoktur.** Salon kampanyayı istediği zaman, ücretsiz atabilir. "24 saat" kuralı sadece sistemin (API'nin) attığı mesajlar için geçerlidir.
+
+**Asistan kotası (AI):** Salonun telefondan ya da panelden yazdığı mesajlar AI kotasından da düşmez. AI kotasına sadece asistanın kendi ürettiği cevaplar sayılır.
