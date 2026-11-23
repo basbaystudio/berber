@@ -1,312 +1,268 @@
-# Güzellik Salonları için Yapay Zekâ Asistanı — Proje Planı
+# Güzellik Salonu Yapay Zekâ Asistanı — Basit Anlatımlı Plan
 
-> Hazırlanma: Kasım 2026 · Durum: Taslak plan
-> Kapsam: WhatsApp + Instagram üzerinden çalışan Claude tabanlı müşteri asistanı, otomasyonlar ve salon web paneli.
-> Bu plan mevcut **Dijital Berber** kod tabanının (Next.js + PostgreSQL + Vercel) üzerine kurulur. Randevu, çalışan, hizmet ve müsaitlik altyapısı zaten var.
-
-⚠️ **Fiyatlar ve limitler hakkında:** Meta (WhatsApp/Instagram) ve Google fiyatları ve limitleri sık değişir. Aşağıdaki rakamlar planlama için yaklaşık değerlerdir. Canlıya çıkmadan önce şu sayfalardan güncel hallerine bakılmalı:
-- WhatsApp fiyatları: developers.facebook.com/docs/whatsapp/pricing
-- WhatsApp mesaj limitleri: developers.facebook.com/docs/whatsapp/messaging-limits
-- Claude API fiyatları: platform.claude.com/docs/en/about-claude/pricing
+> Kasım 2026 · Bu proje **Dijital Berber'den ayrı**, sıfırdan yeni bir üründür. Kendi alan adı, kendi kodu ve kendi veritabanı olacak.
+> Aşağıda "senindomain.com" yazan her yere alacağınız alan adını koyun.
+> Rakamlar yaklaşıktır. Meta ve Google fiyatları değişebilir, canlıya çıkmadan önce kontrol edin.
 
 ---
 
-## 1. Hizmet Kapsamı (Modüller)
+## 1. Sistem tek cümlede
 
-| # | Modül | Ne yapar | Kanal |
-|---|---|---|---|
-| 1 | **WhatsApp müşteri hizmetleri** | 7/24 soruları yanıtlar (fiyat, adres, hizmet detayı, çalışma saati). Gerekirse konuşmayı salon çalışanına devreder. | WhatsApp |
-| 2 | **Randevu oluşturma** | Müsait saatleri gösterir, randevu açar, iptal eder, saatini değiştirir. Mevcut müsaitlik motorunu kullanır. | WhatsApp, Instagram, web |
-| 3 | **Randevu hatırlatma** | Randevudan 24 saat ve 2 saat önce onay butonlu hatırlatma gönderir ("Geliyorum / İptal / Saat değiştir"). | WhatsApp |
-| 4 | **Boş randevu doldurma** | İptal olan saati; bekleme listesine, o hizmetin zamanı gelmiş müşterilere ya da "son dakika" listesine sırayla teklif eder. | WhatsApp |
-| 5 | **İşlem sonrası yan ürün önerisi** | Hizmet bitince ona uygun ürünü ya da bakımı önerir. Örnek: cilt bakımından sonra serum, keratinden sonra tuzsuz şampuan. | WhatsApp |
-| 6 | **İşlem önerme / tekrar hatırlatma** | Hizmetin tekrar zamanı gelince hatırlatır. Örnek: protez tırnak dolgusu 3 hafta, lazer seansı 6 hafta, kaş-kirpik 4 hafta. | WhatsApp |
-| 7 | **Google puanlama hatırlatıcısı** | İşlemden 2-3 saat sonra Google yorum bağlantısını gönderir. | WhatsApp |
-| 8 | **Özel indirim tanımlama** | Müşteriye özel kupon tanımlanır: doğum günü, sadakat, uzun süredir gelmeyen müşteriyi geri kazanma. Asistan bu kuponları tanır ve uygular. | Panel + WhatsApp |
-| 9 | **Kampanya bilgisi / toplu gönderim** | Seçilen müşteri grubuna (son 90 günde gelenler, sadece lazer müşterileri vb.) kampanya mesajı gönderir. Asistan gelen kampanya sorularını da yanıtlar. | WhatsApp |
-| 10 | **Salon web paneli** | Gelen kutusu (tüm konuşmalar), takvim, otomasyon ayarları, kampanyalar, raporlar. | Web |
-| 11 | **Çalışan yönetimi** | Çalışanlar, vardiyalar, yetkinlikler, prim/komisyon raporu, panel yetkileri (sahip/yönetici/çalışan). | Web |
-| +++ | **Salon web sitesi** | `salonadi.dijitalberber.com` ya da salonun kendi alan adı. Online randevu sayfası içerir. | Web |
-| +++ | **Instagram mesaj takibi** | DM'ler ve yorumlar aynı gelen kutusuna düşer. Asistan DM'leri yanıtlar. Yorumlara özelden cevap yazabilir. | Instagram |
+Salonun müşterisi WhatsApp'tan ya da Instagram'dan yazar. Yazılan mesaj bizim sunucumuza gelir. Claude (yapay zekâ) mesajı okur, salonun takvimine bakar, cevabı yazar ve randevuyu açar. Salon sahibi her şeyi kendine ait panelde (`salonadi.senindomain.com`) görür.
 
 ---
 
-## 2. Genel Mimari
+## 2. Web paneli: subdomain düzeni
+
+### Adresler
+
+| Adres | Kimin için | Ne var |
+|---|---|---|
+| `senindomain.com` | Herkes | Sizin tanıtım ve satış siteniz |
+| `admin.senindomain.com` | **Sadece siz** | Bütün salonlar, abonelikler, maliyetler, yeni salon açma |
+| `lara.senindomain.com` | Lara Güzellik'in sahibi ve çalışanları | Lara'nın yönetim paneli |
+| `mina.senindomain.com` | Mina Beauty'nin sahibi ve çalışanları | Mina'nın yönetim paneli |
+| `api.senindomain.com` | Meta (WhatsApp/Instagram) | Mesajların geldiği kapı, insanlar görmez |
+
+### "Her müşterinin ayrı paneli" ne demek?
+
+**Apartman benzetmesi:** Tek bir bina var (tek uygulama, tek veritabanı). Her salon bir daire. Her dairenin kapısında kendi adı (subdomain) ve kendi anahtarı (kullanıcı adı ve şifre) var. Lara, Mina'nın dairesine giremez.
+
+- Her salona **ayrı sunucu kurulmaz.** 100 salon olunca 100 sunucu güncellemek kâbus olur, fatura da patlar.
+- Sistem adres çubuğundaki ilk kelimeye bakar (`lara`), "bu Lara Güzellik" der ve **yalnızca Lara'nın verisini** gösterir.
+- Veritabanında her kayıtta bir `salon_id` sütunu bulunur: müşteri, randevu, mesaj, çalışan, kampanya. Her sorgu bu sütuna göre filtrelenir. Bu kural kodda tek bir yerde zorunlu tutulur, unutulamaz.
+- Yeni bir özellik eklediğinizde **bütün salonlara aynı anda gelir.**
+- İsteyen salon kendi alan adını da kullanabilir, örneğin `panel.laraguzellik.com`. Salon kendi alan adında bir CNAME kaydı açar, o kadar.
+
+### Bunun için teknik olarak ne lazım?
+
+1. **Alan adı alın.** Namecheap, GoDaddy ya da isimtescil olur.
+2. **DNS'e joker kayıt (wildcard) ekleyin:** `*.senindomain.com` → sunucu. Bu sayede her yeni salon için DNS'e dokunmanız gerekmez. `lara.`, `mina.`, `herhangi.` hepsi otomatik çalışır.
+3. **SSL (kilit ikonu) da joker olmalı.** Vercel'de alan adının nameserver'ları Vercel'e yönlendirilirse joker SSL otomatik verilir.
+4. **Uygulamada bir "middleware" olur.** Gelen isteğin subdomain'ini okur, salonu bulur, kullanıcının o salona ait olup olmadığını kontrol eder.
+5. **Oturum çerezi her subdomain'e ayrı yazılır.** Böylece Lara'nın oturumu Mina'nın adresinde geçerli olmaz.
+
+### Panelde olacak menüler
+
+- **Gelen Kutusu:** WhatsApp ve Instagram konuşmalarının hepsi. Asistanın yazdıkları görünür. Çalışan "Ben devralıyorum" diyerek konuşmaya girebilir.
+- **Takvim:** Çalışan sütunlu gün/hafta görünümü. Randevular sürükle-bırak ile taşınır.
+- **Müşteriler:** Geçmiş işlemler, harcama, notlar, kampanya izni var mı yok mu.
+- **Hizmetler ve Ürünler:** Fiyat, süre, "kaç günde bir tekrar edilir", "yanında hangi ürün önerilir".
+- **Çalışanlar:** Vardiya, izin, hangi hizmetleri yaptığı, prim raporu, panel yetkisi (sahip / yönetici / çalışan).
+- **Otomasyonlar:** Hatırlatma, Google yorum, tekrar işlem, yan ürün. Her biri açma/kapama düğmesi ve saat ayarıyla.
+- **Kampanyalar ve Kuponlar:** Müşteri grubu seç, mesajı seç, gönder. Kişiye özel indirim tanımla.
+- **Asistan Ayarları:** Salon bilgileri, sık sorulan sorular, konuşma üslubu ("siz" mi "sen" mi, emoji olsun mu).
+- **Kanallar:** "WhatsApp'ı Bağla", "Instagram'ı Bağla", Google yorum bağlantısı.
+- **Raporlar:** Kaç randevuyu asistan aldı, iptal oranı, kampanya dönüşleri, bu ayki AI ve WhatsApp harcaması.
+- **Web Sitesi:** Salonun herkese açık sayfası (aşağıya bakın).
+
+### Salonun web sitesi (+++)
+
+- `lara.senindomain.com` adresine panel girişi olmayan biri gelirse **salonun tanıtım sitesini** görür: hizmetler, fotoğraflar, "Randevu Al" butonu.
+- Panel `lara.senindomain.com/panel` adresinde durur.
+- Salon isterse kendi alan adını (`laraguzellik.com`) siteye bağlar.
+
+---
+
+## 3. Bir mesajın yolculuğu (en basit hali)
 
 ```
- Müşteri (WhatsApp / Instagram DM / Web)
-          │
-          ▼
- Meta Webhook  ──►  /api/webhooks/meta  (imza doğrulama: X-Hub-Signature-256)
-                          │  mesajı DB'ye yaz, 200 dön (birkaç saniye içinde)
-                          ▼
-                    İş kuyruğu (queue)
-                          │
-                          ▼
-              AI Asistan Çalışanı (Claude API + araçlar)
-                 │ araçlar (tool use):
-                 │  • hizmetleri_listele / fiyat_getir
-                 │  • musait_saatleri_bul   → mevcut availability modülü
-                 │  • randevu_olustur / iptal / degistir → booking modülü
-                 │  • kampanya_ve_kupon_getir
-                 │  • musteri_gecmisi_getir
-                 │  • insana_devret   (konuşmayı panelde "bekliyor" yapar)
-                          ▼
-              WhatsApp Cloud API / Instagram Send API ile yanıt
-                          │
- Zamanlayıcı (cron + kuyruk) ──► hatırlatma, Google yorum, tekrar işlem, kampanya
-                          │
-                Salon Web Paneli (gelen kutusu, takvim, ayarlar)
+1. Ayşe Hanım, Lara Güzellik'in WhatsApp'ına yazar: "Yarın kaşa yer var mı?"
+2. Meta bu mesajı api.senindomain.com/webhooks/meta adresine yollar.
+3. Sistem mesajdaki numaradan "Bu Lara'nın numarası" der, mesajı Lara'nın kutusuna kaydeder.
+4. Claude'a sorulur. Claude şunu bilir:
+   - Lara'nın hizmetleri, fiyatları, kuralları
+   - Ayşe Hanım'ın geçmişi
+   - Kullanabileceği araçlar: "müsait saat bul", "randevu aç", "iptal et", "insana devret"
+5. Claude "müsait saat bul" aracını çağırır. Sistem takvime bakar: 11:00 ve 15:30 boş.
+6. Claude cevap yazar: "Yarın 11:00 veya 15:30 uygun, hangisini ayıralım?"
+7. Ayşe "15:30" der → Claude "randevu aç" aracını çağırır → takvime düşer.
+8. Ertesi gün 13:30'da sistem otomatik hatırlatma yollar: [Geliyorum] [İptal]
+9. İşlem bitince 2 saat sonra Google yorum bağlantısı gider.
+10. 4 hafta sonra "Kaş zamanınız geldi, randevu ayıralım mı?" mesajı gider.
 ```
 
-**Önemli tasarım kararları**
-
-- **Asistan yalnızca araçlarla randevu açabilir.** Saatleri kendisi tahmin etmez. Müsaitlik her zaman veritabanından gelir. Çakışmaları mevcut exclusion constraint zaten engelliyor.
-- **İnsan devri:** Bir çalışan panelden konuşmaya yazdığında asistan o konuşmada X saat susar. Müşteri "yetkiliyle görüşmek istiyorum" derse ya da şikâyet algılanırsa konuşma otomatik devredilir.
-- **Her salonun kendi bilgi bankası olur:** hizmetler, fiyatlar, SSS, kampanyalar, üslup ("siz" mi "sen" mi, emoji kullanılsın mı). Bunlar sistem istemine (system prompt) eklenir ve önbelleğe alınır (prompt caching). Böylece maliyet ciddi düşer.
-- **Webhook hızlı dönmeli:** Meta yanıt bekler. Mesaj DB'ye yazılır ve kuyruğa atılır. Yapay zekâ işi arka planda çalışır. Kuyruk için Vercel Queues, Upstash QStash ya da Inngest gibi bir servis kullanılabilir.
-- **Zamanlanmış işler:** Mevcut günlük cron yetmez. Hatırlatmalar dakika hassasiyeti ister. Bunun için Vercel Pro'da 1-5 dakikalık bir cron ya da kuyruk servisinin gecikmeli mesajı (delayed message) kullanılmalı.
-
-### Yeni veritabanı tabloları (özet)
-
-| Tablo | İçerik |
-|---|---|
-| `channels` | salon_id, tür (whatsapp/instagram), waba_id, phone_number_id, ig_user_id, **şifreli** erişim token'ı, durum |
-| `contacts` | telefon / IG kimliği, müşteri eşleşmesi, **pazarlama izni (opt-in) + izin tarihi + kaynağı**, İYS durumu |
-| `conversations` | kanal, müşteri, durum (asistan / insan / kapalı), atanan çalışan, son 24 saat penceresi bitişi |
-| `messages` | yön, içerik, medya, Meta mesaj kimliği, iletim durumu (gönderildi/iletildi/okundu/hata) |
-| `message_templates` | şablon adı, kategori (utility/marketing), dil, Meta onay durumu |
-| `automations` | tür (hatırlatma, google_yorum, tekrar_islem, yan_urun, geri_kazanma), açık/kapalı, zamanlama, şablon |
-| `scheduled_jobs` | ne zaman, hangi müşteriye, hangi otomasyon, durum (tekrar gönderimi önlemek için idempotency anahtarı) |
-| `campaigns`, `campaign_recipients` | segment, şablon, gönderim, tıklama, randevuya dönüşüm |
-| `coupons` | kod, müşteriye özel mi, indirim, geçerlilik, kullanım limiti |
-| `service_followups` | hizmet → tekrar süresi (gün), önerilen yan ürünler |
-| `waitlist` | müşteri, hizmet, tercih edilen gün/saat aralığı |
-| `ai_usage` | salon bazında token ve maliyet takibi (aylık limit için) |
+**Kural:** Claude saat ya da fiyat **uydurmaz.** Bu bilgileri her zaman araçla veritabanından alır.
 
 ---
 
-## 3. Aylık API Limitleri ve Maliyetler
+## 4A. DÜŞÜK MALİYET HEDEFİ — salon başına ayda 50-100 giden mesaj
 
-### 3.1 WhatsApp Business Platform (Cloud API, Meta)
+**Varsayım:** Bir salon ayda **50-100 mesajı ilk kendisi gönderir** (hatırlatma, yorum isteği, kampanya). Bunun dışında müşterilerin yazdığı mesajlara cevap verilir.
 
-**Ücretlendirme (Temmuz 2025'ten beri mesaj başına):**
-
-| Mesaj türü | Ne zaman | Ücret (Türkiye, yaklaşık) |
+| Kalem | Hesap | Aylık |
 |---|---|---|
-| **Servis mesajı** | Müşteri yazdıktan sonraki 24 saat içinde verilen tüm serbest yanıtlar | **Ücretsiz, sınırsız** |
-| **Utility (hizmet) şablonu** | Randevu onayı, hatırlatma, iptal bildirimi | ~0,005 $ / mesaj. **24 saat penceresi açıkken ücretsiz.** |
-| **Marketing (pazarlama) şablonu** | Kampanya, yan ürün önerisi, geri kazanma, büyük ihtimalle Google yorum isteği de | ~0,01 $ / mesaj |
-| **Authentication** | OTP / doğrulama kodu | ~0,008 $ / mesaj |
-| Reklamdan gelen sohbet (Click-to-WhatsApp) | Instagram/Facebook reklamından gelen müşteri | 72 saat boyunca tüm mesajlar ücretsiz |
+| WhatsApp giden mesaj (çoğu utility) | 100 × ~0,005 $ | **~0,5 $** |
+| İçlerinde kampanya olursa (en kötü durum, hepsi marketing) | 100 × ~0,01 $ | ~1 $ |
+| Müşteriye verilen cevaplar | Bedava | 0 $ |
+| Instagram | Bedava | 0 $ |
+| Claude Haiku 5.5, ayda ~200 sohbet | 200 × ~0,003 $ | **~0,6 $** |
+| (Aynı hacim Opus 5.5 ile olursa) | 200 × ~0,10 $ | ~20 $ |
+| Sunucu ve veritabanı payı | ~10 $ / salon sayısı | 20 salonda ~0,5 $ |
+| **Toplam (Haiku ile)** | | **≈ 1,5-2 $ / salon / ay (≈ 60-80 TL)** |
 
-> Türkiye, Meta'nın en ucuz bölgelerinden biri. Kesin rakamı Meta'nın ülke fiyat tablosundan kontrol edin. Ödeme USD ile yapılır.
+### Maliyeti düşük tutmanın 8 kuralı
 
-**Gönderim limitleri (mesaj limiti seviyesi):** Bu limit, sizin başlattığınız şablon mesajlarla 24 saatte kaç farklı kişiye ulaşabileceğinizi belirler. Müşterinin başlattığı sohbetler bu limite dahil değildir.
+1. **Ucuz model.** Asistanı Claude Haiku 5.5 ile çalıştırın. Zor durumlar (şikâyet, karmaşık randevu değişikliği) zaten "insana devret" ile çalışana gider.
+2. **Bedava pencereyi kullanın.** Müşteri son 24 saat içinde yazdıysa o pencerede gönderilen her mesaj, şablonlu mesajlar dahil, **bedavadır.** Randevu onayı müşteri yazarken verilir, ücret çıkmaz.
+3. **Hatırlatmayı "utility" kategorisinde tutun.** Utility mesaj, marketing mesajın yaklaşık yarı fiyatıdır. Hatırlatma ve onay mesajlarının içine **kampanya ya da indirim yazmayın.** Yazarsanız Meta mesajı marketing sayar.
+4. **Tek mesajda birleştirin.** "Hatırlatma + Geliyorum/İptal butonu" tek mesaj olsun. Ayrı ayrı "onay", "hatırlatma 1", "hatırlatma 2" göndermeyin. Randevu başına 1 hatırlatma yeter.
+5. **Google yorum isteğini hatırlatmaya bağlayın.** Müşteri butona bastığında 24 saat penceresi açılır. İşlemden sonraki teşekkür ve yorum mesajı bu pencereye denk gelirse bedava olur.
+6. **Salon başına aylık kota koyun.** Örneğin 100 giden mesaj ve 300 AI sohbeti. Kota dolunca panelde uyarı çıkar. İsteyen salon ek paket alır.
+7. **Önbellek (prompt caching) kullanın.** Salon bilgileri her mesajda tekrar okunmaz, önbellekten okunur ve neredeyse bedava olur.
+8. **Ucuz altyapı seçin:**
+   - **Seçenek A (önerilen başlangıç):** Hetzner VPS (~5-8 €/ay) üzerinde Coolify ile uygulama + PostgreSQL. DNS ve joker SSL için Cloudflare (bedava). Bütün salonlar için toplam **~8 €/ay**.
+   - **Seçenek B:** Vercel Pro (20 $) + Neon (0-19 $). Daha az uğraş, daha pahalı.
+   - Zamanlanmış işleri (hatırlatmalar) VPS'te basit bir cron ve kuyrukla çalıştırın. Ek servise para vermeyin.
 
-| Seviye | Koşul | 24 saatte ulaşılabilecek farklı kişi |
+---
+
+## 4. Ne kadar tutar? (büyük salon örneği, ayda ~600 randevu — referans)
+
+### WhatsApp (parayı Meta alır)
+
+- **Müşteri yazarsa:** 24 saat içinde ne kadar cevap verirseniz verin **bedava.**
+- **Siz ilk yazarsanız** (hatırlatma, kampanya) para öder ve önceden onaylı bir "şablon" kullanırsınız:
+  - Hatırlatma ve randevu mesajı: ~0,005 $ (yaklaşık 20 kuruş)
+  - Kampanya ve öneri mesajı: ~0,01 $ (yaklaşık 40 kuruş)
+- **Günlük sınır:**
+  - Yeni hesap günde **250 farklı kişiye** ilk mesajı atabilir.
+  - Meta işletme doğrulaması yapılınca bu sınır **2.000** olur. Sonra 10 bin, 100 bin, sınırsız diye büyür.
+  - Gelen mesajlara cevaplar bu sınıra dahil değildir.
+- Müşteriler sizi engellerse ya da şikâyet ederse "kalite puanı" düşer, sınır küçülür. **Kampanyayı sadece izin verenlere, ayda en fazla 1-2 kez atın.**
+- **Toplam:** ayda ~25-30 $
+
+### Instagram
+
+- **Tamamen bedava.**
+- **Ama müşteriye ilk siz yazamazsınız.** Sadece size yazan kişiye 24 saat içinde cevap verebilirsiniz. Elle cevap veren çalışan için bu süre 7 gün.
+- Kampanya gönderimi Instagram'dan yapılamaz, WhatsApp'tan yapılır.
+
+### Claude (yapay zekâ, parayı Anthropic alır)
+
+| Model | Bir sohbet (5-6 mesaj) | Ayda 500 sohbet |
 |---|---|---|
-| Başlangıç | İşletme doğrulaması yok | **250** |
-| Doğrulanmış | Meta işletme doğrulaması tamam + kalite iyi | **2.000** |
-| Sonraki seviyeler | Kalite yüksek kaldıkça otomatik yükselir | 10.000 → 100.000 → sınırsız |
+| Claude Opus 5.5 (en akıllı) | ~0,10 $ | **~50 $** |
+| Claude Sonnet 5.5 | ~0,05 $ | ~25 $ |
+| Claude Haiku 5.5 (en ucuz) | ~0,003 $ | ~1,5 $ |
 
-- Saniyede gönderim (throughput): numara başına varsayılan ~80 mesaj/sn. Coexistence modunda ~20 mesaj/sn. Bir salon için fazlasıyla yeterli.
-- **Kalite puanı:** Müşteriler mesajları engeller ya da şikâyet ederse puan düşer, limit küçülür, numara kısıtlanabilir. Bu yüzden kampanyalar **sadece izin veren müşterilere** ve **düşük sıklıkta** gönderilmeli. Meta kullanıcı başına pazarlama mesajı sayısını kendi tarafında da sınırlıyor.
-- Şablonlar Meta onayından geçer. Onay genelde birkaç dakika ile 24 saat arasında gelir. 24 saat penceresi dışında **yalnızca onaylı şablonla** mesaj atılabilir.
+- Anthropic Console'da **aylık harcama sınırı** koyun. Ayrıca her salona kendi aylık AI bütçesini tanımlayın. Bütçe biterse asistan "Ekibimiz size dönecek" der ve sahibe haber verir.
+- Dakikalık istek sınırları hesabın kullanım seviyesine göre otomatik artar. Onlarca salon için sorun olmaz.
 
-**Örnek salon (ayda 600 randevu, 1.500 kayıtlı müşteri) için aylık WhatsApp maliyeti:**
+### Google yorum
 
-| Kalem | Adet | Tahmini maliyet |
-|---|---|---|
-| Müşteri soruları ve yanıtlar (servis) | sınırsız | 0 $ |
-| Randevu onayı (çoğu 24 saat penceresi içinde) | 600 | ~0-1 $ |
-| 24 saat önce hatırlatma | 600 | ~3 $ |
-| Google yorum isteği | 600 | ~3-6 $ |
-| Tekrar işlem ve yan ürün önerisi | 400 | ~4 $ |
-| Aylık 2 kampanya × 800 izinli müşteri | 1.600 | ~16 $ |
-| **Toplam** | | **~25-30 $ / ay** (kampanya sayısına göre değişir) |
+- **Bedava, API bile gerekmez.** Salonun Place ID'si ile bir bağlantı oluşturulur: `https://search.google.com/local/writereview?placeid=XXXX`
 
-### 3.2 Instagram Mesajlaşma API'si (Meta)
+### Sizin sabit giderleriniz (bütün salonlar için toplam)
 
-- **Ücret yok.** Instagram DM API'si ücretsizdir.
-- **Kurallar:**
-  - Sadece **profesyonel hesap** (İşletme ya da İçerik Üreticisi) bağlanabilir.
-  - Müşteri son 24 saat içinde yazdıysa serbest yanıt verilir. İnsan çalışan "HUMAN_AGENT" etiketiyle bu süreyi **7 güne** uzatabilir.
-  - **Müşteriye ilk mesajı siz atamazsınız.** Instagram'dan toplu kampanya gönderilemez. Kampanyalar WhatsApp'tan yapılır.
-  - Yorumlara "özel yanıt" (private reply) ile tek bir DM gönderilebilir. Bu, "fiyat?" yorumlarına DM ile cevap vermek için kullanışlıdır.
-- **Hız limitleri:** Hesap başına saniyede onlarca mesaj civarındadır. Ayrıca Graph API'nin genel saatlik çağrı limitleri vardır. Bir salonun trafiği bu limitlere yaklaşmaz.
+| Kalem | Aylık |
+|---|---|
+| Alan adı | ~1 $ (yıllık ~12 $) |
+| Vercel Pro (hosting) | ~20 $ |
+| Neon (veritabanı) | 0-19 $ |
+| Zamanlanmış işler / kuyruk (QStash veya Inngest) | 0-10 $ |
+| E-posta (Resend) | 0 $ |
 
-### 3.3 Claude API (Anthropic) — Yapay Zekâ
+**Salon başına toplam maliyet:** ~55-80 $/ay (Opus ile). Ucuz modelle ~30 $. Satış fiyatınızı bunun üstüne kurun.
 
-| Model | Girdi / 1M token | Çıktı / 1M token | Önbellekten okuma | Not |
-|---|---|---|---|---|
-| **Claude Opus 5.5** | 4 $ | 20 $ | 0,20 $ | En yetenekli seçenek. Varsayılan öneri. |
-| Claude Sonnet 5.5 | 2 $ | 10 $ | 0,10 $ | Hızlı ve dengeli |
-| Claude Haiku 5.5 | 0,10 $ | 0,50 $ | — | Çok ucuz. Basit SSS ve sınıflandırma için. |
+---
 
-**Bir sohbet ne kadar tutar? (tahmini)**
-- Salon bilgi bankası + sistem istemi ≈ 4.000 token. Önbellekten okunur ve neredeyse bedavaya gelir.
-- Mesaj başına ≈ 1.000 yeni girdi token'ı + 300-800 çıktı ve düşünme token'ı.
-- Ortalama bir randevu sohbeti 5-6 mesajdır.
+## 5. Hesaplar: bir kere sizin açacaklarınız
 
-| Model | Mesaj başına | Sohbet başına | Ayda 500 sohbet (orta salon) |
+Bunlara **bu hafta başlayın.** Meta onayları 2-6 hafta sürebilir.
+
+| # | Ne | Nereden | Neden |
 |---|---|---|---|
-| Opus 5.5 | ~0,015-0,02 $ | ~0,10 $ | **~50 $** |
-| Sonnet 5.5 | ~0,008 $ | ~0,05 $ | **~25 $** |
-| Haiku 5.5 | ~0,0005 $ | ~0,003 $ | **~1,5 $** |
+| 1 | Alan adı | Namecheap / GoDaddy / isimtescil | Paneller burada çalışacak |
+| 2 | Meta Business Portfolio + **işletme doğrulaması** | business.facebook.com | Şirketinizin gerçek olduğunu Meta'ya kanıtlar. Vergi levhası ve faaliyet belgesi istenir. |
+| 3 | Meta Developer uygulaması | developers.facebook.com | WhatsApp ve Instagram'a bağlanan "fiş" |
+| 4 | **Tech Provider** kaydı | Aynı yer | Salonların tek tıkla hesabını size bağlayabilmesi için |
+| 5 | **App Review** (uygulama incelemesi) | Aynı yer | Meta, mesaj okuma/gönderme iznini inceleyip verir. Ekran kaydı videosu, gizlilik politikası sayfası ve veri silme sayfası istenir. |
+| 6 | Anthropic Console | platform.claude.com | Claude API anahtarı. Harcama sınırını burada koyarsınız. |
+| 7 | Vercel + Neon + GitHub (yeni repo) | vercel.com, neon.tech, github.com | Kodun ve verinin yaşadığı yer |
+| 8 | Avukat / KVKK danışmanı | — | Aydınlatma metni, kampanya izni, yurt dışına veri aktarımı |
 
-> Model seçimi sizin kararınız. Önerim: kalite için Opus 5.5 ile başlayın, ilk 1-2 ayın gerçek konuşmalarıyla ölçün. Kalite yeterli kalıyorsa sınıflandırma ve SSS gibi basit işleri daha ucuz modele taşıyın. Rakamlar tahmindir. Gerçek değerler `ai_usage` tablosundan izlenecek.
+> **Meta onayı gecikirse:** 360dialog ya da Twilio gibi Meta'nın resmi çözüm ortaklarından biriyle hemen başlanabilir. Ek ücret alırlar ama beklemezsiniz.
 
-**Claude API limitleri:**
-- Hesap "kullanım katmanı"na (usage tier) göre dakikadaki istek ve token limitleri vardır. Hesaba yükleme yapıldıkça katman otomatik yükselir. Güncel limitler Console → Limits sayfasında görünür.
-- 50 salona kadar düşük katmanlar bile yeter. Bir salonun yoğun saatinde dakikada birkaç istek olur.
-- **Console'dan aylık harcama limiti (spend limit) koyun.** Ayrıca sistemde **salon başına aylık AI bütçesi** tutulmalı. Bütçe aşılırsa asistan "ekibimiz size dönecek" moduna geçer ve sahibe bildirim gider.
+---
 
-### 3.4 Diğer Servisler
+## 6. Yeni bir salonu uzaktan kurmak (adım adım)
 
-| Servis | Kullanım | Aylık maliyet |
-|---|---|---|
-| Google yorum bağlantısı | `https://search.google.com/local/writereview?placeid=<PLACE_ID>`. **API gerekmez.** | 0 $ |
-| Google Places API (opsiyonel) | Panelde salonu arayıp Place ID bulmak | Ücretsiz kota içinde kalır |
-| Google Business Profile API (opsiyonel, faz 4) | Yorumları panelde görmek ve AI ile yanıt taslağı hazırlamak. **Erişim başvurusu gerekir.** Varsayılan kota ~300 istek/dk. | 0 $ |
-| Vercel Pro | Dakikalık cron, daha uzun fonksiyon süresi | ~20 $ / üye |
-| Neon Postgres | Mevcut | 0-19 $ |
-| Kuyruk servisi (QStash/Inngest) | Gecikmeli işler, tekrar deneme | Ücretsiz katman → ~10 $ |
-| Resend | E-posta | Ücretsiz katman |
+**Hazırlık:** Salon sahibiyle WhatsApp görüntülü görüşme ya da Google Meet açın, ekranını paylaşsın. Yanında **telefonu, Facebook şifresi, Instagram şifresi ve kredi kartı** olsun. Toplam ~30 dakika.
 
-### 3.5 Salon Başına Toplam Maliyet ve Fiyatlandırma Önerisi
+### Adım 1 — Salonu açın (siz, 2 dk)
 
-| Kalem | Orta salon (aylık) |
+`admin.senindomain.com` → "Yeni Salon" → ad: *Lara Güzellik*, adres: `lara`, sahibin e-postası.
+Sahibe otomatik bir e-posta gider: "Şifreni belirle". Artık `lara.senindomain.com` adresi çalışıyor.
+
+### Adım 2 — WhatsApp'ı bağlayın (salon sahibi, 10 dk)
+
+1. Sahip `lara.senindomain.com/panel` adresine girer → **Kanallar → "WhatsApp'ı Bağla"**
+2. Meta'nın küçük penceresi açılır. Sahip **kendi Facebook hesabıyla** giriş yapar.
+3. "İşletme seç / oluştur" ekranında salon adını, web sitesini ve adresini yazar.
+4. **Numara seçimi** gelir. Burada üç yol var:
+   - **(Önerilen) Mevcut WhatsApp Business numarası:** Salonun bilinen numarası aynen kalır. Telefondaki WhatsApp Business uygulamasında çıkan onay ekranı onaylanır. Salon telefondan da yazmaya devam edebilir.
+   - **Yeni numara:** SMS ile gelen 6 haneli kod girilir.
+   - **Normal (Business olmayan) WhatsApp kullanıyorsa:** Önce telefona WhatsApp Business uygulaması kurulur ve numara oraya taşınır. Sonra birinci yol uygulanır.
+5. Pencere kapanır, panelde "✅ WhatsApp bağlandı" yazar. Sistem arka planda şunları kendiliğinden yapar:
+   - mesajları dinlemeye başlar,
+   - hatırlatma, randevu onayı, Google yorum ve kampanya **şablonlarını** Meta'ya onaya gönderir. Onay birkaç dakika ile 1 gün arasında gelir.
+6. **Kart ekleme:** Sahip business.facebook.com → WhatsApp Manager → **Ödeme yöntemi** bölümüne kredi kartını ekler. WhatsApp ücretleri doğrudan bu karttan çekilir, size yansımaz.
+7. **Test:** Sahibin kendi telefonundan salon numarasına "Merhaba" yazılır, asistan cevap vermeli.
+
+### Adım 3 — Instagram'ı bağlayın (salon sahibi, 5 dk)
+
+1. Telefonda Instagram → **Ayarlar → Hesap türü → Profesyonel hesaba geç → İşletme** (zaten profesyonelse bu adım atlanır).
+2. Instagram → **Ayarlar → Mesajlar → Bağlı araçlar → "Mesajlara erişime izin ver" → AÇ.** *(Bu yapılmazsa hiçbir şey çalışmaz!)*
+3. Panel → **Kanallar → "Instagram'ı Bağla"** → Instagram şifresiyle giriş → "İzin ver".
+4. **Test:** Başka bir hesaptan DM atılır, panelin Gelen Kutusu'na düşmeli.
+
+### Adım 4 — Google yorumu bağlayın (1 dk)
+
+Panel → **Kanallar → Google** → salon adını arayın ya da Google Haritalar bağlantısını yapıştırın → "Kaydet". Test bağlantısına tıklayıp doğru salonun açıldığını kontrol edin.
+
+### Adım 5 — Salon bilgilerini girin (siz ya da sahip, 15 dk)
+
+- Hizmetler, süreler, fiyatlar (Excel'den toplu yükleme de olur)
+- Çalışanlar ve çalışma saatleri
+- Müşteri listesi (Excel / rehber). **Kampanya izni olmayanları işaretleyin.**
+- Asistan bilgileri: adres, otopark, ödeme yöntemleri, iptal kuralı, sık sorulan sorular
+- Otomasyonları açın: hatırlatma (24 saat önce), Google yorum (2 saat sonra), tekrar işlem
+
+### Adım 6 — İlk hafta "çıraklık modu"
+
+Asistan cevapları **kendisi göndermez**, panelde taslak olarak hazırlar. Çalışan "Gönder" der ya da düzeltir. Bir hafta sonra her şey iyiyse **otomatik mod** açılır.
+
+---
+
+## 7. Kesinlikle yapılmaması gerekenler
+
+1. **İzin almadan kampanya atmak.** Hem kanuna aykırıdır (6563 sayılı Kanun, İYS) hem de Meta numarayı kısıtlar. Her kampanya mesajının altında "Almak istemiyorsanız DUR yazın" olmalı.
+2. **Sadece memnun müşteriye yorum linki atmak.** Google yasaklıyor, yorumları siliyor. Herkese atın. Yorum karşılığında indirim de vermeyin.
+3. **Asistanın bot olduğunu saklamak.** İlk mesajda "Ben Lara Güzellik'in dijital asistanıyım" desin ve her zaman insana bağlanma seçeneği sunsun.
+4. **Sağlık bilgisi toplamak.** Alerji, hastalık gibi bilgileri asistan sormasın.
+5. **KVKK'yı atlamak.** Mesajlar ABD'deki sunucularda (Meta, Anthropic) işleniyor. Aydınlatma metni, gerekli bildirimler ve salonla aranızda bir veri işleme sözleşmesi gerekir. **Bir avukata baktırın.**
+
+---
+
+## 8. Takvim (yaklaşık 12 hafta)
+
+| Hafta | Ne yapılıyor |
 |---|---|
-| WhatsApp (Meta) | ~25-30 $ |
-| Claude (Opus 5.5) | ~50 $ (Haiku 5.5 ile ~2 $) |
-| Altyapı payı (50 salona bölünmüş) | ~1-2 $ |
-| **Toplam** | **~55-80 $** (≈ 2.300-3.400 TL) |
-
-**Paket önerisi:**
-- **Başlangıç:** Asistan + randevu + hatırlatma. Aylık mesaj ve AI kotası var.
-- **Pro:** Tüm otomasyonlar + kampanya + Instagram + web sitesi.
-- **WhatsApp ücretlerini kimin ödeyeceği:**
-  - (a) Salon kendi kartını Meta'ya tanımlar ve doğrudan öder. Sizin için en az riskli seçenek budur ve **önerilen** de budur.
-  - (b) Siz ödersiniz ve pakete gömersiniz. Bunun için Meta "Solution Partner" kredi hattı ya da bir BSP gerekir.
+| 1 | Alan adı, Meta doğrulaması ve App Review başvurusu, Anthropic hesabı, avukat |
+| 2-3 | Temel sistem: subdomain'li panel, giriş, admin paneli, salon açma, takvim, hizmetler, çalışanlar |
+| 4-5 | WhatsApp bağlama, gelen kutusu, Claude asistanı, randevu açma |
+| 6-7 | Otomasyonlar: hatırlatma, Google yorum, tekrar işlem, yan ürün önerisi, boş saat doldurma |
+| 8-9 | Kampanyalar, kuponlar, müşteri grupları, raporlar |
+| 10 | Instagram DM, salon web sitesi |
+| 11-12 | 2-3 pilot salonla deneme, düzeltmeler, fiyatın netleşmesi |
 
 ---
 
-## 4. Uzaktan Kurulum — Müşterinin WhatsApp ve Instagram'ını Nasıl Bağlarız?
+## 9. Sizden beklenen kararlar
 
-### 4.0 Bizim tarafımızda **bir kere** yapılacaklar (ön koşul, 2-6 hafta sürebilir — HEMEN başlanmalı)
-
-1. **Meta Business Portfolio** açılır (Basbay Studio adına) ve **işletme doğrulaması** yapılır. Vergi levhası, ticaret sicil, alan adı ve telefon gerekir.
-2. **Meta Developer** hesabında bir uygulama oluşturulur. Eklenecek ürünler: WhatsApp, Instagram (Instagram Login ile), Webhooks.
-3. Uygulama **"Tech Provider"** olarak kaydedilir. Böylece salonlar kendi hesaplarını bizim panelimizden tek tıkla bağlayabilir (**Embedded Signup**).
-4. **App Review (uygulama incelemesi)** için başvurulur. Gerekli izinler:
-   - WhatsApp: `whatsapp_business_management`, `whatsapp_business_messaging`
-   - Instagram: `instagram_business_basic`, `instagram_business_manage_messages`, `instagram_business_manage_comments`
-   - Her izin için ekran kaydı videosu, gizlilik politikası URL'si, veri silme URL'si ve kullanım açıklaması istenir.
-5. Webhook adresi tanımlanır: `https://dijitalberber.com/api/webhooks/meta`. Doğrulama token'ı ve App Secret ile imza kontrolü yapılır.
-6. **Anthropic Console:** organizasyon, API anahtarı, harcama limiti.
-7. Hukuki metinler hazırlanır (bkz. Bölüm 6): KVKK aydınlatma metni, açık rıza, yurt dışına aktarım ve ticari ileti izni.
-
-> **Alternatif kısa yol:** Tech Provider onayı beklenirken 360dialog, Twilio ya da Gupshup gibi resmi bir **BSP (çözüm ortağı)** üzerinden başlanabilir. Onlar da Embedded Signup sunar. Dezavantajı mesaj başına ya da aylık ek ücret almalarıdır. Uzun vadede doğrudan Cloud API daha ucuzdur.
-
-### 4.1 Salonu bağlama — WhatsApp (salon başına ~15-20 dakika, uzaktan)
-
-Salon sahibiyle Google Meet ya da WhatsApp görüntülü görüşme açılır, ekran paylaşılır. Alternatif olarak salon panelde adım adım sihirbazı kendisi izler.
-
-**Hangi numara kullanılacak? 3 seçenek:**
-
-| Seçenek | Açıklama | Ne zaman |
-|---|---|---|
-| **A) Coexistence (birlikte kullanım)** — *önerilen* | Salonun **mevcut WhatsApp Business uygulamasındaki numarası** API'ye bağlanır. Salon telefondaki uygulamayı kullanmaya devam eder. Son 6 aya kadar sohbet geçmişi ve kişiler aktarılabilir. | Salon, müşterilerinin bildiği numarayı değiştirmek istemiyorsa |
-| B) Yeni numara | Salon için yeni bir hat alınır, sadece API'de kullanılır | Temiz başlangıç isteniyorsa |
-| C) Taşıma | Numara Business App'ten silinir, tamamen API'ye geçer. Telefonda uygulama artık çalışmaz. | Coexistence uygun değilse |
-
-> Coexistence'ın bazı kısıtları var: daha düşük gönderim hızı, bazı özelliklerde farklılık, telefondaki uygulamanın en az 14 günde bir açılması gerekliliği. Güncel kısıtlar kurulumdan önce kontrol edilmeli.
-
-**Adımlar:**
-1. Salon sahibi **Dijital Berber paneline** girer → *Ayarlar → Kanallar → "WhatsApp'ı Bağla"*.
-2. Meta'nın açılır penceresi (Embedded Signup) gelir. Sahip **kendi Facebook hesabıyla** giriş yapar.
-3. Bir işletme portföyü seçer ya da yeni oluşturur. Salon adı, web sitesi ve adres girilir.
-4. Bir **WhatsApp Business hesabı (WABA)** oluşturulur. Görünen ad girilir (örn. "Lara Güzellik Salonu").
-5. Numara seçilir. Coexistence seçildiyse telefondaki WhatsApp Business uygulamasında çıkan QR kod ya da onay ekranı onaylanır. Yeni numara seçildiyse SMS/arama ile gelen kod girilir.
-6. Pencere kapanınca bizim sistemimiz şunları alır: `waba_id`, `phone_number_id` ve bir kod. Bu kod sunucuda kalıcı erişim token'ına çevrilir ve **şifrelenerek** saklanır. Ardından sistem:
-   - numarayı Cloud API'ye kaydeder (register),
-   - WABA'yı uygulamamızın webhook'una abone eder (subscribed_apps),
-   - **standart şablonları otomatik oluşturup** Meta onayına gönderir (randevu_onay, randevu_hatirlatma, randevu_iptal, google_yorum, tekrar_islem_hatirlatma, kampanya_genel).
-7. Salon sahibi **WhatsApp Manager → Ödeme yöntemleri** bölümüne kredi kartını ekler. Bu, şablon mesaj ücretleri için gereklidir.
-8. (Önerilir) Salon kendi Meta işletme doğrulamasını da yapar. Böylece limit 250'den 2.000'e çıkar ve görünen ad onaylanır.
-9. Test: Salon sahibinin telefonundan numaraya "Merhaba" yazılır, asistan yanıt verir, deneme randevusu açılıp iptal edilir.
-
-### 4.2 Salonu bağlama — Instagram (~5-10 dakika)
-
-1. Instagram hesabı **Profesyonel hesap** olmalı. Değilse: *Ayarlar → Hesap türü ve araçlar → Profesyonel hesaba geç → İşletme*.
-2. Instagram uygulamasında: *Ayarlar → Mesajlar ve hikâye yanıtları → Mesaj kontrolleri → Bağlı araçlar → "Mesajlara erişime izin ver"* **açılır**. Bu açılmazsa API mesajları okuyamaz.
-3. Panelde *Kanallar → "Instagram'ı Bağla"* tıklanır. Instagram ile giriş yapılır ve izinler onaylanır.
-4. Sistem `ig_user_id`'yi ve uzun süreli token'ı kaydeder (yaklaşık 60 gün geçerli, otomatik yenilenir), webhook aboneliğini açar (messages, comments).
-5. Test: Başka bir hesaptan DM atılır, panel gelen kutusunda görünür, asistan yanıt verir.
-
-### 4.3 Salonu bağlama — Google yorum
-
-1. Panelde *Ayarlar → Google* bölümünde salon adı aranır (Places API) **ya da** Google Haritalar bağlantısı yapıştırılır.
-2. Sistem Place ID'yi bulur ve yorum bağlantısını oluşturur.
-3. Test bağlantısı açılarak doğru salona gidip gitmediği kontrol edilir.
-
-### 4.4 Salon verilerinin içeri alınması
-
-1. Hizmetler, süreler, fiyatlar ve çalışanlar panelden girilir. Excel ile toplu içe aktarma da yapılabilir.
-2. Mevcut müşteri listesi (telefon, isim) içe aktarılır. **Pazarlama izni olmayanlara kampanya gitmez.** İzin durumu ayrıca işaretlenir.
-3. Bilgi bankası doldurulur: adres, otopark, ödeme yöntemleri, iptal politikası, sık sorulan sorular, asistanın üslubu.
-4. Otomasyonlar açılır ve süreleri ayarlanır: hatırlatma kaç saat önce gidecek, yorum isteği kaç saat sonra gidecek vb.
-5. **1 hafta "gölge mod" önerilir:** Asistan yanıtları otomatik göndermez, panelde **taslak** olarak önerir. Çalışan onaylar. Kalite görüldükten sonra tam otomatiğe geçilir.
-
----
-
-## 5. Yol Haritası (Fazlar)
-
-| Faz | Süre | İçerik |
-|---|---|---|
-| **0 — Hazırlık** | 1. hafta (paralel, 2-6 hafta sürebilir) | Meta işletme doğrulaması, uygulama, Tech Provider, App Review başvurusu. Anthropic hesabı. Hukuki metinler. |
-| **1 — WhatsApp çekirdeği** | 2-4. hafta | Webhook, kanal bağlama (Embedded Signup), mesaj tabloları, panel gelen kutusu, insan devri, Claude asistanı (SSS + randevu araçları), şablon yönetimi |
-| **2 — Otomasyonlar** | 5-6. hafta | Kuyruk ve zamanlayıcı, randevu onayı ve hatırlatma (butonlu), Google yorum isteği, tekrar işlem hatırlatması, yan ürün önerisi |
-| **3 — Pazarlama** | 7-8. hafta | İzin (opt-in) yönetimi, segmentler, kampanyalar, kuponlar ve özel indirimler, boş randevu doldurma ve bekleme listesi, raporlar (dönüşüm, gelir) |
-| **4 — Instagram + web sitesi** | 9-10. hafta | Instagram DM ve yorum entegrasyonu, salon mini web sitesi, (opsiyonel) Google Business Profile yorum yanıtlama |
-| **5 — Pilot** | 11-12. hafta | 2-3 pilot salon, gölge mod, istem (prompt) iyileştirme, maliyet ölçümü, fiyat paketlerinin netleşmesi |
-
-**Mevcut koddan yeniden kullanılacaklar:** `booking` (randevu oluşturma ve durum makinesi), müsaitlik motoru, `business` (çalışma saatleri, çalışanlar), `customer`, `reviews`, `billing` (salon aboneliği), `notifications` (şablon altyapısı), günlük cron. İşletme türüne **"güzellik salonu"** eklenir. Hizmet türleri genişletilir (cilt bakımı, lazer, protez tırnak, kirpik, kaş vb.).
-
----
-
-## 6. Hukuk ve Uyum (Türkiye) — Atlanmaması Gerekenler
-
-- **6563 sayılı Kanun / Ticari Elektronik İleti:** Kampanya, indirim ve yan ürün önerisi gibi **ticari** mesajlar için müşterinin **önceden onayı** gerekir. Her mesajda ret (çıkış) imkânı olmalıdır: "Mesaj almak istemiyorsanız DUR yazın". Onay kaydı saklanmalıdır. **İYS (İleti Yönetim Sistemi)** yükümlülüğü salon ve kanal bazında hukukçuyla netleştirilmelidir. Randevu hatırlatması gibi hizmet mesajları genelde ticari ileti sayılmaz.
-- **KVKK:**
-  - Aydınlatma metni hazırlanmalı. Pazarlama için açık rıza alınmalı.
-  - Mesajlar Meta ve Anthropic (ABD) sunucularında işlenir. Bu **yurt dışına aktarım** demektir. Standart sözleşme kullanılmalı ve KVKK'ya bildirim yapılmalıdır (2024 değişikliği).
-  - Salon veri sorumlusu, Dijital Berber veri işleyen olur. Aralarında **veri işleme sözleşmesi** imzalanmalıdır.
-  - Sağlık verisi sayılabilecek bilgiler (alerji, cilt hastalığı vb.) için ekstra dikkat gerekir. Asistan bu bilgileri istememeli.
-- **Google yorum politikası:** Yorum isteği **herkese** gönderilmelidir. "Memnun musunuz? Evet ise Google'a, hayır ise bize yazın" gibi filtreleme (review gating) Google kurallarına aykırıdır ve yorumların silinmesine yol açabilir. Yorum karşılığında indirim de verilemez.
-- **Meta Ticaret Politikası:** Bazı ürün ve hizmet kategorileri kısıtlıdır. Kozmetik genelde sorun değildir. Bazı tıbbi ve estetik işlemler kısıtlı olabilir, kontrol edilmelidir.
-- **Asistan şeffaflığı:** İlk mesajda müşteriye bir yapay zekâ asistanıyla konuştuğu söylenmeli. Her zaman insana bağlanma seçeneği sunulmalı.
-
----
-
-## 7. Riskler ve Önlemler
-
-| Risk | Önlem |
-|---|---|
-| App Review / Tech Provider onayı gecikir | Faz 0'a hemen başlanır. Bu sürede BSP (360dialog vb.) ile pilot yapılır. |
-| Numara kalitesi düşer, numara kısıtlanır | Sadece izinli müşteriye kampanya, sıklık sınırı (örn. ayda en fazla 2), kolay çıkış, kalite puanı panelde izlenir |
-| Asistan yanlış fiyat ya da saat söyler | Fiyat ve saat yalnızca araçlardan (DB) gelir. Asistan uydurmaz. Gölge mod. Konuşma kayıtları incelenir. |
-| AI maliyeti kontrolden çıkar | Salon başına aylık bütçe, önbellekleme, mesaj başına token sınırı, `ai_usage` raporu |
-| Token sızıntısı | Token'lar DB'de şifreli tutulur (uygulama anahtarıyla AES-GCM). Webhook imzası doğrulanır. Salonlar birbirinin verisine erişemez (tenant izolasyonu). |
-| Meta API değişiklikleri | Graph API sürümü sabitlenir. Yılda 1-2 kez sürüm yükseltme planlanır. |
-
----
-
-## 8. Karar Bekleyen Konular
-
-1. **AI modeli:** Opus 5.5 (en iyi kalite, ~50 $/salon/ay) mi, yoksa ölçüm sonrası daha ucuz model mi?
-2. **WhatsApp ücretleri:** Salon kendi kartıyla mı ödeyecek (önerilen), yoksa pakete mi gömülecek?
-3. **Doğrudan Tech Provider mı, yoksa başlangıçta BSP mi?**
-4. **Kuyruk ve zamanlayıcı servisi:** Vercel Queues, QStash ya da Inngest?
-5. **Paket fiyatları:** Pilot maliyet ölçümünden sonra belirlenecek.
+1. **Alan adı ne olacak?**
+2. **Yeni GitHub reposu:** Bu proje ayrı bir repoda olmalı. Repoyu siz açın ve bu oturuma ekleyin.
+3. **AI modeli:** En akıllısı (Opus 5.5, ~50 $/salon) mı, ölçtükten sonra daha ucuzu mu?
+4. **WhatsApp ücretleri:** Salonun kendi kartından mı (önerilen), yoksa sizin paketinizin içinden mi?
+5. **Meta onayı beklenirken** çözüm ortağıyla (360dialog vb.) başlanacak mı?
