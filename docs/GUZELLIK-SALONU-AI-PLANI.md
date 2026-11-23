@@ -426,3 +426,42 @@ Telefondan atılan mesajlar API'den gitmediği için sayaca giremez.
 **Not:** Telefondaki uygulamada 24 saat kuralı **yoktur.** Salon kampanyayı istediği zaman, ücretsiz atabilir. "24 saat" kuralı sadece sistemin (API'nin) attığı mesajlar için geçerlidir.
 
 **Asistan kotası (AI):** Salonun telefondan ya da panelden yazdığı mesajlar AI kotasından da düşmez. AI kotasına sadece asistanın kendi ürettiği cevaplar sayılır.
+
+---
+
+## 13. Çalışan yönetimi ve randevu atama (salon panelinden)
+
+**Salon kendi panelinden şunları yapar:**
+- Çalışan ekler ve çıkarır. Vardiya, mola, izin ve hangi hizmetleri yaptığını tanımlar.
+- Rol verir: **sahip / yönetici / çalışan**. Çalışan kendi girişiyle sadece kendi takvimini görür.
+- Gelen randevuyu istediği çalışana atar. Takvimde sürükle-bırak ile başka çalışana aktarır.
+- Haftalık iş yükü tablosunu görür: çalışan başına randevu sayısı, çalışılan saat, doluluk yüzdesi. Dengesizlik olursa panel uyarır ("Elif'in yükü %30 fazla").
+
+**Atama modları (salon ayarlardan seçer):**
+
+| Mod | Nasıl çalışır |
+|---|---|
+| **Otomatik adil** (varsayılan) | O hizmeti yapabilen ve o saatte boş olan çalışanlar arasından, **bu hafta en az dakika çalışmış** olana verilir. Eşitlik olursa sırayla verilir. |
+| **Yönetici atar** | Asistan saati ayırır, randevu "atanmamış" kutusuna düşer, yönetici dağıtır. Saat tutulduğu için çakışma olmaz. |
+| **Müşteri seçer** | Müşteri "Elif Hanım olsun" derse randevu Elif'e yazılır. Tercih belirtmezse otomatik adil mod çalışır. |
+
+- Aynı çalışana aynı saatte iki randevu verilmesi veritabanı seviyesinde engellenir.
+- Çalışana yeni randevu bildirimi **panel ve telefon (PWA) bildirimi** ile gider. Bu ücretsizdir. WhatsApp ile gitmez, çünkü o ücretli olur.
+
+---
+
+## 14. Bağlantıları salon kendisi kurar, biz şifre istemeyiz
+
+**Kural:** Salondan hiçbir şifre ya da hesap bilgisi istenmez. Salon panelinde "Bağla" düğmesine basar, adımları kendisi tamamlar. Bundan sonrası **otomatik** kurulur: webhook aboneliği, numara kaydı, şablonların onaya gönderilmesi ve test mesajı. Başarılı olursa panelde ✅ yanar, olmazsa bize anında uyarı gelir. *(Bu bölüm, Bölüm 6'daki "siz yaparsınız" anlatımının yerine geçer.)*
+
+- **Instagram:** Sorun yok. Salon kendi Instagram girişiyle izin verir. Panel, "Mesajlara erişime izin ver" ayarı için resimli yönlendirme gösterir.
+- **Google:** Salon Haritalar bağlantısını yapıştırır.
+- **WhatsApp:** "Salon kendisi bağlasın" + "ücreti biz ödeyelim" kararlarını birlikte sağlamanın iki yolu var. **Karar bekliyor:**
+
+| Yol | Salon kendisi bağlar | Kart bizden | Aynı numara telefonda da çalışır | Ek maliyet |
+|---|---|---|---|---|
+| **1) Panelden numara + SMS kodu** (numara API ile bizim Meta hesabımıza eklenir) | Evet | Evet | **Hayır.** Numara telefondaki WhatsApp'tan silinmeli. Asistan için ayrı hat önerilir. | Yok |
+| **2) Meta'nın bağlanma ekranı + Solution Partner aracı** (ücreti partner öder, bize fatura eder) | Evet | Evet | Evet (coexistence) | Var (numara ya da mesaj başı, teklif alınmalı) |
+| 3) Meta'nın bağlanma ekranı, aracısız | Evet | **Hayır, salon kart girer** | Evet | Yok |
+
+Kartı bizim ödeyebilmemiz için iki yoldan biri gerekir: ya numara bizim hesabımızda olacak (Yol 1), ya da Meta'nın kredi paylaştırma yetkisi olan bir partner araya girecek (Yol 2). Yol 3, "salon kart bağlamaz" kararına aykırıdır. Yol 1 seçilirse "kampanyaları salon aynı numaradan telefonla atar" kararı değişir: kampanyalar salonun eski numarasından atılır.

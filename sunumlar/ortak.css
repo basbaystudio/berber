@@ -64,3 +64,7 @@ ul.cross li:before{content:"✕";background:none;color:var(--bad);font-weight:80
 .mono{font-family:"JetBrains Mono",monospace;font-size:16px}
 .tree{background:#2a1a24;color:#f6dbe7;border-radius:16px;padding:22px 26px;font-family:"JetBrains Mono",monospace;font-size:17px;line-height:1.7;white-space:pre}
 .spacer{flex:1}
+
+body{counter-reset:sayfa}.slide{counter-increment:sayfa}.pn:before{content:counter(sayfa)}
+.tight td,.tight th{padding:9px 14px;font-size:15px}
+.dense h2{margin-bottom:18px}.dense .step{padding:14px 16px}.dense .step h3{font-size:18px}.dense .step p{font-size:15px}.dense .step .n{margin-bottom:8px}
