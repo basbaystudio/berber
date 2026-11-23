@@ -117,6 +117,73 @@ Salonun müşterisi WhatsApp'tan ya da Instagram'dan yazar. Yazılan mesaj bizim
 
 ---
 
+## 4B. ÖDEME MODELİ (KARAR): Meta'ya biz öderiz, salon kart bağlamaz
+
+**Karar:** WhatsApp ücretleri **bizim şirket kartımızdan** çekilir. Salon hiçbir yere kart girmez. Her salonun aylık kotası olur. Kota dolmak üzereyken **bize** e-posta gelir. Biz salonu arar, ek paket satarız.
+
+### 4B.1 Teknik olarak nasıl yapılır? (en ucuz yol)
+
+**Bütün salonların WhatsApp hesapları bizim Meta işletme hesabımızın (Business Portfolio) içinde açılır.**
+
+```
+Bizim Meta Business Portfolio'muz  ← bizim kredi kartımız burada (tek kart)
+ ├─ WhatsApp hesabı: Lara Güzellik   → numara: 0532 ...
+ ├─ WhatsApp hesabı: Mina Beauty     → numara: 0541 ...
+ └─ WhatsApp hesabı: Su Estetik      → numara: 0555 ...
+```
+
+- Kart bir kere, bizim portföye eklenir. Her yeni salonun WhatsApp hesabı bu kartı kullanır.
+- Meta ayda bir **tek fatura** keser. Fatura bizim şirket adımıza olur, muhasebesi kolaydır.
+- Aracı firmaya (360dialog, Twilio) para vermeyiz. Onlar mesaj başına ya da numara başına ek ücret alır.
+- Salon tarafında yapılacak tek şey: numaraya gelen **doğrulama kodunu** (SMS ya da arama) görüntülü görüşmede bize söylemek.
+
+### 4B.2 Bu yolun dikkat edilecek noktaları
+
+| Konu | Açıklama | Ne yapacağız |
+|---|---|---|
+| **Görünen ad onayı** | Meta, WhatsApp'ta görünen adın ("Lara Güzellik") gerçek bir işletmeye ait olduğunu görmek ister. Ad bizim şirket adımızla aynı değil. | Her salonun `lara.senindomain.com` sitesinde salon adı + WhatsApp numarası yazar. Meta bu bağı görür. Reddedilirse salonun vergi levhası ile itiraz edilir. |
+| **Numara sayısı sınırı** | Bir portföye başta az sayıda numara eklenebilir. İşletme doğrulamasından sonra limit artar. Daha fazlası için Meta'dan artış istenir. | Salon sayısı arttıkça artış talep edilir. |
+| **Gönderim limiti portföy bazında olabilir** | Meta son düzenlemelerle günlük "kaç kişiye ilk mesaj" limitini tüm portföy için ortak saymaya başladı. Başlangıç limiti doğrulanmış hesapta günde 2.000 kişi, sonra 10 bin, 100 bin. | Salon başına ayda 100 mesajla 20 salon, günde ortalama ~70 mesaj eder, limite çok uzak. Kalite yüksek tutulursa limit kendiliğinden büyür. |
+| **Bir salon herkesi etkileyebilir** | Bir salon spam atıp şikâyet alırsa portföyün kalite puanı düşebilir. | Kampanyalar sadece izinli müşterilere gider. Kota ve sıklık sınırı uygulanır. Kalite puanı admin panelde izlenir. |
+| **Mevcut numarayı telefonda kullanmaya devam etmek (coexistence)** | Bu özellik Meta'nın "Embedded Signup" ekranıyla açılıyor. Numarayı bizim portföyümüze bu şekilde almak teknik olarak mümkün görünüyor ama **pilotta mutlaka denenmeli.** | Olmazsa salon için **yeni bir hat** alınır (en temizi), ya da mevcut numara tamamen API'ye taşınır. |
+| **Salon ayrılırsa** | Numara bizim portföyümüzde olduğu için salonun numarasını geri isteme hakkı vardır. | Sözleşmeye "Ayrılırsanız numaranızı size ya da yeni sağlayıcınıza taşırız" yazılır. Numaralar taşınabilir. |
+
+> **B planı:** Bu yol Meta tarafında sorun çıkarırsa Meta'nın **Solution Partner**'ı olan bir aracı firmayla (360dialog Partner programı gibi) "ücreti partner öder" modelinde çalışılır. Ödeme yine bizden çıkar, salon kart bağlamaz, ama aracı ek ücret alır.
+
+### 4B.3 Kota sistemi — nasıl çalışacak?
+
+**1) Paketler (örnek):**
+
+| Paket | Aylık giden WhatsApp mesajı | Aylık AI sohbeti |
+|---|---|---|
+| Başlangıç | 100 | 300 |
+| Ek paket +100 | +100 | +200 |
+
+**2) Sayaç:** Meta her gönderilen mesaj için bize bir durum bildirimi yollar. Bu bildirimde "bu mesaj **ücretli mi** (billable), **hangi kategoride** (utility/marketing)" bilgisi yazar. Sistem sadece **gerçekten ücretli** olan mesajları sayar. 24 saat penceresindeki bedava mesajlar kotadan düşmez. Böylece sayaç Meta faturasıyla birebir aynı olur.
+
+**3) Uyarılar — hepsi BİZE gider, salona değil:**
+
+| Kullanım | Ne olur |
+|---|---|
+| **%80** | Bize e-posta: "Lara Güzellik kotasının %80'ini kullandı (80/100). Ay sonuna 9 gün var, tahmini ay sonu: 115." |
+| **%100** | Bize e-posta: "Lara Güzellik kotayı doldurdu." Admin panelde salon **kırmızı** görünür. |
+| **%100 sonrası** | **Kampanya gönderimi otomatik durur.** Randevu hatırlatmaları **gitmeye devam eder,** çünkü salonun işini bozmayız. |
+| **%150 (güvenlik tavanı)** | Her şey durur. Sadece müşteriye verilen cevaplar devam eder, onlar zaten bedava. Bize acil e-posta gider. |
+
+- Yüzdeler ve tavan admin panelden salon bazında değiştirilebilir.
+- **Erken uyarı:** Sistem ayın ortasında gidişata bakar. "Bu hızla ay sonunda kotayı aşacak" diyorsa %80'i beklemeden e-posta atar.
+- Ek paketi admin panelden siz tanımlarsınız: "Lara'ya bu ay +100 ekle". Kota anında büyür.
+- Her ayın 1'inde sayaçlar sıfırlanır. Size aylık özet e-postası gelir: salon salon kullanım, Meta maliyeti, AI maliyeti, kâr.
+
+**4) Yapay zekâ (Claude) maliyeti:** Bu da bizim hesabımızdan çıkar. Aynı sistem uygulanır:
+- Her sohbetin token maliyeti kaydedilir. Salon kotası %80 ve %100 olduğunda bize e-posta gider.
+- Kota dolsa bile asistan susmaz. Gerekirse daha kısa cevaplarla çalışmaya devam eder. Sadece %150 tavanında "Ekibimiz size dönecek" moduna geçer.
+- Ayrıca Anthropic Console'da **toplam aylık harcama sınırı** konur. Bu, bütün salonlar için son emniyet kemeridir.
+
+**5) Meta faturasının kontrolü:** Ayda bir, sistemin saydığı tutar Meta'nın fiyat analitiği (pricing analytics) verisiyle karşılaştırılır. Fark varsa bize e-posta gelir.
+
+---
+
 ## 4. Ne kadar tutar? (büyük salon örneği, ayda ~600 randevu — referans)
 
 ### WhatsApp (parayı Meta alır)
@@ -207,7 +274,7 @@ Sahibe otomatik bir e-posta gider: "Şifreni belirle". Artık `lara.senindomain.
 5. Pencere kapanır, panelde "✅ WhatsApp bağlandı" yazar. Sistem arka planda şunları kendiliğinden yapar:
    - mesajları dinlemeye başlar,
    - hatırlatma, randevu onayı, Google yorum ve kampanya **şablonlarını** Meta'ya onaya gönderir. Onay birkaç dakika ile 1 gün arasında gelir.
-6. **Kart ekleme:** Sahip business.facebook.com → WhatsApp Manager → **Ödeme yöntemi** bölümüne kredi kartını ekler. WhatsApp ücretleri doğrudan bu karttan çekilir, size yansımaz.
+6. **Kart ekleme YOK.** Salon kart bağlamaz. WhatsApp hesabı bizim portföyümüzde açılır ve bizim kartımızı kullanır (bkz. Bölüm 4B). Bu durumda 2-5. adımları **siz** kendi Meta hesabınızla yaparsınız. Salon sahibi sadece numaraya gelen doğrulama kodunu söyler ya da coexistence QR onayını telefonundan verir.
 7. **Test:** Sahibin kendi telefonundan salon numarasına "Merhaba" yazılır, asistan cevap vermeli.
 
 ### Adım 3 — Instagram'ı bağlayın (salon sahibi, 5 dk)
@@ -264,5 +331,5 @@ Asistan cevapları **kendisi göndermez**, panelde taslak olarak hazırlar. Çal
 1. **Alan adı ne olacak?**
 2. **Yeni GitHub reposu:** Bu proje ayrı bir repoda olmalı. Repoyu siz açın ve bu oturuma ekleyin.
 3. **AI modeli:** En akıllısı (Opus 5.5, ~50 $/salon) mı, ölçtükten sonra daha ucuzu mu?
-4. **WhatsApp ücretleri:** Salonun kendi kartından mı (önerilen), yoksa sizin paketinizin içinden mi?
+4. ~~WhatsApp ücretleri~~ → **KARAR VERİLDİ:** Meta'ya biz öderiz. Kota ve ek paket modeli uygulanır (Bölüm 4B).
 5. **Meta onayı beklenirken** çözüm ortağıyla (360dialog vb.) başlanacak mı?
