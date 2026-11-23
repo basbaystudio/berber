@@ -333,3 +333,74 @@ Asistan cevapları **kendisi göndermez**, panelde taslak olarak hazırlar. Çal
 3. **AI modeli:** En akıllısı (Opus 5.5, ~50 $/salon) mı, ölçtükten sonra daha ucuzu mu?
 4. ~~WhatsApp ücretleri~~ → **KARAR VERİLDİ:** Meta'ya biz öderiz. Kota ve ek paket modeli uygulanır (Bölüm 4B).
 5. **Meta onayı beklenirken** çözüm ortağıyla (360dialog vb.) başlanacak mı?
+
+---
+
+## 10. KARAR: Kampanyaları salon kendi telefonundan atar
+
+Sistem kampanya göndermez. Salon kampanyayı **kendi WhatsApp Business uygulamasından** elle atar.
+
+**Mümkün mü?** Evet. Ama salonun numarasının nasıl kurulduğuna göre durum değişir:
+
+| Kurulum | Salon telefondan kampanya atınca ne olur? |
+|---|---|
+| **Aynı numara hem telefonda hem sistemde (coexistence)** | Telefondan atılan mesajlar **bedava** (uygulama mesajlarına ücret yok). Sistem bu mesajları da görür ve gelen kutusuna düşürür. Müşteri cevap verirse asistan da görür. |
+| **Sisteme yeni hat alındıysa** | Salon kampanyayı eski numarasından atar. Sistemle hiç ilgisi yoktur, sistemi hiç etkilemez. Ama müşterinin cevabı eski numaraya gider, asistan göremez. |
+
+**Sistemi etkiler mi? Etkileyebilecek 3 nokta:**
+
+1. **Numara cezası riski (en önemlisi):** Coexistence'ta numara ortaktır. Salon telefondan izinsiz ya da çok sık kampanya atar, müşteriler "engelle / spam bildir" derse **aynı numara** Meta tarafından kısıtlanabilir ya da kapatılabilir. O zaman asistan ve hatırlatmalar da durur. Numaralar bizim portföyümüzde olduğu için portföy kalite puanı da etkilenebilir.
+   → Önlem: Sözleşmeye "Kampanyayı sadece izin veren müşterilere, ayda en fazla 2 kez atarım" maddesi koyulur. Admin panelde numara kalite puanı izlenir. Puan düşerse bize anında uyarı gelir.
+2. **Asistanın araya girmesi:** Salon telefondan bir müşteriyle yazışıyorsa asistan o sohbete karışmamalı.
+   → Kural: Salon telefondan bir müşteriye yazdığı an, asistan o müşteriyle sohbette **24 saat susar** (ayarlanabilir).
+3. **Telefondaki yayın listesi sınırları:** WhatsApp Business uygulamasında yayın listesi ile mesaj sadece **numaranızı rehberine kaydetmiş** kişilere ulaşır. Bir liste en fazla 256 kişi alır.
+
+**Kanun:** Kampanyayı kim atarsa atsın, ticari ileti kuralları (izin, ret hakkı, İYS) geçerlidir. Sorumluluk salonda olur. Sözleşmede bu yazılmalıdır.
+
+**Maliyete etkisi:**
+- Pazarlama mesajı ücreti sıfırlanır.
+- **Yan ürün önerisi** ve **"işlem zamanınız geldi" mesajları da Meta'ya göre pazarlama sayılır.** Bunlar:
+  - ya müşteri son 24 saat içinde yazdıysa o pencerede bedava gönderilir,
+  - ya da randevu sonrası teşekkür mesajının içine eklenir (o da 24 saat penceresi içindeyse bedava olur).
+- Sonuçta ücretli kalan neredeyse sadece **randevu hatırlatmaları** olur.
+
+**Kolaylık (bedava):** Panelde "Kampanya Taslağı" düğmesi olur. Asistan kampanya metnini yazar, uygun müşteri listesini (izinli olanlar) çıkarır. Salon tek tıkla kopyalar ve telefondan gönderir.
+
+---
+
+## 11. Sorun çıkarsa: anında fark etmek ve çözmek
+
+### Anında haberimiz olsun (izleme)
+
+| Ne izlenir | Nasıl | Bize nasıl haber gelir |
+|---|---|---|
+| Site ve API ayakta mı | Uptime izleme, 1 dakikada bir (UptimeRobot / Better Stack, ücretsiz) | Anında Telegram + e-posta |
+| Kodda hata | Sentry (ücretsiz katman) | Anında Telegram + e-posta |
+| Bir salona saatlerdir mesaj gelmiyor (normalde gelirdi) | Kendi kontrolümüz, 15 dakikada bir | Telegram |
+| Meta: numara kalitesi düştü, numara kısıtlandı, şablon reddedildi, token geçersiz | Meta'nın kendi bildirimleri (webhook) | Anında Telegram + e-posta |
+| Claude cevap vermiyor | Hata sayacı | Anında Telegram |
+| Mesaj gönderilemedi (hata kodu) | Meta durum bildirimleri | Topluca, 15 dakikada bir |
+
+### Hemen müdahale (admin panelde)
+
+- **Canlı durum ekranı:** Her salonun yanında yeşil, sarı ya da kırmızı ışık.
+- **"Destek olarak gir":** Salonun panelini onun gözünden görürsünüz. Her giriş kayda geçer.
+- **Asistanı kapat düğmesi:** Tek salon için ya da **bütün salonlar** için. Kapalıyken müşteriye "Mesajınızı aldık, ekibimiz size dönecek" gider ve salon telefondan devam eder.
+- **Ayar düzeltme:** Fiyat, saat, sık sorulan sorular ve asistan talimatları panelden değişir, **saniyeler içinde** geçerli olur. Kod yüklemek gerekmez.
+
+### Kendi kendini koruyan sistem (biz uyurken bile)
+
+- **Claude çökerse:** Otomatik "Ekibimiz dönecek" cevabı gider ve salona bildirim düşer.
+- **Bizim sunucu çökerse:** Meta mesajları kaybetmez, **saatlerce tekrar dener.** Sunucu açılınca mesajlar işlenir. Coexistence'ta salon telefondan cevap vermeye devam eder.
+- **Aynı hatırlatma iki kez gitmez:** Her gönderimin tekrar gönderimi engelleyen bir kilidi vardır.
+
+### Ne kadar hızlı çözülür?
+
+| Sorun | Çözüm süresi |
+|---|---|
+| Asistan yanlış bilgi veriyor, ayar hatası | **Dakikalar.** Panelden düzeltilir. |
+| Koddaki hata | **10-30 dakika.** Düzeltilir, GitHub'a gönderilir, otomatik yayına çıkar. Kötü bir güncelleme **tek tıkla geri alınır.** |
+| Sunucu ya da veritabanı sorunu | Dakikalar ile 1 saat arası. Günlük yedekler alınır. |
+| **Meta kaynaklı** (numara kısıtlandı, şablon reddedildi, görünen ad onaylanmadı, Meta'nın genel kesintisi) | **Anında çözülemez.** Saatler ile günler arası sürer. Meta destek talebi açılır. → Önlem: Her şablonun yedek bir versiyonu önceden onaylı tutulur. Kalite puanı izlenir. |
+
+**Gerçekçi beklenti:** Bizim tarafımızdaki sorunların çoğu dakikalar içinde çözülür. Meta tarafındaki sorunlar bizim elimizde değildir. Onlar için önlem almak, sonradan çözmekten daha önemlidir.
