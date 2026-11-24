@@ -595,21 +595,23 @@ async function rotaYerleriGetir() {
   for (let i = 1; i < r.coords.length; i++) if (r.cumD[i] - r.cumD[son] >= 1500) { ornek.push(r.coords[i]); son = i; }
   ornek.push(r.coords[r.coords.length - 1]);
   const parcalar = [];
-  for (let i = 0; i < ornek.length - 1; i += 120) parcalar.push(ornek.slice(i, i + 121));
+  // Uzun yolda tek büyük sorgu yer servisinde zaman aşımına düşüyordu: küçük parçalar, her biri 2 kez denenir,
+  // biri alınamazsa diğerleri yine gelir (eskiden ilk hatada bütün yol boş kalıyordu).
+  for (let i = 0; i < ornek.length - 1; i += 40) parcalar.push(ornek.slice(i, i + 41));
   const hepsi = new Map();
-  try {
-    for (let i = 0; i < parcalar.length; i++) {
-      $("rotaOzet").insertAdjacentHTML("beforeend", "");
-      durumYaz(`Yol üzerindeki yerler aranıyor… (${i + 1}/${parcalar.length})`);
-      const alan = parcalar[i].map((p) => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join(",");
-      const q = `[out:json][timeout:90];(${sorguParca(alan, yaricap, k)});out center tags;`;
-      const els = await overpass(q);
-      for (const e of els) { const p = poiDonustur(e); if (p) hepsi.set(p.id, p); }
+  let hatali = 0;
+  for (let i = 0; i < parcalar.length; i++) {
+    durumYaz(`Yol üzerindeki yerler aranıyor… (${i + 1}/${parcalar.length})`);
+    const alan = parcalar[i].map((p) => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join(",");
+    const q = `[out:json][timeout:60];(${sorguParca(alan, yaricap, k)});out center tags;`;
+    let els = null;
+    for (let deneme = 0; deneme < 2 && !els; deneme++) {
+      try { els = await overpass(q); } catch { await new Promise((r) => setTimeout(r, 1500)); }
     }
-    durumYaz("");
-  } catch (e) {
-    durumYaz("⚠ Yerler alınamadı: " + e.message + ". Kendi eklediğiniz yerler yine görünür.");
+    if (!els) { hatali++; continue; }
+    for (const e of els) { const p = poiDonustur(e); if (p) hepsi.set(p.id, p); }
   }
+  durumYaz(hatali ? `⚠ Yolun ${hatali}/${parcalar.length} parçasında yerler alınamadı (yer servisi meşgul). Yolda giderken yakındaki camiler ayrıca aranır.` : "");
   durum.hamPoiler = [...hepsi.values()];
   poileriRotaylaEslestir();
   namazPlaniCiz();
@@ -631,7 +633,7 @@ function poileriRotaylaEslestir() {
     for (const p of liste) {
       if (!p.benim && !k[p.tur === "mescit" ? "cami" : p.tur]) continue;
       const { idx, uzak } = enYakin(r, p);
-      if (uzak > yaricap + 250) continue;
+      if (uzak > (p.genis ? 3500 : yaricap + 250)) continue;
       sonuc.push({ ...p, idx, uzak });
     }
     sonuc.sort((a, b) => a.idx - b.idx);
@@ -849,7 +851,7 @@ async function bildirimleriPlanla(plan) {
   } catch { /* izin yoksa sessizce geç */ }
 }
 function oneriMetni(p) {
-  if (!p.oneriler.length) return "Yol üstünde kayıtlı cami veya tesis görünmüyor" + (p.varistaDevam ? ", varınca da kılabilirsin." : ".");
+  if (!p.oneriler.length) return "Yol üstünde kayıtlı cami veya tesis görünmüyor; yolda giderken yoldan 3 km içerideki camileri de arayıp haber vereceğim" + (p.varistaDevam ? ", varınca da kılabilirsin." : ".");
   return "Şuralarda kılabilirsin: " + p.oneriler.slice(0, 3).map((o) =>
     `${o.ad} (${km(durum.rota.cumD[o.idx] - durum.rota.cumD[durum.sonIdx])} sonra, ~${saat(zamanAt(o.idx))})`).join("; ") + ".";
 }
@@ -1077,6 +1079,7 @@ function navGuncelle() {
   vakitKontrol();
   // Vakit içindeyken ve henüz kılınmadıysa: önümüzdeki 2,5 km'de cami/mescit varsa haber ver
   const icinde = plan.find((p) => p.vakit <= Date.now() && Date.now() < p.bitis - 10 * 60000);
+  if (icinde && !kilindi(gunKey(icinde.vakit) + "|" + icinde.ad)) yakinCamiAra(icinde, idx);
   if (icinde) {
     const vk = gunKey(icinde.vakit) + "|" + icinde.ad;
     const yakin = durum.poiler.find((p) => p.idx > idx && p.tur !== "yakit" && r.cumD[p.idx] - r.cumD[idx] <= 2500);
@@ -1088,6 +1091,45 @@ function navGuncelle() {
         `${NAMAZ_AD[icinde.ad]} vakti, ${saat(icinde.bitis)}'e kadar. Kılmadıysan orada kılabilirsin.`, yakin, vk);
     }
   }
+}
+
+/**
+ * Yol üstünde cami yoksa: önümüzdeki 3-20 km boyunca yoldan 3 km içeriye kadar cami/mescit ara
+ * (şehir içindeki camiler). Bulursa "X km sonra yoldan Y içeride Z Camii var, kılıp yola dönebilirsin" der;
+ * "Git" denirse rota camiye uğrayıp tekrar yola bağlanır. Yer servisini yormamak için en fazla 4 dakikada bir.
+ */
+async function yakinCamiAra(icinde, idx) {
+  const r = durum.rota;
+  if (!r || durum.camiAraniyor || Date.now() - (durum.sonCamiArama || 0) < 4 * 60000) return;
+  const ileride = durum.poiler.some((p) => p.idx > idx && p.tur !== "yakit" && r.cumD[p.idx] - r.cumD[idx] <= 20000 && zamanAt(p.idx) < icinde.bitis - 10 * 60000);
+  if (ileride) return;
+  durum.camiAraniyor = true; durum.sonCamiArama = Date.now();
+  try {
+    const noktalar = [];
+    for (let i = idx; i < r.coords.length && r.cumD[i] - r.cumD[idx] <= 20000; i++) {
+      if (r.cumD[i] - r.cumD[idx] >= 3000 && (!noktalar.length || r.cumD[i] - noktalar[noktalar.length - 1].d >= 2000)) noktalar.push({ ...r.coords[i], d: r.cumD[i] });
+    }
+    if (!noktalar.length) return;
+    const alan = noktalar.map((p) => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join(",");
+    const els = await overpass(`[out:json][timeout:30];(${sorguParca(alan, 3000, { cami: true })});out center tags;`);
+    const yeni = els.map(poiDonustur).filter(Boolean).map((p) => ({ ...p, genis: true }));
+    if (!yeni.length) return;
+    const var_ = new Set((durum.hamPoiler || []).map((p) => p.id));
+    durum.hamPoiler = [...(durum.hamPoiler || []), ...yeni.filter((p) => !var_.has(p.id))];
+    poileriRotaylaEslestir();
+    namazPlaniCiz();
+    // En az sapmalı olanı öner: yola en yakın, sonra en yakın ileride olan
+    const aday = durum.poiler.filter((p) => p.genis && p.idx > idx && zamanAt(p.idx) < icinde.bitis - 10 * 60000)
+      .sort((a, b) => a.uzak - b.uzak || a.idx - b.idx)[0];
+    if (!aday) return;
+    const vk = gunKey(icinde.vakit) + "|" + icinde.ad;
+    if (bildirildi(vk + "|sapma|" + aday.id)) return;
+    bildirimKaydet(vk + "|sapma|" + aday.id);
+    const ne = TUR[aday.tur].ad.toLocaleLowerCase("tr");
+    bildir(seslen(`Yol üstünde ${ne} yok. ${km(r.cumD[aday.idx] - r.cumD[idx])} sonra, yoldan ${km(aday.uzak)} içeride ${aday.ad} var`),
+      `${NAMAZ_AD[icinde.ad]} vakti ${saat(icinde.bitis)}'e kadar. "Git"e basarsan seni oraya götürür, kıldıktan sonra tekrar yola bağlar.`, aday, vk);
+  } catch { /* yer servisi meşgul: 4 dakika sonra yeniden denenir */ }
+  finally { durum.camiAraniyor = false; }
 }
 
 // ---------- Yer ekleme ----------
