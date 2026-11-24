@@ -1,0 +1,14 @@
+{
+  "name": "Yolcu Namaz — Yol üstü cami, mescit ve tesisler",
+  "short_name": "Yolcu Namaz",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#22403a",
+  "theme_color": "#22403a",
+  "lang": "tr",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

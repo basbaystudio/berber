@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d3a33">
+<title>Yolcu Namaz</title>
+<meta name="description" content="Yolculukta güzergâh üzerindeki cami, mescit ve dinlenme tesisleri; namaz vakti uyarıları ve sesli yol tarifi.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="vakitBar" aria-live="polite">
+  <button id="vakitSonraki" aria-expanded="false" aria-controls="vakitSatir">Konum bekleniyor…</button>
+  <div id="vakitSatir" hidden></div>
+</header>
+
+<main id="harita" aria-label="Harita"></main>
+
+<div id="navKutu" hidden>
+  <div id="navOk">⬆</div>
+  <div class="nav-yazi">
+    <div id="navMesafe"></div>
+    <div id="navMetin"></div>
+  </div>
+</div>
+
+<div id="uyari" role="alert" hidden>
+  <div id="uyariMetin"></div>
+  <div class="uyariButonlar">
+    <button id="uyariGit" class="btn btn-ana" hidden>Oraya git</button>
+    <button id="uyariKildim" class="btn" hidden>Kıldım</button>
+    <button id="uyariKapat" class="btn">Tamam</button>
+  </div>
+</div>
+
+<div id="fabs">
+  <button id="btnOrtala" class="fab" title="Konumuma dön" aria-label="Konumuma dön">
+    <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="currentColor" stroke-width="2"/></svg>
+  </button>
+  <button id="btnEkleFab" class="fab fab-ekle" title="Burada cami/mescit var" aria-label="Burada cami veya mescit var">
+    <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+  </button>
+</div>
+
+<section id="panel">
+  <div id="navOzet" hidden>
+    <div id="navOzetMetin"></div>
+    <div class="satir">
+      <button id="btnPanelAc" class="btn">Ayrıntılar</button>
+      <button id="btnBitir" class="btn btn-sessiz">Yolculuğu bitir</button>
+    </div>
+  </div>
+
+  <nav id="sekmeler" role="tablist">
+    <button data-sekme="rota" class="aktif">Yol</button>
+    <button data-sekme="namaz">Namaz</button>
+    <button data-sekme="yerler">Yerler</button>
+    <button data-sekme="ayar">Ayarlar</button>
+  </nav>
+
+  <div class="sekme" id="s-rota">
+    <label class="etiket" for="nereye">Nereye gidiyoruz?</label>
+    <div class="satir">
+      <input id="nereye" placeholder="Şehir, ilçe veya adres" autocomplete="off" enterkeyhint="search">
+      <button class="btn" id="btnNereyeAra">Ara</button>
+    </div>
+    <div class="sonuclar" id="nereyeSonuc"></div>
+
+    <details class="katlanir">
+      <summary>Başka yerden çıkış · saat · seçenekler</summary>
+      <label class="etiket" for="nereden">Nereden</label>
+      <div class="satir">
+        <input id="nereden" placeholder="Bulunduğum konum" autocomplete="off" enterkeyhint="search">
+        <button class="btn" id="btnNeredenAra">Ara</button>
+      </div>
+      <div class="sonuclar" id="neredenSonuc"></div>
+      <label class="etiket" for="cikis">Çıkış saati</label>
+      <input id="cikis" type="datetime-local">
+      <div class="secenekler">
+        <label><input type="checkbox" id="kCami" checked> Cami ve mescitler</label>
+        <label><input type="checkbox" id="kTesis" checked> Dinlenme tesisleri</label>
+        <label><input type="checkbox" id="kYakit"> Akaryakıt istasyonları <span class="ipucu">(çoğunda mescit var)</span></label>
+        <label>Yoldan en fazla
+          <select id="sapma">
+            <option value="500">500 m</option>
+            <option value="1000" selected>1 km</option>
+            <option value="2000">2 km</option>
+            <option value="3000">3 km</option>
+          </select> içeride</label>
+      </div>
+    </details>
+    <p class="ipucu">Haritada bir yere dokunup “Buraya git” de diyebilirsin.</p>
+
+    <button id="btnRota" class="btn btn-ana btn-buyuk">Yolu göster</button>
+    <div id="rotaOzet"></div>
+    <button id="btnBasla" class="btn btn-ana btn-buyuk" hidden>Yola çık</button>
+  </div>
+
+  <div class="sekme" id="s-namaz" hidden>
+    <div id="namazPlan"><p class="ipucu">Önce “Yol” sekmesinden gidilecek yeri seç. Yol seçmeden de bulunduğun yerin vakitleri üstte görünür, vakit yaklaşınca haber verilir.</p></div>
+  </div>
+
+  <div class="sekme" id="s-yerler" hidden>
+    <button id="btnYakin" class="btn btn-buyuk">Yakınımdaki camiler</button>
+    <div id="yerListe"></div>
+    <button class="btn btn-buyuk" id="btnEklediklerim">Eklediğim yerler</button>
+  </div>
+
+  <div class="sekme" id="s-ekle" hidden>
+    <h2>Yeni yer ekle</h2>
+    <p class="ipucu">Haritada olmayan bir cami, mescit ya da tesis mi gördün? Buradan ekle, telefonda hemen görünür.</p>
+    <form id="ekleForm">
+      <div class="tur-secim" role="radiogroup" aria-label="Ne var?">
+        <label><input type="radio" name="tur" value="cami" checked><span>Cami</span></label>
+        <label><input type="radio" name="tur" value="mescit"><span>Mescit</span></label>
+        <label><input type="radio" name="tur" value="tesis"><span>Tesis</span></label>
+      </div>
+      <label class="etiket" for="ekleAd">Adı (biliyorsan)</label>
+      <input id="ekleAd" placeholder="Örn: Yeni Mahalle Camii">
+      <label class="etiket" for="ekleNot">Not</label>
+      <input id="ekleNot" placeholder="Örn: Abdesthane var">
+      <div id="ekleKonum" class="ipucu">Bulunduğun konum kullanılacak.</div>
+      <label class="onay"><input type="checkbox" id="ekleOsm" checked> Herkes faydalansın diye OpenStreetMap'e de bildir</label>
+      <button class="btn btn-ana btn-buyuk" type="submit">Kaydet</button>
+    </form>
+    <h2>Eklediklerim</h2>
+    <div id="benimListe"></div>
+    <div class="satir">
+      <button class="btn" id="btnDisa">Yedekle / Paylaş</button>
+      <label class="btn">İçe aktar<input type="file" id="iceAktar" accept=".json,application/json" hidden></label>
+    </div>
+  </div>
+
+  <div class="sekme" id="s-ayar" hidden>
+    <label class="etiket" for="ayarHitap">Uyarılarda hitap</label>
+    <input id="ayarHitap" placeholder="Örn: Baba">
+    <label class="etiket" for="ayarOnce">Namaz vaktinden ne kadar önce haber verilsin?</label>
+    <select id="ayarOnce">
+      <option value="15">15 dakika</option>
+      <option value="30" selected>30 dakika</option>
+      <option value="45">45 dakika</option>
+      <option value="60">1 saat</option>
+    </select>
+    <label class="etiket" for="ayarMola">Aralıksız sürüşte mola hatırlatması</label>
+    <select id="ayarMola">
+      <option value="90">1,5 saatte bir</option>
+      <option value="120">2 saatte bir</option>
+      <option value="180">3 saatte bir</option>
+      <option value="0">Kapalı</option>
+    </select>
+    <label class="etiket" for="ayarKaynak">Namaz vakitleri</label>
+    <select id="ayarKaynak">
+      <option value="site">namazvakti.com (Türkiye Takvimi)</option>
+      <option value="diyanet">Diyanet yöntemi (telefonda hesaplanır)</option>
+    </select>
+    <p class="ipucu" id="kaynakDurum"></p>
+    <label class="etiket" for="ayarTema">Görünüm</label>
+    <select id="ayarTema">
+      <option value="oto">Otomatik (akşamdan sonra koyu)</option>
+      <option value="acik">Hep açık</option>
+      <option value="koyu">Hep koyu</option>
+    </select>
+    <label class="etiket" for="ayarHiz">Tahmini süreye trafik/mola payı</label>
+    <select id="ayarHiz">
+      <option value="1">Ekleme</option>
+      <option value="1.1" selected>%10</option>
+      <option value="1.2">%20</option>
+      <option value="1.3">%30</option>
+    </select>
+    <label class="onay"><input type="checkbox" id="ayarSes" checked> Yol tarifini ve uyarıları sesli oku</label>
+    <label class="onay"><input type="checkbox" id="ayarEkran" checked> Yolculukta ekran kapanmasın</label>
+    <button class="btn" id="btnBildirimIzin">Bildirimleri dene</button>
+    <p class="ipucu">Harita © OpenStreetMap katkıcıları · Yol tarifi: OSRM · Adres arama: Nominatim. Hepsi ücretsiz.</p>
+  </div>
+</section>
+
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="prayer.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

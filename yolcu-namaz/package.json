@@ -1,0 +1,24 @@
+{
+  "name": "yolcu-namaz",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Yolculukta güzergâh üzerindeki cami, mescit ve dinlenme tesisleri; namaz vakti uyarıları; sesli yol tarifi.",
+  "type": "commonjs",
+  "scripts": {
+    "vendor": "mkdir -p www/vendor/leaflet && cp -r node_modules/leaflet/dist/leaflet.js node_modules/leaflet/dist/leaflet.css node_modules/leaflet/dist/images www/vendor/leaflet/",
+    "test": "node test/prayer.test.js",
+    "sync": "npm run vendor && npx cap sync android",
+    "apk": "npm run sync && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor-community/keep-awake": "8.0.1",
+    "@capacitor-community/text-to-speech": "8.0.2",
+    "@capacitor/android": "8.6.2",
+    "@capacitor/core": "8.6.2",
+    "@capacitor/local-notifications": "8.3.1",
+    "leaflet": "1.9.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.2"
+  }
+}

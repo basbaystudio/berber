@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Yolcu Namaz</string>
+    <string name="title_activity_main">Yolcu Namaz</string>
+    <string name="package_name">com.basbay.yolcunamaz</string>
+    <string name="custom_url_scheme">com.basbay.yolcunamaz</string>
+</resources>
