@@ -1,6 +1,6 @@
 {
   "name": "yolcu-namaz",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Yolculukta güzergâh üzerindeki cami, mescit ve dinlenme tesisleri; namaz vakti uyarıları; sesli yol tarifi.",
   "type": "commonjs",

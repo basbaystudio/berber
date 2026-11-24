@@ -49,10 +49,15 @@ button,input,select{font:inherit;color:inherit}
 .rota-gecilen{stroke:var(--rota-gecilen)}
 
 /* Alt panel */
-#panel{flex:0 0 auto;max-height:46dvh;overflow-y:auto;background:var(--yuzey);border-radius:18px 18px 0 0;margin-top:-14px;z-index:1;
+#panel{flex:0 0 auto;max-height:40dvh;overflow-y:auto;background:var(--yuzey);border-radius:18px 18px 0 0;margin-top:-14px;z-index:1;
   box-shadow:0 -2px 12px rgba(0,0,0,.12);padding:0 16px calc(env(safe-area-inset-bottom) + 14px)}
-body.nav #panel{max-height:34dvh}
-body.nav.panelAcik #panel{max-height:62dvh}
+body.nav #panel{max-height:none;overflow:visible}
+/* Yolculukta "Ayrıntılar": haritayı küçültmeden üstte açılan sayfa */
+body.nav.panelAcik #panel{position:fixed;left:0;right:0;bottom:0;max-height:78dvh;overflow-y:auto;margin:0;z-index:800;box-shadow:0 -4px 24px rgba(0,0,0,.45)}
+body.nav.panelAcik #navOzet{display:none}
+#btnPanelKapat{display:none}
+body.nav.panelAcik #btnPanelKapat{display:block;margin:12px 0 0 auto}
+body:not(.nav) #navKutu{display:none}
 #sekmeler{display:flex;gap:6px;position:sticky;top:0;background:var(--yuzey);padding:12px 0 10px;z-index:2}
 #sekmeler button{flex:1;font-size:17px;padding:10px 4px;border:0;background:transparent;color:var(--soluk);border-radius:12px;cursor:pointer}
 #sekmeler button.aktif{background:var(--vurgu-acik);color:var(--yazi);font-weight:600}
@@ -100,8 +105,8 @@ input[type=checkbox],input[type=radio]{width:22px;height:22px;vertical-align:-4p
 .r-cami{background:var(--cami)}.r-mescit{background:var(--mescit)}.r-tesis{background:var(--tesis)}.r-yakit{background:var(--yakit)}.r-benim{background:var(--benim)}
 
 /* Harita üstü düğmeler */
-#fabs{position:fixed;right:14px;bottom:calc(46dvh + 4px);display:flex;flex-direction:column;gap:12px;z-index:500}
-body.nav #fabs{bottom:calc(34dvh + 4px)}
+#fabs{position:fixed;right:14px;bottom:calc(40dvh + 4px);display:flex;flex-direction:column;gap:12px;z-index:500}
+body.nav #fabs{bottom:calc(var(--ozetYukseklik, 150px) + 4px)}
 body.nav.panelAcik #fabs{display:none}
 .fab{width:58px;height:58px;border-radius:50%;border:0;background:var(--yuzey);color:var(--rota);box-shadow:var(--golge);cursor:pointer;display:grid;place-items:center}
 .fab-ekle{background:var(--vurgu);color:var(--vurgu-yazi)}
@@ -118,14 +123,15 @@ body.nav.panelAcik #fabs{display:none}
 /* Uyarı kartı */
 #uyari{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 62px);z-index:700;background:var(--uyari-zemin);color:var(--uyari-yazi);
   border-left:6px solid var(--uyari-kenar);border-radius:14px;padding:14px 16px;font-size:19px;box-shadow:var(--golge)}
-body.nav #uyari{top:auto;bottom:calc(34dvh + 8px);right:86px}
+body.nav #uyari{top:auto;bottom:calc(var(--ozetYukseklik, 150px) + 8px);right:86px}
 #uyari[hidden]{display:none}
 #uyari b{font-size:20px}
 .uyariButonlar{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
 .uyariButonlar .btn{background:transparent;color:inherit;border-color:color-mix(in srgb,var(--uyari-kenar) 60%,transparent)}
 .uyariButonlar .btn-ana{background:var(--vurgu);color:var(--vurgu-yazi);border-color:var(--vurgu)}
 
-#navOzet{padding:14px 0 4px;font-size:19px}
+#navOzet{padding:12px 0 2px;font-size:18px}
+#navOzet .satir .btn{padding:10px 12px;font-size:17px}
 #navOzet[hidden]{display:none}
 #navOzetMetin .buyuk{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
 #navOzetMetin .namaz{display:block;margin-top:6px;color:var(--soluk)}
@@ -144,3 +150,10 @@ body.nav #uyari{top:auto;bottom:calc(34dvh + 8px);right:86px}
 .leaflet-popup-content{font-size:17px;margin:14px 16px}
 .leaflet-popup-content .btn{margin:8px 6px 0 0;font-size:16px;padding:10px 12px}
 .leaflet-popup-content .tur{color:var(--soluk);font-size:15px}
+#durumSatir details{margin-top:4px;font-size:14px}
+#durumSatir .btn{margin-top:8px;padding:8px 14px;font-size:16px}
+.leaflet-popup-content .btn{display:block;width:100%;margin:8px 0 0}
+#uyari{font-size:17px;padding:12px 14px}
+#uyari b{font-size:18px}
+.uyariButonlar{flex-wrap:nowrap;margin-top:10px}
+.uyariButonlar .btn{padding:9px 12px;font-size:16px}

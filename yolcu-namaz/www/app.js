@@ -545,17 +545,52 @@ function rotaOzetYaz() {
 }
 
 // ---------- Yerler (Overpass) ----------
-const OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"];
+/* Overpass (OpenStreetMap yer verisi). Kurallarına uygun olarak uygulama kendini açıkça tanıtır;
+   sunucular tanımsız istemcileri 429 ile reddediyor. Android'de bu başlık yerel istemciyle gönderilir. */
+const OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
+const OVERPASS_UA = "YolcuNamaz/1.0 (Android; mosques and rest areas along a driving route)";
+class YerHatasi extends Error {}
 async function overpass(q) {
-  let son;
-  for (const u of OVERPASS) {
-    try {
-      const r = await fetch(u, { method: "POST", body: "data=" + encodeURIComponent(q), headers: { "Content-Type": "application/x-www-form-urlencoded" } });
-      if (r.ok) return (await r.json()).elements || [];
-      son = new Error("Yer servisi meşgul (" + r.status + ")");
-    } catch (e) { son = e; }
+  const hatalar = [];
+  for (let tur = 0; tur < 2; tur++) {
+    for (const u of [...OVERPASS]) {
+      const kontrol = new AbortController();
+      const zaman = setTimeout(() => kontrol.abort(), 45000);
+      try {
+        const r = await fetch(u, {
+          method: "POST", body: "data=" + encodeURIComponent(q), signal: kontrol.signal,
+          headers: { "Content-Type": "application/x-www-form-urlencoded", ...(NATIVE ? { "User-Agent": OVERPASS_UA } : {}) },
+        });
+        if (r.ok) {
+          const j = await r.json();
+          // Çalışan sunucuyu öne al, sonraki parçalarda önce o denensin
+          OVERPASS.splice(OVERPASS.indexOf(u), 1); OVERPASS.unshift(u);
+          if (j.remark && /timed out|out of memory/i.test(j.remark) && !(j.elements || []).length) { hatalar.push(new URL(u).host + ": zaman aşımı"); continue; }
+          return j.elements || [];
+        }
+        hatalar.push(new URL(u).host + ": " + r.status);
+      } catch (e) {
+        hatalar.push(new URL(u).host + ": " + (e.name === "AbortError" ? "yanıt gelmedi" : "bağlanılamadı"));
+      } finally { clearTimeout(zaman); }
+    }
+    if (tur === 0) await uyku(4000); // hepsi meşgulse biraz bekleyip bir kez daha dene
   }
-  throw son || new Error("Yer servisine ulaşılamadı");
+  const e = new YerHatasi("Cami ve tesis bilgisi sunucularına şu an ulaşılamadı");
+  e.ayrinti = hatalar.join(", ");
+  throw e;
+}
+// Aynı yol tekrar sorulursa internet olmadan da göstermek için sonuçları 14 gün sakla
+const yerOnbellek = LS.get("yn_yeronbellek", {});
+function onbellekYaz(key, poiler) {
+  yerOnbellek[key] = { t: Date.now(), p: poiler.map((x) => [x.id, x.lat, x.lng, x.tur, x.ad]) };
+  const keys = Object.keys(yerOnbellek).sort((a, b) => yerOnbellek[a].t - yerOnbellek[b].t);
+  while (keys.length > 60) delete yerOnbellek[keys.shift()];
+  try { localStorage.setItem("yn_yeronbellek", JSON.stringify(yerOnbellek)); } catch { /* dolu */ }
+}
+function onbellekOku(key) {
+  const o = yerOnbellek[key];
+  if (!o || Date.now() - o.t > 14 * 86400000) return null;
+  return o.p.map(([id, lat, lng, tur, ad]) => ({ id, lat, lng, tur, ad, tags: {} }));
 }
 function kategoriler() { return { cami: $("kCami").checked, tesis: $("kTesis").checked, yakit: $("kYakit").checked }; }
 function sorguParca(alan, r, k) {
@@ -594,31 +629,49 @@ async function rotaYerleriGetir() {
   let son = 0;
   for (let i = 1; i < r.coords.length; i++) if (r.cumD[i] - r.cumD[son] >= 1500) { ornek.push(r.coords[i]); son = i; }
   ornek.push(r.coords[r.coords.length - 1]);
+  // ~60 km'lik küçük parçalar: sunucuyu yormaz, biri alınamazsa diğerleri yine gelir
   const parcalar = [];
-  for (let i = 0; i < ornek.length - 1; i += 120) parcalar.push(ornek.slice(i, i + 121));
+  for (let i = 0; i < ornek.length - 1; i += 40) parcalar.push(ornek.slice(i, i + 41));
   const hepsi = new Map();
-  try {
-    for (let i = 0; i < parcalar.length; i++) {
-      $("rotaOzet").insertAdjacentHTML("beforeend", "");
-      durumYaz(`Yol üzerindeki yerler aranıyor… (${i + 1}/${parcalar.length})`);
-      const alan = parcalar[i].map((p) => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join(",");
-      const q = `[out:json][timeout:90];(${sorguParca(alan, yaricap, k)});out center tags;`;
-      const els = await overpass(q);
-      for (const e of els) { const p = poiDonustur(e); if (p) hepsi.set(p.id, p); }
+  const no = ++yerSorguNo;
+  let basarisiz = 0, sonHata = null;
+  for (let i = 0; i < parcalar.length; i++) {
+    if (no !== yerSorguNo) return; // yeni rota istendi
+    durumYaz(`Yol üstündeki camiler aranıyor… (${i + 1}/${parcalar.length})`);
+    const alan = parcalar[i].map((p) => `${p.lat.toFixed(4)},${p.lng.toFixed(4)}`).join(",");
+    const key = [alan.length, parcalar[i][0].lat.toFixed(3), parcalar[i][0].lng.toFixed(3), parcalar[i].at(-1).lat.toFixed(3), parcalar[i].at(-1).lng.toFixed(3), yaricap, +k.cami, +k.tesis, +k.yakit].join("|");
+    let liste = onbellekOku(key);
+    if (!liste) {
+      try {
+        const els = await overpass(`[out:json][timeout:60];(${sorguParca(alan, yaricap, k)});out center tags qt;`);
+        liste = els.map(poiDonustur).filter(Boolean);
+        onbellekYaz(key, liste);
+      } catch (e) { basarisiz++; sonHata = e; continue; }
     }
-    durumYaz("");
-  } catch (e) {
-    durumYaz("⚠ Yerler alınamadı: " + e.message + ". Kendi eklediğiniz yerler yine görünür.");
+    for (const p of liste) hepsi.set(p.id, p);
+    // Buldukça göster
+    durum.hamPoiler = [...hepsi.values()];
+    poileriRotaylaEslestir();
+    rotaOzetYaz();
   }
   durum.hamPoiler = [...hepsi.values()];
   poileriRotaylaEslestir();
   namazPlaniCiz();
   rotaOzetYaz();
+  if (!basarisiz) durumYaz("");
+  else {
+    durumYaz(basarisiz === parcalar.length
+      ? `Cami ve tesis bilgisi şu an alınamadı (sunucular meşgul ya da internet zayıf). Eklediğin yerler yine görünür.`
+      : `Yolun bir kısmındaki yerler alınamadı (${basarisiz}/${parcalar.length} bölüm).`, true, sonHata?.ayrinti);
+  }
 }
-function durumYaz(t) {
+let yerSorguNo = 0;
+function durumYaz(t, tekrar, ayrinti) {
   let el = $("durumSatir");
-  if (!el) { el = document.createElement("p"); el.id = "durumSatir"; el.className = "ipucu"; $("rotaOzet").after(el); }
-  el.textContent = t;
+  if (!el) { el = document.createElement("div"); el.id = "durumSatir"; el.className = "ipucu"; $("rotaOzet").after(el); }
+  el.innerHTML = esc(t) + (ayrinti ? `<details><summary>Ayrıntı</summary>${esc(ayrinti)}</details>` : "") +
+    (tekrar ? ` <button class="btn" id="btnYerTekrar">Tekrar dene</button>` : "");
+  if (tekrar) $("btnYerTekrar").onclick = () => rotaYerleriGetir();
 }
 
 function poileriRotaylaEslestir() {
@@ -646,7 +699,7 @@ function poileriCiz() {
   const gorulen = new Set();
   const ekle = (p) => {
     if (gorulen.has(p.id)) return; gorulen.add(p.id);
-    L.marker([p.lat, p.lng], { icon: poiIkon(p.tur, p.benim), title: p.ad }).bindPopup(() => poiPopup(p)).addTo(poiKatman);
+    L.marker([p.lat, p.lng], { icon: poiIkon(p.tur, p.benim), title: p.ad }).bindPopup(() => poiPopup(p), popupAyar()).addTo(poiKatman);
   };
   durum.poiler.forEach(ekle);
   durum.yakinPoiler.forEach(ekle);
@@ -1074,6 +1127,7 @@ function navGuncelle() {
       (o ? ` · <b>${esc(o.ad)}</b>, ${km(r.cumD[o.idx] - r.cumD[idx])} sonra` : "") + `</span>`;
   }
   $("navOzetMetin").innerHTML = `<span class="buyuk">${km(kalanD)}</span> kaldı · varış <span class="buyuk">${saat(varis)}</span>${namazMetin}`;
+  document.documentElement.style.setProperty("--ozetYukseklik", $("panel").offsetHeight + "px");
   vakitKontrol();
   // Vakit içindeyken ve henüz kılınmadıysa: önümüzdeki 2,5 km'de cami/mescit varsa haber ver
   const icinde = plan.find((p) => p.vakit <= Date.now() && Date.now() < p.bitis - 10 * 60000);
@@ -1206,7 +1260,8 @@ $("btnRota").addEventListener("click", async () => {
 });
 $("btnBasla").addEventListener("click", navBaslat);
 $("btnBitir").addEventListener("click", navBitir);
-$("btnPanelAc").addEventListener("click", () => { document.body.classList.toggle("panelAcik"); setTimeout(() => harita.invalidateSize(), 300); });
+$("btnPanelAc").addEventListener("click", () => { sekmeAc("namaz"); document.body.classList.add("panelAcik"); });
+$("btnPanelKapat").addEventListener("click", () => document.body.classList.remove("panelAcik"));
 $("btnOrtala").addEventListener("click", () => {
   durum.takipte = true;
   if (durum.konum) harita.setView([durum.konum.lat, durum.konum.lng], Math.max(harita.getZoom(), durum.nav ? 16 : 14));
@@ -1272,7 +1327,7 @@ document.addEventListener("click", (e) => {
     const p = poiBul(t.dataset.goster); if (!p) return;
     durum.takipte = false;
     harita.setView([p.lat, p.lng], 16);
-    L.popup().setLatLng([p.lat, p.lng]).setContent(poiPopup(p)).openOn(harita);
+    L.popup(popupAyar()).setLatLng([p.lat, p.lng]).setContent(poiPopup(p)).openOn(harita);
     if (durum.nav) document.body.classList.remove("panelAcik");
   } else if (t.dataset.ugra) {
     const p = poiBul(t.dataset.ugra); if (p) poiyeUgra(p);
@@ -1291,14 +1346,15 @@ document.addEventListener("click", (e) => {
     const [lat, lng] = t.dataset.koord.split(",").map(Number);
     harita.closePopup();
     const p = { lat, lng, ad: `${lat.toFixed(4)}, ${lng.toFixed(4)}` };
-    if (t.dataset.harita === "git") { durum.hedef = p; $("nereye").value = "Haritadan seçilen yer"; durum.ara = null; isaretleriCiz(); sekmeAc("rota"); rotaHesapla({ sessiz: durum.nav }); }
+    if (t.dataset.harita === "git") { durum.hedef = p; $("nereye").value = "Haritadan seçilen yer"; durum.ara = null; isaretleriCiz(); if (!durum.nav) sekmeAc("rota"); rotaHesapla({ sessiz: durum.nav }); }
     else if (t.dataset.harita === "bas") { durum.baslangic = p; $("nereden").value = "Haritadan seçilen yer"; isaretleriCiz(); sekmeAc("rota"); }
-    else if (t.dataset.harita === "ekle") { ekleNoktasiniAyarla(p, "Haritada seçtiğiniz yer"); sekmeAc("ekle"); }
+    else if (t.dataset.harita === "ekle") { ekleNoktasiniAyarla(p, "Haritada seçtiğin yer"); sekmeAc("ekle"); }
   }
 });
+const popupAyar = () => ({ autoPanPaddingTopLeft: L.point(10, durum.nav ? 190 : 20), autoPanPaddingBottomRight: L.point(80, 30), maxWidth: 260 });
 harita.on("click", (e) => {
   const k = `${e.latlng.lat},${e.latlng.lng}`;
-  L.popup().setLatLng(e.latlng).setContent(
+  L.popup(popupAyar()).setLatLng(e.latlng).setContent(
     `<button class="btn btn-ana" data-harita="git" data-koord="${k}">🏁 Buraya git</button>` +
     (durum.nav ? "" : `<button class="btn" data-harita="bas" data-koord="${k}">🟢 Buradan başla</button>`) +
     `<button class="btn" data-harita="ekle" data-koord="${k}">＋ Burada cami/mescit var</button>`).openOn(harita);
