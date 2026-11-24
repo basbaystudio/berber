@@ -5,6 +5,6 @@
   "android": { "allowMixedContent": false },
   "plugins": {
     "CapacitorHttp": { "enabled": true },
-    "LocalNotifications": { "iconColor": "#0f5132" }
+    "LocalNotifications": { "iconColor": "#22403a" }
   }
 }
