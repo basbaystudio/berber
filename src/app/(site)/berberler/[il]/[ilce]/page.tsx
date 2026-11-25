@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { isLaunchMode } from "@/server/modules/marketplace/launch";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
@@ -30,6 +32,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 export default async function DistrictLandingPage({ params }: Params) {
+  if (await isLaunchMode()) redirect("/"); // lansman modunda pazaryeri listeleri kapalı
   await connection();
   const x = await load(params);
   if (!x) notFound();

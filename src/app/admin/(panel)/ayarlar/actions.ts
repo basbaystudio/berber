@@ -64,3 +64,20 @@ export async function saveLegalAction(_p: ActionState, fd: FormData): Promise<Ac
     return { status: "success", message: "Yasal metinler kaydedildi." };
   });
 }
+
+const launchSchema = z.object({
+  enabled: z.preprocess((v) => v === "on" || v === "true", z.boolean()),
+  autoOpenAt: z.coerce.number({ error: "Sayı girin." }).int().min(0, "0 ya da daha büyük olmalı.").max(100000),
+});
+
+/** Lansman modu: az berber varken pazaryeri gizlenir, ana sayfa berberlere tanıtım olur */
+export async function saveLaunchAction(_p: ActionState, fd: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const ctx = await requireAdmin();
+    const input = parseInput(launchSchema, formToObject(fd));
+    await setSetting(db, "marketplace.launchMode", input, ctx.admin.id);
+    await audit(db, { actorRealm: "ADMIN", actorId: ctx.admin.id, action: "settings.launch_update", meta: input, ip: (await getRequestMeta()).ip });
+    revalidatePath("/", "layout");
+    return { status: "success", message: "Kaydedildi." };
+  });
+}

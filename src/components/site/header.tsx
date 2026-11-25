@@ -2,9 +2,11 @@ import Link from "next/link";
 import { UserRound } from "lucide-react";
 import { getCustomer } from "@/server/auth/guards";
 import { provincesWithBusinesses } from "@/server/modules/marketplace/locations-seo";
+import { isLaunchMode } from "@/server/modules/marketplace/launch";
 
 export async function SiteHeader() {
   const ctx = await getCustomer();
+  const launch = await isLaunchMode();
   return (
     <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-stone-50/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
@@ -16,9 +18,11 @@ export async function SiteHeader() {
           <img src="/brand/logo-isaret.png" alt="Dijital Berber" width={173} height={120} className="h-7 w-auto sm:hidden" />
         </Link>
         <nav className="flex items-center gap-1 text-xs sm:text-sm" aria-label="Site menüsü">
-          <Link href="/ara" className="hidden rounded-xl px-3 py-2 text-stone-600 hover:bg-stone-100 hover:text-stone-900 md:block">
-            Berber bul
-          </Link>
+          {!launch && (
+            <Link href="/ara" className="hidden rounded-xl px-3 py-2 text-stone-600 hover:bg-stone-100 hover:text-stone-900 md:block">
+              Berber bul
+            </Link>
+          )}
           <Link href="/fiyatlandirma" className="hidden rounded-xl px-3 py-2 text-stone-600 hover:bg-stone-100 hover:text-stone-900 sm:block">
             Fiyatlandırma
           </Link>
@@ -50,7 +54,8 @@ export async function SiteHeader() {
 }
 
 export async function SiteFooter() {
-  const cities = (await provincesWithBusinesses()).slice(0, 12);
+  const launch = await isLaunchMode();
+  const cities = launch ? [] : (await provincesWithBusinesses()).slice(0, 12);
   return (
     <footer className="mt-16 border-t border-stone-200/70">
       {cities.length > 0 && (
@@ -70,9 +75,11 @@ export async function SiteFooter() {
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm text-stone-500 sm:px-6">
         <span>© {new Date().getFullYear()} Dijital Berber</span>
         <nav className="flex flex-wrap gap-4" aria-label="Alt menü">
-          <Link href="/ara" className="hover:text-stone-900">
-            Berber bul
-          </Link>
+          {!launch && (
+            <Link href="/ara" className="hover:text-stone-900">
+              Berber bul
+            </Link>
+          )}
           <Link href="/kvkk-aydinlatma" className="hover:text-stone-900">
             KVKK Aydınlatma Metni
           </Link>

@@ -22,6 +22,12 @@ export const DEFAULT_PLATFORM_SETTINGS = {
   "billing.earlyAdopter": { limit: 0, trialMonths: 1 },
   /** Kampanya dışındaki işletmelerin ücretsiz deneme süresi (ay). */
   "billing.defaultTrialMonths": 1,
+  /**
+   * Lansman modu: platformda az berber varken pazaryeri (ana sayfa listeleri, arama, şehir sayfaları) gizlenir;
+   * ana sayfa berberlere yönelik tanıtım olur. Berber profilleri açık kalır (berber kendi linkini paylaşır).
+   * Yayındaki berber sayısı autoOpenAt'e ulaşınca kendiliğinden kapanır.
+   */
+  "marketplace.launchMode": { enabled: true, autoOpenAt: 30 },
   /** Ödeme gecikmesinin kaçıncı gününde işletme otomatik askıya alınır. */
   "billing.graceDays": 7,
   /** İşletmelerin ve müşterilerin platforma ulaşacağı iletişim bilgileri; alertEmail: yönetici bildirimlerinin gideceği adres (boşsa tüm yöneticiler). */

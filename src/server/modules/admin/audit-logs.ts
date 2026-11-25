@@ -66,6 +66,7 @@ export const AUDIT_LABELS: Record<string, string> = {
   "banner.update": "Banner güncellendi",
   "banner.delete": "Banner silindi",
   "settings.contact_update": "İletişim ayarları güncellendi",
+  "settings.launch_update": "Lansman modu ayarları güncellendi",
   "settings.bank_update": "Banka bilgileri güncellendi",
   "subscription.invoice_upload": "Fatura yüklendi",
   "subscription.method_change": "Ödeme yöntemi değiştirildi",

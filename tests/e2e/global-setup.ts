@@ -17,4 +17,9 @@ export default async function globalSetup() {
   await pool.end();
   const env = { ...process.env, DATABASE_URL: url, ADMIN_EMAIL: E2E_ADMIN.email, ADMIN_PASSWORD: E2E_ADMIN.password, ADMIN_NAME: "E2E Yönetici" };
   for (const s of ["scripts/migrate.ts", "scripts/seed.ts", "scripts/create-admin.ts"]) execFileSync("npx", ["tsx", s], { env, stdio: "inherit" });
+  // Pazaryeri akışları test edildiği için lansman modu (az berberde listeleri gizler) testlerde kapalı
+  const p2 = new Pool({ connectionString: url });
+  await p2.query(`INSERT INTO platform_settings (key, value) VALUES ('marketplace.launchMode', '{"enabled": false, "autoOpenAt": 30}'::jsonb)
+    ON CONFLICT (key) DO UPDATE SET value = excluded.value`);
+  await p2.end();
 }

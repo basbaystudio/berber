@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { isLaunchMode } from "@/server/modules/marketplace/launch";
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { db } from "@/server/db/client";
@@ -24,6 +26,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 }
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+  if (await isLaunchMode()) redirect("/"); // lansman modunda pazaryeri listeleri kapalı
   await connection();
   const raw = await searchParams;
   const parsed = searchSchema.parse(raw);

@@ -83,3 +83,38 @@ export function LegalForm({ action, defaults }: { action: (p: ActionState, fd: F
     </form>
   );
 }
+
+export function LaunchForm({
+  action,
+  defaults,
+  published,
+}: {
+  action: (p: ActionState, fd: FormData) => Promise<ActionState>;
+  defaults: { enabled: boolean; autoOpenAt: number };
+  published: number;
+}) {
+  const { state, pending, onSubmit, fieldErrors: fe } = useFormAction(action);
+  const active = defaults.enabled && published < defaults.autoOpenAt;
+  return (
+    <form onSubmit={onSubmit} noValidate className="space-y-4">
+      {state.status === "error" && <Alert tone="error">{state.message}</Alert>}
+      {state.status === "success" && <Alert tone="success">{state.message}</Alert>}
+      <p className="text-sm text-stone-600">
+        Şu an: <b>{active ? "Lansman modu AÇIK" : "Pazaryeri herkese açık"}</b> · yayındaki berber: <b>{published}</b>
+      </p>
+      <label className="flex items-start gap-3 text-sm">
+        <input type="checkbox" name="enabled" defaultChecked={defaults.enabled} className="mt-1 size-4" />
+        <span>
+          <b>Lansman modu</b>
+          <span className="block text-stone-600">Açıkken ana sayfa berberlere tanıtım olur; berber listeleri, arama ve şehir sayfaları gizlenir. Berber profilleri açık kalır, müşteriler berberin paylaştığı bağlantıdan randevu alır.</span>
+        </span>
+      </label>
+      <Field label="Yayındaki berber sayısı bu sayıya ulaşınca pazaryeri kendiliğinden açılsın" name="autoOpenAt" error={fe?.autoOpenAt}>
+        <Input id="autoOpenAt" name="autoOpenAt" inputMode="numeric" defaultValue={String(defaults.autoOpenAt)} />
+      </Field>
+      <div className="flex justify-end">
+        <SubmitButton pending={pending}>Kaydet</SubmitButton>
+      </div>
+    </form>
+  );
+}

@@ -13,6 +13,8 @@ import { BannerCarousel } from "@/components/marketplace/banner-carousel";
 import { AdCard, CardGrid } from "@/components/marketplace/business-card";
 import { LocationPrompt } from "@/components/marketplace/location-prompt";
 import { SearchBar } from "@/components/marketplace/search-bar";
+import { LaunchHome } from "@/components/marketplace/launch-home";
+import { isLaunchMode } from "@/server/modules/marketplace/launch";
 
 export const metadata: Metadata = {
   title: { absolute: "Online Berber Randevusu — Yakınındaki Berberi Bul | Dijital Berber" },
@@ -57,6 +59,8 @@ function Section({ title, href, note, children }: { title: string; href?: string
 
 export default async function HomePage() {
   await connection();
+  // Lansman modu: platform boş görünmesin diye pazaryeri yerine berberlere tanıtım
+  if (await isLaunchMode()) return <LaunchHome freeMonths={(await getApplicationOffer(db)).currentFreeMonths} />;
   const [banners, show, types, locations, loc] = [
     await getActiveBanners(db, { placement: "HERO" }),
     await getHomeShowcases(),
