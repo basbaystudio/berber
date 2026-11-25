@@ -120,6 +120,20 @@
       "when": 1795364844810,
       "tag": "0016_lifetime_billing",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1795381967580,
+      "tag": "0017_price_update",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795382304175,
+      "tag": "0018_application_method",
+      "breakpoints": true
     }
   ]
 }

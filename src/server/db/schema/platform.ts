@@ -258,6 +258,8 @@ export const businessApplications = pgTable(
     staffCount: smallint("staff_count").notNull(),
     planId: uuid("plan_id").notNull().references(() => subscriptionPlans.id),
     billingCycle: text("billing_cycle").notNull(),
+    /** Başvuranın tercih ettiği ödeme yöntemi: CARD (kart) ya da BANK_TRANSFER (havale/EFT). */
+    preferredMethod: text("preferred_method").notNull().default("CARD"),
     note: text("note"),
     kvkkConsentAt: ts("kvkk_consent_at").notNull(),
     /** NEW: incelenmedi · APPROVED: işletme oluşturuldu · REJECTED: reddedildi */
@@ -273,6 +275,7 @@ export const businessApplications = pgTable(
     index("business_applications_status_idx").on(t.status, t.createdAt),
     check("business_applications_status_ck", sql`${t.status} IN ('NEW', 'APPROVED', 'REJECTED')`),
     check("business_applications_cycle_ck", sql`${t.billingCycle} IN ('MONTHLY', 'YEARLY', 'LIFETIME')`),
+    check("business_applications_method_ck", sql`${t.preferredMethod} IN ('CARD', 'BANK_TRANSFER')`),
     check("business_applications_staff_ck", sql`${t.staffCount} BETWEEN 1 AND 100`),
   ],
 );

@@ -47,7 +47,7 @@ export default async function PricingPage() {
       <header className="space-y-4 text-center">
         <p className="text-sm font-semibold uppercase tracking-wider text-accent-600">Fiyatlandırma</p>
         <h1 className="text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">Size uyan ödemeyi seçin</h1>
-        <p className="mx-auto max-w-xl text-stone-600">Tüm seçeneklerde aynı özellikler. Ücretsiz süre boyunca kart bilgisi istenmez, ödeme alınmaz.</p>
+        <p className="mx-auto max-w-xl text-stone-600">Tüm seçeneklerde aynı özellikler. Fiyatlara KDV dahildir. Ücretsiz süre boyunca kart bilgisi istenmez, ödeme alınmaz.</p>
         <p className="inline-flex items-center gap-2 rounded-full bg-accent-600 px-4 py-1.5 text-sm font-semibold text-white">
           <Gift className="size-4" aria-hidden />
           {early ? `İlk ${offer.early.limit} işletmeye ${offer.early.months} ay ücretsiz · kalan ${offer.early.remaining}` : `${offer.defaultTrialMonths} ay ücretsiz`}
@@ -70,6 +70,7 @@ export default async function PricingPage() {
               <p>
                 <span className="text-4xl font-bold tracking-tight text-stone-900">{o.price}</span>
                 <span className="text-stone-600"> {o.unit}</span>
+                <span className="block text-xs text-stone-500">KDV dahil</span>
               </p>
               <p className="text-sm text-stone-600">{o.note}</p>
               <ul className="space-y-2 text-sm text-stone-700">
@@ -94,7 +95,7 @@ export default async function PricingPage() {
       )}
 
       <p className="text-center text-sm text-stone-500">
-        Sorularınız için başvuru formunu doldurun, sizi arayalım.
+        Fiyatlara KDV dahildir. Kartla otomatik ödeme ya da havale / EFT ile ödeyebilirsiniz. Sorularınız için başvuru formunu doldurun, sizi arayalım.
       </p>
     </main>
   );

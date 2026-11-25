@@ -89,11 +89,11 @@ describe("ödeme yöntemi ve kart", () => {
     };
     setPaymentGatewayForTests(gw);
     expect(await startCardSetup(db, bizOf(a), "/geri")).toBe("https://odeme.example/kart");
-    expect(calls).toContain(`setup:${a.businessId}:MONTHLY:69990`);
+    expect(calls).toContain(`setup:${a.businessId}:MONTHLY:34990`);
     await handleGatewayEvent(db, "tp", { type: "SUBSCRIPTION_ACTIVATED", businessId: a.businessId, customerRef: "c", subscriptionRef: `s2_${a.businessId}`, cardLast4: "1111" });
     // Yıllığa geçiş sağlayıcıdaki aboneliği günceller
     await setBillingCycle(db, bizOf(a), "YEARLY");
-    expect(calls).toContain(`update:s2_${a.businessId}:YEARLY:699000`);
+    expect(calls).toContain(`update:s2_${a.businessId}:YEARLY:349000`);
     await setPaymentMethod(db, bizOf(a), "BANK_TRANSFER");
     expect(calls).toContain(`cancel:s2_${a.businessId}`);
     const [sub] = await db.select().from(businessSubscriptions).where(eq(businessSubscriptions.businessId, a.businessId));

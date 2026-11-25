@@ -31,7 +31,7 @@ export default async function BillingPage() {
       )}
       <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Card>
-          <CardHeader title={b.plan.name} description={`${fee.label} ödeme · ${fee.text}`} actions={<Badge tone={st.kind === "PAST_DUE" ? "red" : st.kind === "PAID" ? "green" : "gray"}>{st.label}</Badge>} />
+          <CardHeader title={b.plan.name} description={`${fee.label} ödeme · ${fee.text} (KDV dahil)`} actions={<Badge tone={st.kind === "PAST_DUE" ? "red" : st.kind === "PAID" ? "green" : "gray"}>{st.label}</Badge>} />
           <div className="space-y-2 p-6 text-sm text-stone-600">
             {st.kind === "FREE_PERIOD" && <p>Şu an ücretsiz dönemdesiniz; ödeme alınmıyor. {b.sub.trialMonths} aylık ücretsiz deneme süreniz, ücretlendirme başladığında işlemeye başlayacak.</p>}
             {st.kind === "TRIAL" && <p>Ücretsiz deneme süreniz {formatDateStr(st.coveredUntil)} tarihinde bitiyor ({st.days} gün kaldı).</p>}

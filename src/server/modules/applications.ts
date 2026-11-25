@@ -32,6 +32,7 @@ export const applicationSchema = z.object({
   staffCount: z.coerce.number({ error: "Çalışan sayısı girin." }).int("Çalışan sayısı tam sayı olmalı.").min(1, "En az 1 olmalı.").max(100, "En fazla 100."),
   planId: z.string({ error: "Paket seçin." }).uuid("Paket seçin."),
   billingCycle: z.enum(["MONTHLY", "YEARLY", "LIFETIME"], { error: "Ödeme dönemi seçin." }),
+  preferredMethod: z.enum(["CARD", "BANK_TRANSFER"], { error: "Ödeme yöntemi seçin." }).default("CARD"),
   note: optionalText(500, "Not"),
   kvkk: checkbox.refine((v) => v, "Devam etmek için aydınlatma metnini onaylayın."),
   /** Bot tuzağı: gerçek kullanıcı bu alanı görmez, doldurmaz */
@@ -40,6 +41,7 @@ export const applicationSchema = z.object({
 export type ApplicationInput = z.infer<typeof applicationSchema>;
 
 export const CYCLE_LABEL: Record<string, string> = { MONTHLY: "Aylık", YEARLY: "Yıllık", LIFETIME: "Tek seferlik" };
+export const METHOD_LABEL: Record<string, string> = { CARD: "Kart", BANK_TRANSFER: "Havale / EFT" };
 
 /** Başvuru sayfasındaki teklif: aktif paketler ve şu an başvurana verilecek ücretsiz süre. */
 export async function getApplicationOffer(db: Executor) {
@@ -89,6 +91,7 @@ export async function submitApplication(db: DB, input: ApplicationInput, meta: {
       staffCount: input.staffCount,
       planId: plan.id,
       billingCycle: input.billingCycle,
+      preferredMethod: input.preferredMethod,
       note: input.note ?? null,
       kvkkConsentAt: new Date(),
       ip: meta.ip,
@@ -100,7 +103,7 @@ export async function submitApplication(db: DB, input: ApplicationInput, meta: {
     .from(districts)
     .innerJoin(provinces, eq(provinces.id, districts.provinceId))
     .where(eq(districts.id, input.districtId));
-  const cycle = CYCLE_LABEL[input.billingCycle];
+  const cycle = `${CYCLE_LABEL[input.billingCycle]} · ${METHOD_LABEL[input.preferredMethod]}`;
   for (const to of await adminAlertRecipients(db)) {
     await sendEmail(db, {
       to,
@@ -201,7 +204,7 @@ export async function approveApplication(db: DB, actor: AdminActor, id: string) 
         : "MONTHLY";
   const [sub] = await db
     .update(businessSubscriptions)
-    .set({ planId: a.planId, monthlyFeeKurus: plan!.monthlyPriceKurus, yearlyFeeKurus: plan!.yearlyPriceKurus, lifetimeFeeKurus: plan!.lifetimePriceKurus, billingCycle: cycle, updatedAt: new Date() })
+    .set({ planId: a.planId, monthlyFeeKurus: plan!.monthlyPriceKurus, yearlyFeeKurus: plan!.yearlyPriceKurus, lifetimeFeeKurus: plan!.lifetimePriceKurus, billingCycle: cycle, preferredMethod: a.preferredMethod === "BANK_TRANSFER" ? "BANK_TRANSFER" : "CARD", updatedAt: new Date() })
     .where(eq(businessSubscriptions.businessId, created.businessId))
     .returning();
   await db

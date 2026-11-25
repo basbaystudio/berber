@@ -12,10 +12,12 @@ test("başvuru: ana sayfadan form → yönetici onayı → işletme girişi", as
   await expect(gp.getByRole("heading", { level: 1 })).toContainText("İşletmenizi");
   await gp.waitForLoadState("networkidle");
 
-  // Günlük fiyat: yıllık 6.990 ₺ ≈ 19 ₺/gün, aylık 699,90 ₺ ≈ 23 ₺/gün
-  await expect(gp.getByText("≈₺19", { exact: true })).toBeVisible();
+  // Günlük fiyat: yıllık 3.490 ₺ ≈ 10 ₺/gün, aylık 349,90 ₺ ≈ 12 ₺/gün
+  await expect(gp.getByText("≈₺10", { exact: true })).toBeVisible();
   await gp.getByRole("radio", { name: "Aylık", exact: true }).click();
-  await expect(gp.getByText("≈₺23", { exact: true })).toBeVisible();
+  await expect(gp.getByText("≈₺12", { exact: true })).toBeVisible();
+  await expect(gp.getByText("Fiyatlara KDV dahildir", { exact: false })).toBeVisible();
+  await gp.getByRole("radio", { name: /Havale/ }).check();
   await gp.getByLabel("İşletme adı").fill(`Uzak Berber ${suffix}`);
   await gp.getByLabel("Çalışan sayısı").fill("3");
   await gp.getByRole("combobox", { name: "İl", exact: true }).selectOption({ label: "Trabzon" });
@@ -35,7 +37,7 @@ test("başvuru: ana sayfadan form → yönetici onayı → işletme girişi", as
   await page.goto("/admin/basvurular");
   const card = page.locator("li", { hasText: `Uzak Berber ${suffix}` });
   await expect(card.getByText("Ortahisar, Trabzon")).toBeVisible();
-  await expect(card.getByText(/Aylık/)).toBeVisible();
+  await expect(card.getByText(/Aylık · Havale \/ EFT/)).toBeVisible();
   page.once("dialog", (d) => d.accept());
   await card.getByRole("button", { name: "Onayla ve işletmeyi oluştur" }).click();
   await expect(card.getByText("İşletme oluşturuldu")).toBeVisible({ timeout: 20_000 });
@@ -114,6 +116,8 @@ test("fiyatlandırma: ana sayfa butonu → aylık, yıllık, tek seferlik → ba
   await expect(page.getByRole("heading", { level: 2, name: "Tek seferlik" })).toBeVisible();
   await expect(page.getByText("₺14.999", { exact: true })).toBeVisible();
   await expect(page.getByText(/fotoğraf çekim/i)).toHaveCount(0);
+  await expect(page.getByText("KDV dahil", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(/havale \/ EFT/i)).toBeVisible();
 
   await page.getByRole("link", { name: "Tek seferlik ile başvur" }).click();
   await expect(page).toHaveURL(/\/basvuru\?donem=tek-seferlik$/);

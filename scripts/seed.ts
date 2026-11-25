@@ -93,8 +93,8 @@ await db.transaction(async (tx) => {
       code: "standart",
       name: "Standart",
       description: "Online randevu, işletme paneli ve pazaryeri profili.",
-      monthlyPriceKurus: 69990,
-      yearlyPriceKurus: 699000,
+      monthlyPriceKurus: 34990,
+      yearlyPriceKurus: 349000,
       lifetimePriceKurus: 1499900,
       highlights: ["Pazaryerinde işletme profili", "Online randevu ve takvim", "Çalışan ve hizmet yönetimi", "30 fotoğraflık portfolyo"],
       isDefault: true,
@@ -102,12 +102,12 @@ await db.transaction(async (tx) => {
   }
   // Yıllık fiyattan önceki eski varsayılan (900 TL/ay, yıllık yok) → güncel fiyatlar. Elle değiştirilmiş paketlere dokunmaz.
   await tx.execute(sql`
-    UPDATE business_subscriptions s SET monthly_fee_kurus = 69990, yearly_fee_kurus = 699000
+    UPDATE business_subscriptions s SET monthly_fee_kurus = 34990, yearly_fee_kurus = 349000
     FROM subscription_plans p
     WHERE s.plan_id = p.id AND p.code = 'standart' AND p.monthly_price_kurus = 90000 AND p.yearly_price_kurus IS NULL
       AND s.monthly_fee_kurus = 90000 AND s.yearly_fee_kurus IS NULL`);
   await tx.execute(sql`
-    UPDATE subscription_plans SET monthly_price_kurus = 69990, yearly_price_kurus = 699000
+    UPDATE subscription_plans SET monthly_price_kurus = 34990, yearly_price_kurus = 349000
     WHERE code = 'standart' AND monthly_price_kurus = 90000 AND yearly_price_kurus IS NULL`);
 
   // Aboneliği olmayan eski işletmelere oluşturulma sırasıyla abonelik ata (kampanya kuralı korunur)

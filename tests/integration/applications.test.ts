@@ -88,15 +88,16 @@ describe("işletme başvurusu", () => {
     expect((await getApplicationOffer(db)).currentFreeMonths).toBe(1);
 
     const [s1] = await db.select().from(businessSubscriptions).where(eq(businessSubscriptions.businessId, r1.businessId));
-    expect(s1).toMatchObject({ billingCycle: "YEARLY", yearlyFeeKurus: 699000, monthlyFeeKurus: 69990 });
+    expect(s1).toMatchObject({ billingCycle: "YEARLY", yearlyFeeKurus: 349000, monthlyFeeKurus: 34990 });
     const [s2] = await db.select().from(businessSubscriptions).where(eq(businessSubscriptions.businessId, r2.businessId));
     expect(s2!.billingCycle).toBe("MONTHLY");
 
     // Tek seferlik seçen başvuru onaylanınca abonelik tek seferlik açılır
-    const a3 = await submitApplication(db, await input({ billingCycle: "LIFETIME" }), { ip: ip() });
+    const a3 = await submitApplication(db, await input({ billingCycle: "LIFETIME", preferredMethod: "BANK_TRANSFER" }), { ip: ip() });
     const r3 = await approveApplication(db, actor, a3.id);
     const [s3] = await db.select().from(businessSubscriptions).where(eq(businessSubscriptions.businessId, r3.businessId));
-    expect(s3).toMatchObject({ billingCycle: "LIFETIME", lifetimeFeeKurus: 1499900 });
+    expect(s3).toMatchObject({ billingCycle: "LIFETIME", lifetimeFeeKurus: 1499900, preferredMethod: "BANK_TRANSFER" });
+    expect(s2!.preferredMethod).toBe("CARD");
 
     const [u] = await db.select().from(businessUsers).where(eq(businessUsers.businessId, r1.businessId));
     expect(u).toMatchObject({ login: r1.login, mustChangePassword: true });
