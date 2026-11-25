@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><title>{{MARKA}} — İşleyiş Rehberi</title>
+<link rel="stylesheet" href="ortak.css"></head><body>
+
+<section class="slide cover">
+  <div class="kicker">İç kullanım · Sadece sizin için</div>
+  <h1>İşleyiş Rehberi</h1>
+  <p class="lead">Sistem nasıl çalışıyor, para nereye gidiyor, bir salon nasıl kurulur, sorun çıkınca ne yapılır? Hepsi basit anlatımla.</p>
+  <div class="foot"><span>{{MARKA}} · {{DOMAIN}}</span><span>Kasım 2026 · Rakamlar yaklaşıktır, Meta fiyatları değişebilir</span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">1 · Büyük resim</div>
+  <h2>Sistem tek cümlede</h2>
+  <p class="lead" style="margin-bottom:34px">Salonun müşterisi WhatsApp'tan ya da Instagram'dan yazar. Mesaj <b>bizim sunucumuza</b> gelir. <b>Claude</b> (yapay zekâ) mesajı okur, takvime bakar, cevabı yazar. Salon her şeyi <b>kendi panelinde</b> görür.</p>
+  <div class="flow">
+    <div class="box"><b>Müşteri</b><span>WhatsApp / Instagram</span></div><div class="arr">→</div>
+    <div class="box"><b>Meta</b><span>Mesajı bize iletir</span></div><div class="arr">→</div>
+    <div class="box"><b>Bizim sunucu</b><span>Hangi salon? Kaydet</span></div><div class="arr">→</div>
+    <div class="box"><b>Claude</b><span>Anlar, takvime bakar, yazar</span></div><div class="arr">→</div>
+    <div class="box"><b>Meta</b><span>Cevabı müşteriye iletir</span></div>
+  </div>
+  <div class="grid g3" style="margin-top:30px">
+    <div class="card"><h3>Meta</h3><p>WhatsApp ve Instagram'ın sahibi. Postacı gibidir. Mesaj taşır, şablonlu mesajlar için para alır.</p></div>
+    <div class="card"><h3>Anthropic (Claude)</h3><p>Asistanın "beyni". Okuduğu ve yazdığı kelime (token) başına para alır.</p></div>
+    <div class="card"><h3>Bizim sistem</h3><p>Paneller, takvim, kota, otomasyonlar. Hepsi tek uygulama, tek veritabanı.</p></div>
+  </div>
+  <div class="foot"><span>İşleyiş Rehberi</span><span class="pn"></span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">2 · Paneller</div>
+  <h2>Apartman mantığı: tek bina, her salona bir daire</h2>
+  <div class="grid g2" style="align-items:start">
+    <table>
+      <tr><th>Adres</th><th>Kimin</th></tr>
+      <tr><td class="mono">{{DOMAIN}}</td><td>Sizin satış siteniz</td></tr>
+      <tr><td class="mono">admin.{{DOMAIN}}</td><td><b>Sadece siz.</b> Bütün salonlar, kotalar, maliyet</td></tr>
+      <tr><td class="mono">lara.{{DOMAIN}}</td><td>Lara'nın yönetim paneli (web sitesi yok, sadece panel)</td></tr>
+      <tr><td class="mono">mina.{{DOMAIN}}</td><td>Mina'nın yönetim paneli</td></tr>
+      <tr><td class="mono">api.{{DOMAIN}}</td><td>Meta'nın mesaj getirdiği kapı</td></tr>
+    </table>
+    <div>
+      <ul class="clean">
+        <li>Her salona <b>ayrı sunucu kurulmaz.</b> Sistem adresteki ilk kelimeye (<span class="mono">lara</span>) bakar, sadece o salonun verisini gösterir.</li>
+        <li>DNS'te bir kere <span class="mono">*.{{DOMAIN}}</span> joker kaydı açılır. Yeni salon için DNS'e dokunulmaz.</li>
+        <li>Yeni bir özellik eklenince <b>bütün salonlara aynı anda</b> gelir.</li>
+        <li>Lara, Mina'nın verisini asla göremez. Her kayıtta <span class="mono">salon_id</span> bulunur.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>İşleyiş Rehberi</span><span class="pn"></span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">3 · Bir mesajın yolculuğu</div>
+  <div style="display:flex;gap:50px;flex:1;align-items:center">
+    <div class="phone" style="width:320px">
+      <div class="top">Lara Güzellik</div>
+      <div class="b in">Yarın kaşa yer var mı?</div>
+      <div class="b out">Yarın 11:00 veya 15:30 uygun, hangisini ayıralım?</div>
+      <div class="b in">15:30</div>
+      <div class="b out">Randevunuz oluşturuldu ✓</div>
+    </div>
+    <ol style="flex:1;padding-left:26px">
+      <li class="small">Ayşe, Lara'nın numarasına yazar.</li>
+      <li class="small">Meta mesajı <span class="mono">api.{{DOMAIN}}</span> adresine yollar.</li>
+      <li class="small">Sistem numaradan "Bu Lara" der, mesajı Lara'nın kutusuna kaydeder.</li>
+      <li class="small">Claude çağrılır. Lara'nın hizmetlerini, fiyatlarını ve Ayşe'nin geçmişini bilir.</li>
+      <li class="small">Claude <b>"müsait saat bul"</b> aracını kullanır. Sistem takvime bakar: 11:00 ve 15:30 boş.</li>
+      <li class="small">Claude cevabı yazar, Meta müşteriye iletir. <b>Ücreti yok.</b></li>
+      <li class="small">Ayşe "15:30" der. Claude <b>"randevu aç"</b> aracını kullanır, randevu takvime düşer.</li>
+      <li class="small">Ertesi gün hatırlatma gider, işlemden sonra Google yorum bağlantısı gider.</li>
+    </ol>
+  </div>
+  <div class="callout">Claude saat ya da fiyat <b>uydurmaz</b>. Bu bilgileri her zaman araçla veritabanından alır.</div>
+  <div class="foot"><span>İşleyiş Rehberi</span><span class="pn"></span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">4 · En önemli kural</div>
+  <h2>24 saat kuralı: ne bedava, ne ücretli?</h2>
+  <div class="grid g2">
+    <div class="card" style="border-color:#bfe5cc">
+      <span class="pill ok">BEDAVA</span>
+      <ul class="clean check" style="margin-top:16px">
+        <li class="small">Müşteri yazdıktan sonraki <b>24 saat içinde</b> verilen her cevap (asistan, panel, çalışan)</li>
+        <li class="small">Bu pencerede gönderilen hatırlatma ve öneriler</li>
+        <li class="small">Salonun <b>telefondan elle</b> yazdığı her şey, saat fark etmez</li>
+        <li class="small">Instagram mesajlarının hepsi</li>
+      </ul>
+    </div>
+    <div class="card" style="border-color:#f3d2a5">
+      <span class="pill warn">ÜCRETLİ (Meta alır)</span>
+      <ul class="clean" style="margin-top:16px">
+        <li class="small">Müşteri son 24 saatte yazmadıysa <b>sistemin ilk attığı</b> mesaj</li>
+        <li class="small">Bu mesaj Meta'nın önceden onayladığı bir <b>"şablon"</b> olmak zorundadır</li>
+        <li class="small">Hatırlatma / onay (utility): <b>~0,005 $</b></li>
+        <li class="small">Öneri / kampanya (marketing): <b>~0,01 $</b></li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout warn" style="margin-top:22px">Hatırlatma mesajının içine indirim ya da kampanya yazılırsa Meta onu <b>marketing</b> sayar ve <b>2 kat ücret</b> alır. Hatırlatmalar sade kalmalı.</div>
+  <div class="foot"><span>İşleyiş Rehberi</span><span class="pn"></span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">5 · Para nereye gidiyor?</div>
+  <h2>Ödeme modeli: Meta'ya biz öderiz</h2>
+  <div class="grid g2" style="align-items:start">
+    <div class="tree">Bizim Meta işletme hesabımız
+  💳 bizim kredi kartımız (tek kart)
+  ├─ Lara Güzellik → 0532 ...
+  ├─ Mina Beauty   → 0541 ...
+  └─ Su Estetik    → 0555 ...</div>
+    <ul class="clean">
+      <li>Salon <b>hiçbir yere kart girmez.</b></li>
+      <li>Bütün salonların WhatsApp hesapları <b>bizim</b> Meta hesabımızın içinde açılır.</li>
+      <li>Meta ayda bir, şirketimiz adına <b>tek fatura</b> keser.</li>
+      <li>Salondan aylık paket ücreti alırız. Kota aşılırsa ek paket satarız.</li>
+      <li>Claude ücretini de biz öderiz (Anthropic hesabımız).</li>
+    </ul>
+  </div>
+  <div class="grid g3" style="margin-top:22px">
+    <div class="card"><h3>Görünen ad</h3><p>"Lara Güzellik" adı için Meta bağlantı ister. Salonun Google ve Instagram profilinde ad ve numara yazmalı.</p></div>
+    <div class="card"><h3>Ortak kalite</h3><p>Bir salon spam atarsa hepsini etkileyebilir. Kalite puanı izlenir.</p></div>
+    <div class="card"><h3>B planı</h3><p>Meta sorun çıkarırsa: ücreti partnerin ödediği bir aracı firma (360dialog gibi).</p></div>
+  </div>
+  <div class="foot"><span>İşleyiş Rehberi</span><span class="pn"></span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">6 · Kota</div>
+  <h2>Kota sistemi: uyarılar salona değil, BİZE gelir</h2>
+  <div class="bar" style="margin-bottom:10px">
+    <div style="flex:80;background:#4c9a6a">0-80%: normal</div>
+    <div style="flex:20;background:#d08a2c">80%: e-posta</div>
+    <div style="flex:50;background:#b84a3c">100-150%: kampanyalar durur, hatırlatmalar devam</div>
+  </div>
+  <table style="margin-top:14px">
+    <tr><th>Kullanım</th><th>Ne olur</th></tr>
+    <tr><td><b>%80</b></td><td>Bize e-posta: "Lara 80/100 kullandı, ay sonu tahmini 115"</td></tr>
+    <tr><td><b>%100</b></td><td>Bize e-posta, admin panelde salon <b>kırmızı</b>. Hatırlatmalar <b>devam eder</b>, salonun işi bozulmaz.</td></tr>
+    <tr><td><b>%150</b></td><td>Ücretli her şey durur. Bedava cevaplar devam eder. Bize acil e-posta.</td></tr>
+    <tr><td><b>Ay ortası</b></td><td>Salon kotayı aşacak hızla gidiyorsa erken uyarı gelir</td></tr>
+    <tr><td><b>Ayın 1'i</b></td><td>Sayaçlar sıfırlanır. Salon salon maliyet ve kâr özeti gelir.</td></tr>
+  </table>
+  <p class="small muted" style="margin-top:14px">Ek paket: admin panelden "Lara'ya +100" denir, kota anında büyür. Yüzdeler salon bazında değiştirilebilir.</p>
+  <div class="foot"><span>İşleyiş Rehberi</span><span class="pn"></span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">7 · Kotaya ne sayılır?</div>
+  <h2>Sadece sistemin attığı ücretli mesaj sayılır</h2>
+  <table>
+    <tr><th>Mesaj</th><th>Kotadan düşer mi?</th></tr>
+    <tr><td>Salonun <b>telefonu eline alıp klavyeyle</b> yazdığı her şey (kampanya dahil)</td><td><span class="pill ok">Hayır</span> Meta da ücret almaz</td></tr>
+    <tr><td>Müşteri yazdıktan sonra 24 saat içinde verilen cevaplar</td><td><span class="pill ok">Hayır</span></td></tr>
+    <tr><td>Çalışanın panelden yazdığı mesaj (24 saat içinde)</td><td><span class="pill ok">Hayır</span></td></tr>
+    <tr><td>Asistanın cevapları</td><td><span class="pill">Sadece AI kotasından</span></td></tr>
+    <tr><td>Sistemin otomatik hatırlatması (müşteri son 24 saatte yazmadıysa)</td><td><span class="pill warn">Evet</span> Sayılan tek mesaj bu</td></tr>
+  </table>
+  <div class="callout" style="margin-top:20px"><b>Teknik garanti:</b> Bir mesajın sayılması için iki şart gerekir: (1) mesaj <b>bizim API'mizden</b> çıkmış olmalı, (2) Meta o mesaj için <b>"ücretli"</b> demiş olmalı. Telefondan atılan mesajlar API'den çıkmadığı için sayaca giremez.</div>
+  <div class="foot"><span>İşleyiş Rehberi</span><span class="pn"></span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">8 · Kampanyalar</div>
+  <h2>Kampanyaları salon kendi telefonundan atar</h2>
+  <div class="grid g2">
+    <div>
+      <h3>Nasıl işliyor?</h3>
+      <ul class="clean check" style="margin-top:10px">
+        <li class="small">Aynı numara hem telefonda hem sistemde (<b>coexistence</b>)</li>
+        <li class="small">Telefondan atılan mesajlar <b>bedava</b> ve saat kısıtı yok</li>
+        <li class="small">Sistem bu mesajları görür ve gelen kutusunda gösterir</li>
+        <li class="small">Salon yazdığı an asistan o sohbette <b>24 saat susar</b></li>
+        <li class="small">Panel kampanya metnini ve izinli müşteri listesini hazırlar, salon kopyalar</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Riskler</h3>
+      <ul class="clean cross" style="margin-top:10px">
+        <li class="small">Salon izinsiz ya da sık atarsa ve müşteriler "spam" derse <b>numara kısıtlanır</b>. Asistan da durur.</li>
+        <li class="small">Telefondaki yayın listesi sadece numarayı rehberine kaydetmiş kişilere ulaşır, liste başına en fazla 256 kişi</li>
+        <li class="small">Kanuni sorumluluk salondadır (6563 sayılı kanun, İYS)</li>
+      </ul>
+      <div class="callout warn small" style="margin-top:14px;font-size:16px">Sözleşmeye yazılacak madde: "Sadece izinli müşterilere, ayda en fazla 2 kez."</div>
+    </div>
+  </div>
+  <div class="foot"><span>İşleyiş Rehberi</span><span class="pn"></span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">9 · Maliyet</div>
+  <h2>Bir salonun bize aylık maliyeti</h2>
+  <div class="grid g2" style="align-items:start">
+    <table>
+      <tr><th>Kalem</th><th>Aylık</th></tr>
+      <tr><td>WhatsApp, 50-100 ücretli mesaj</td><td>~0,5-1 $</td></tr>
+      <tr><td>Cevaplar + Instagram</td><td>0 $</td></tr>
+      <tr><td>Claude Haiku 5.5, ~200 sohbet</td><td>~0,6 $</td></tr>
+      <tr><td>Sunucu payı (20 salonda)</td><td>~0,5 $</td></tr>
+      <tr><td><b>Toplam</b></td><td><b>≈ 1,5-2 $ (60-80 TL)</b></td></tr>
+    </table>
+    <div>
+      <table>
+        <tr><th>Model</th><th>Sohbet</th><th>200 sohbet</th></tr>
+        <tr><td>Haiku 5.5 (en ucuz)</td><td>~0,003 $</td><td>~0,6 $</td></tr>
+        <tr><td>Sonnet 5.5</td><td>~0,05 $</td><td>~10 $</td></tr>
+        <tr><td>Opus 5.5 (en akıllı)</td><td>~0,10 $</td><td>~20 $</td></tr>
+      </table>
+      <p class="small muted" style="margin-top:12px">Model seçimi sizin kararınız. Gerçek kullanım panelde ölçülür, pilot sonrası netleşir.</p>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:20px">
+    <div class="card"><h3>Sabit gider (bütün salonlar için)</h3><p>Hetzner VPS + Coolify ~8 €, Cloudflare DNS ve SSL 0 €, alan adı ~1 $/ay, izleme araçları 0 €</p></div>
+    <div class="card"><h3>Ucuz tutmanın sırrı</h3><p>Ucuz model, 24 saat penceresi, sade hatırlatma, kampanyaların telefondan atılması, kota</p></div>
+  </div>
+  <div class="foot"><span>İşleyiş Rehberi</span><span class="pn"></span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">Çalışan yönetimi</div>
+  <h2>Randevu atama ve adil iş dağılımı</h2>
+  <div class="grid g2" style="align-items:start">
+    <div>
+      <h3>Salon panelinden yapılanlar</h3>
+      <ul class="clean check" style="margin-top:8px">
+        <li class="small">Çalışan ekle/çıkar, vardiya, mola, izin, hangi hizmetleri yaptığı</li>
+        <li class="small">Rol: <b>sahip / yönetici / çalışan</b>. Çalışan sadece kendi takvimini görür.</li>
+        <li class="small">Randevuyu istediği çalışana atama, sürükle-bırak ile başkasına aktarma</li>
+        <li class="small">Haftalık iş yükü tablosu ve dengesizlik uyarısı</li>
+        <li class="small">Çalışana yeni randevu bildirimi: <b>panel ve telefon bildirimi (ücretsiz)</b>. WhatsApp ile değil, çünkü o ücretli olur.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Atama modları (salon seçer)</h3>
+      <table style="margin-top:8px">
+        <tr><th>Mod</th><th>Nasıl çalışır</th></tr>
+        <tr><td><b>Otomatik adil</b></td><td>Hizmeti yapabilen + o saatte boş olanlar arasından <b>bu hafta en az dakika çalışmış</b> olana verilir. Eşitlikte sırayla.</td></tr>
+        <tr><td><b>Yönetici atar</b></td><td>Randevu "atanmamış" kutusuna düşer, yönetici dağıtır. Saat tutulur, çakışma olmaz.</td></tr>
+        <tr><td><b>Müşteri seçer</b></td><td>Müşteri "Elif Hanım olsun" derse ona yazılır. Diğer durumlarda otomatik adil mod çalışır.</td></tr>
+      </table>
+      <p class="small muted" style="margin-top:10px">Kural: Aynı çalışana aynı saatte iki randevu veritabanı seviyesinde engellenir.</p>
+    </div>
+  </div>
+  <div class="foot"><span>İşleyiş Rehberi</span><span class="pn"></span></div>
+</section>
+
+<section class="slide dense">
+  <div class="kicker">Bağlantı · karar bekliyor</div>
+  <h2>Salon WhatsApp'ı kendi bağlasın, kart da bizden çıksın</h2>
+  <p class="small" style="margin-bottom:14px">Salon şifre vermeyecek, bağlantıyı panelden kendisi kuracak. Instagram'da bu sorunsuz. WhatsApp'ta ise <b>"kim ödüyor"</b> ve <b>"numara telefonda kalsın mı"</b> soruları birbirine bağlı:</p>
+  <table class="tight">
+    <tr><th>Yol</th><th>Salon kendisi bağlar</th><th>Kart bizden</th><th>Aynı numara telefonda da çalışır</th><th>Ek maliyet</th></tr>
+    <tr><td><b>1) Panelden numara + SMS kodu</b><br><span class="small muted">Numara bizim Meta hesabımıza API ile eklenir</span></td><td><span class="pill ok">Evet</span></td><td><span class="pill ok">Evet</span></td><td><span class="pill bad">Hayır</span> Numara telefondaki WhatsApp'tan silinmeli. Asistan için ayrı hat önerilir.</td><td><span class="pill ok">Yok</span></td></tr>
+    <tr><td><b>2) Meta ekranı + aracı firma</b><br><span class="small muted">Ödemeyi Solution Partner yapar, bize fatura eder</span></td><td><span class="pill ok">Evet</span></td><td><span class="pill ok">Evet</span></td><td><span class="pill ok">Evet</span> (coexistence)</td><td><span class="pill warn">Var</span> numara ya da mesaj başı, teklif alınmalı</td></tr>
+    <tr><td><b>3) Meta ekranı, aracısız</b></td><td><span class="pill ok">Evet</span></td><td><span class="pill bad">Hayır</span> salon kart girer</td><td><span class="pill ok">Evet</span></td><td><span class="pill ok">Yok</span></td></tr>
+  </table>
+  <div class="callout warn" style="margin-top:16px;font-size:17px">Kartı bizim ödeyebilmemiz için ya numaranın bizim hesabımızda olması (Yol 1) ya da Meta'nın kredi paylaştırma yetkisi olan bir partnerin (Solution Partner) araya girmesi (Yol 2) gerekiyor. 3. yol "salon kart bağlamaz" kararına aykırı.</div>
+  <div class="foot"><span>İşleyiş Rehberi</span><span class="pn"></span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">10 · Bir kere yapılacaklar</div>
+  <h2>Bu hafta başlanmalı (Meta onayları 2-6 hafta sürebilir)</h2>
+  <table>
+    <tr><th>#</th><th>Ne</th><th>Nerede</th><th>Neden</th></tr>
+    <tr><td>1</td><td>Alan adı + Cloudflare DNS</td><td>Namecheap / isimtescil</td><td>Paneller burada çalışacak</td></tr>
+    <tr><td>2</td><td>Meta işletme hesabı + <b>işletme doğrulaması</b></td><td>business.facebook.com</td><td>Vergi levhası istenir. Limitleri açar.</td></tr>
+    <tr><td>3</td><td>Meta geliştirici uygulaması</td><td>developers.facebook.com</td><td>WhatsApp ve Instagram'a bağlanan "fiş"</td></tr>
+    <tr><td>4</td><td>Tech Provider + <b>App Review</b></td><td>Aynı yer</td><td>Mesaj okuma/gönderme izni. Video ve gizlilik sayfası istenir.</td></tr>
+    <tr><td>5</td><td>Kredi kartı → Meta hesabı</td><td>WhatsApp Manager</td><td>Bütün salonların mesaj ücreti</td></tr>
+    <tr><td>6</td><td>Claude API + harcama sınırı</td><td>platform.claude.com</td><td>Asistanın beyni</td></tr>
+    <tr><td>7</td><td>Avukat / KVKK</td><td>—</td><td>Aydınlatma metni, izin, yurt dışına aktarım, sözleşme</td></tr>
+    <tr><td>8</td><td>Yeni GitHub reposu</td><td>github.com</td><td>Kodun yaşayacağı yer</td></tr>
+  </table>
+  <div class="foot"><span>İşleyiş Rehberi</span><span class="pn"></span></div>
+</section>
+
+<section class="slide dense">
+  <div class="kicker">11 · Yeni salon kurulumu</div>
+  <h2>Salon kendisi bağlar, şifre istemeyiz</h2>
+  <div class="steps">
+    <div class="step"><div class="n">1</div><h3>Salonu aç (siz)</h3><p>admin paneli → "Yeni Salon" → adres: lara. Sahip e-postadaki bağlantıyla şifresini kendisi belirler.</p></div>
+    <div class="step"><div class="n">2</div><h3>WhatsApp (salon)</h3><p>Panel → "WhatsApp'ı Bağla". Kodu ya da Meta onayını kendisi girer. Webhook, numara kaydı ve şablonlar <b>otomatik</b> kurulur.</p></div>
+    <div class="step"><div class="n">3</div><h3>Instagram (salon)</h3><p>Panel → "Instagram'ı Bağla" → kendi girişi → izin ver. Panel, "Mesajlara erişime izin ver" ayarını açması için resimli yönlendirme gösterir.</p></div>
+  </div>
+  <div class="steps" style="margin-top:16px">
+    <div class="step"><div class="n">4</div><h3>Google (salon)</h3><p>Haritalar bağlantısını yapıştırır, yorum bağlantısı oluşur.</p></div>
+    <div class="step"><div class="n">5</div><h3>Bilgiler (salon)</h3><p>Hizmet, fiyat, çalışan, müşteri listesi (izin durumu dahil), sık sorulan sorular. Panelde adım adım sihirbaz.</p></div>
+    <div class="step"><div class="n">6</div><h3>Çıraklık haftası</h3><p>Asistan taslak yazar, salon onaylar. 1 hafta sonra otomatiğe geçilir.</p></div>
+  </div>
+  <div class="callout" style="margin-top:18px;font-size:17px">Biz hiçbir şifre görmeyiz. Bağlantı başarılı olunca panelde ✅ yanar, sorun olursa bize anında haber gelir. WhatsApp'ın hangi yolla bağlanacağı bir önceki sayfadaki karara bağlı.</div>
+  <div class="foot"><span>İşleyiş Rehberi</span><span class="pn"></span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">12 · Sorun çıkarsa</div>
+  <h2>Anında haber, hızlı müdahale</h2>
+  <div class="grid g3">
+    <div class="card"><h3>🔔 Haber gelir</h3><p>Site çöktü, kod hatası, numara kısıtlandı, şablon reddedildi, salona saatlerdir mesaj gelmiyor → <b>Telegram + e-posta</b>, anında</p></div>
+    <div class="card"><h3>🛠️ Müdahale</h3><p>Canlı durum ekranı (yeşil/sarı/kırmızı), "destek olarak gir", <b>asistanı kapat</b> düğmesi (tek salon ya da hepsi)</p></div>
+    <div class="card"><h3>🛡️ Kendini korur</h3><p>Claude çökerse "Ekibimiz dönecek" mesajı gider. Sunucu çökerse Meta mesajları kaybetmez, tekrar dener.</p></div>
+  </div>
+  <table style="margin-top:22px">
+    <tr><th>Sorun</th><th>Çözüm süresi</th></tr>
+    <tr><td>Asistan yanlış bilgi veriyor</td><td><span class="pill ok">Dakikalar</span> panelden düzeltilir</td></tr>
+    <tr><td>Kod hatası</td><td><span class="pill ok">10-30 dk</span> düzelt ve yayına al, ya da tek tıkla geri al</td></tr>
+    <tr><td>Sunucu / veritabanı</td><td><span class="pill warn">Dakikalar ile 1 saat arası</span> günlük yedek</td></tr>
+    <tr><td>Meta kaynaklı (numara, şablon, kesinti)</td><td><span class="pill bad">Saatler ile günler arası</span> elimizde değil, önlem şart</td></tr>
+  </table>
+  <div class="foot"><span>İşleyiş Rehberi</span><span class="pn"></span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">13 · Yasaklar</div>
+  <h2>Kesinlikle yapılmayacaklar</h2>
+  <ul class="clean cross">
+    <li><b>İzinsiz kampanya.</b> Kanuna aykırı (6563, İYS) ve Meta numarayı kısıtlar.</li>
+    <li><b>Yorum linkini sadece memnun müşteriye atmak.</b> Google yasaklıyor, herkese atılmalı. Yorum karşılığında indirim de verilmez.</li>
+    <li><b>Botu insan gibi göstermek.</b> İlk mesajda "dijital asistanım" demeli, insana bağlanma seçeneği sunmalı.</li>
+    <li><b>Sağlık bilgisi toplamak.</b> Alerji ve hastalık gibi bilgileri asistan sormamalı.</li>
+    <li><b>KVKK'yı atlamak.</b> Mesajlar ABD'deki sunucularda işleniyor. Yurt dışına aktarım bildirimi ve salonla veri işleme sözleşmesi gerekir.</li>
+    <li><b>Hatırlatmaya reklam koymak.</b> Mesaj marketing sayılır, ücret 2 katına çıkar.</li>
+  </ul>
+  <div class="foot"><span>İşleyiş Rehberi</span><span class="pn"></span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">14 · Takvim</div>
+  <h2>Yaklaşık 12 haftalık yol haritası</h2>
+  <table>
+    <tr><th>Hafta</th><th>Ne yapılıyor</th></tr>
+    <tr><td><b>1</b></td><td>Alan adı, Meta doğrulaması, App Review başvurusu, Claude hesabı, avukat</td></tr>
+    <tr><td><b>2-3</b></td><td>Subdomain'li panel, giriş, admin paneli, salon açma, takvim, hizmetler, <b>çalışanlar, roller, randevu atama ve adil dağıtım</b></td></tr>
+    <tr><td><b>4-5</b></td><td>Panelden <b>kendi kendine</b> WhatsApp bağlama, gelen kutusu, Claude asistanı, randevu açma</td></tr>
+    <tr><td><b>6-7</b></td><td>Hatırlatma, Google yorum, tekrar işlem, ürün önerisi, boş saat doldurma, <b>kota + e-posta uyarıları</b></td></tr>
+    <tr><td><b>8-9</b></td><td>Kuponlar, kampanya taslağı, müşteri grupları, raporlar, izleme ve alarmlar</td></tr>
+    <tr><td><b>10</b></td><td>Instagram DM</td></tr>
+    <tr><td><b>11-12</b></td><td>2-3 pilot salon, coexistence testi, maliyet ölçümü, fiyatın netleşmesi</td></tr>
+  </table>
+  <div class="foot"><span>İşleyiş Rehberi</span><span class="pn"></span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">15 · Karar listesi</div>
+  <h2>Verilen ve bekleyen kararlar</h2>
+  <div class="grid g2">
+    <div class="card"><span class="pill ok">VERİLDİ</span>
+      <ul class="clean check" style="margin-top:12px">
+        <li class="small">Ayrı ürün, kendi alan adı, subdomain paneller</li>
+        <li class="small">Meta ücretlerini biz öderiz, salon kart bağlamaz</li>
+        <li class="small">Kota uyarıları bize e-postayla gelir, ek paket satılır</li>
+        <li class="small">Kampanyaları salon telefondan atar</li>
+        <li class="small">Salonun elle yazdığı mesajlar kotaya sayılmaz</li>
+        <li class="small">Web sitesi yok, sadece panel</li>
+        <li class="small">Salon çalışan yönetir, randevuları adil dağıtır</li>
+        <li class="small">Salon bağlantıları kendisi kurar, şifre istenmez</li>
+      </ul></div>
+    <div class="card"><span class="pill warn">BEKLİYOR</span>
+      <ul class="clean" style="margin-top:12px">
+        <li class="small"><b>WhatsApp bağlantı yolu (1 veya 2)</b></li>
+        <li class="small">Marka ve alan adı</li>
+        <li class="small">Yeni GitHub reposu</li>
+        <li class="small">AI modeli (Haiku / Sonnet / Opus)</li>
+        <li class="small">Paket fiyatları ve kota miktarları</li>
+        <li class="small">Meta onayı beklenirken aracı firmayla başlanacak mı?</li>
+      </ul></div>
+  </div>
+  <div class="foot"><span>İşleyiş Rehberi</span><span class="pn"></span></div>
+</section>
+
+</body></html>
