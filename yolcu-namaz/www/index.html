@@ -46,22 +46,26 @@
   </button>
 </div>
 
+<div id="perde" aria-hidden="true"></div>
 <section id="panel">
   <div id="navOzet" hidden>
     <div id="navOzetMetin"></div>
-    <div class="satir">
+    <div class="nav-dugmeler">
       <button id="btnPanelAc" class="btn">Ayrıntılar</button>
-      <button id="btnBitir" class="btn btn-sessiz">Yolculuğu bitir</button>
+      <button id="btnBitir" class="btn btn-bitir">Yolculuğu bitir</button>
     </div>
   </div>
 
-  <button id="btnPanelKapat" class="btn" aria-label="Ayrıntıları kapat">Kapat ✕</button>
+  <div id="panelUst">
+  <button id="tutamak" type="button" aria-label="Paneli büyüt ya da küçült"><span></span></button>
+  <div id="panelBaslik"><button id="btnYolculugaDon" class="btn" hidden>◂ Yolculuk</button><button id="btnBitir2" class="btn btn-bitir">Yolculuğu bitir</button><button id="btnPanelKapat" class="btn" aria-label="Ayrıntıları kapat">Kapat ✕</button></div>
   <nav id="sekmeler" role="tablist">
     <button data-sekme="rota" class="aktif">Yol</button>
     <button data-sekme="namaz">Namaz</button>
     <button data-sekme="yerler">Yerler</button>
     <button data-sekme="ayar">Ayarlar</button>
   </nav>
+  </div>
 
   <div class="sekme" id="s-rota">
     <label class="etiket" for="nereye">Nereye gidiyoruz?</label>
@@ -70,6 +74,25 @@
       <button class="btn" id="btnNereyeAra">Ara</button>
     </div>
     <div class="sonuclar" id="nereyeSonuc"></div>
+
+    <div id="durakYer"><div id="durakBolum">
+    <div id="durakListe"></div>
+    <div id="durakKutu" hidden>
+      <label class="etiket" for="durak">Durak</label>
+      <div class="satir">
+        <input id="durak" placeholder="Uğranacak yer: şehir, ilçe, adres" autocomplete="off" enterkeyhint="search">
+        <button class="btn" id="btnDurakAra">Ara</button>
+      </div>
+      <div class="sonuclar" id="durakSonuc"></div>
+    </div>
+    <button class="btn btn-ince" id="btnDurakEkle" type="button">＋ Durak ekle</button>
+
+    <div class="ikili" role="radiogroup" aria-label="Ücretli yollar">
+      <span class="ikili-ad">Ücretli yollar</span>
+      <label><input type="radio" name="ucretli" value="kullan"><span>Kullan</span></label>
+      <label><input type="radio" name="ucretli" value="kullanma"><span>Kullanma</span></label>
+    </div>
+    </div></div>
 
     <details class="katlanir">
       <summary>Başka yerden çıkış · saat · seçenekler</summary>
@@ -99,6 +122,17 @@
     <button id="btnRota" class="btn btn-ana btn-buyuk">Yolu göster</button>
     <div id="rotaOzet"></div>
     <button id="btnBasla" class="btn btn-ana btn-buyuk" hidden>Yola çık</button>
+  </div>
+
+  <div class="sekme" id="s-yolculuk" hidden>
+    <div id="yolDetay"></div>
+    <h2>Duraklar</h2>
+    <div id="durakYuva"></div>
+    <h2>Namaz</h2>
+    <div id="namazYuva"></div>
+    <h2>İlerideki camiler ve tesisler</h2>
+    <div id="yolculukYerler"></div>
+    <button class="btn btn-buyuk" id="btnYolculukAyar" type="button">Ayarlar</button>
   </div>
 
   <div class="sekme" id="s-namaz" hidden>
@@ -161,7 +195,8 @@
     <p class="ipucu" id="kaynakDurum"></p>
     <label class="etiket" for="ayarTema">Görünüm</label>
     <select id="ayarTema">
-      <option value="oto">Otomatik (akşamdan sonra koyu)</option>
+      <option value="sistem">Telefonun ayarına göre</option>
+      <option value="oto">Akşamdan sonra koyu</option>
       <option value="acik">Hep açık</option>
       <option value="koyu">Hep koyu</option>
     </select>
@@ -175,6 +210,7 @@
     <label class="onay"><input type="checkbox" id="ayarSes" checked> Yol tarifini ve uyarıları sesli oku</label>
     <label class="onay"><input type="checkbox" id="ayarEkran" checked> Yolculukta ekran kapanmasın</label>
     <button class="btn" id="btnBildirimIzin">Bildirimleri dene</button>
+    <button class="btn btn-buyuk btn-cikis" id="btnCikis" type="button">Uygulamadan çık</button>
     <p class="ipucu">Harita © OpenStreetMap katkıcıları · Yol tarifi: OSRM · Adres arama: Nominatim. Hepsi ücretsiz.</p>
   </div>
 </section>

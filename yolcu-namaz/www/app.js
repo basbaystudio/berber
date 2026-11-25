@@ -40,7 +40,9 @@ const EKLENTI = window.Capacitor?.Plugins || {};
 const gunKey = (d) => { const x = new Date(d); return `${x.getFullYear()}-${x.getMonth() + 1}-${x.getDate()}`; };
 
 // ---------- Ayarlar ve durum ----------
-const ayar = Object.assign({ once: "30", ses: true, ekran: true, hiz: "1.1", kaynak: "site", hitap: "Baba", mola: "120", tema: "oto" }, LS.get("yn_ayar", {}));
+const ayar = Object.assign({ once: "30", ses: true, ekran: true, hiz: "1.1", kaynak: "site", hitap: "Baba", mola: "120", tema: "sistem", ucretli: "kullan" }, LS.get("yn_ayar", {}));
+// Eski sürümde tema varsayılanı "akşamdan sonra koyu" idi; artık telefonun ayarı izlenir
+if (ayar.temaV !== 2) { ayar.tema = "sistem"; ayar.temaV = 2; LS.set("yn_ayar", ayar); }
 const hitap = () => (ayar.hitap || "").trim();
 // "Baba, ..." — hitap boşsa sadece cümlenin kendisi
 const seslen = (cumle) => (hitap() ? `${hitap()}, ${cumle.charAt(0).toLocaleLowerCase("tr")}${cumle.slice(1)}` : cumle);
@@ -56,7 +58,7 @@ const BITIS = { imsak: "gunes", ogle: "ikindi", ikindi: "aksam", aksam: "yatsi",
 
 const durum = {
   konum: null, yonNoktasi: null,
-  baslangic: null, hedef: null, ara: null,
+  baslangic: null, hedef: null, duraklar: [],
   rota: null, cizelge: null, sonIdx: 0,
   poiler: [], yakinPoiler: [],
   nav: false, takipte: true, rotaDisi: 0, sonYonlendirme: 0, rotaHesaplaniyor: false,
@@ -74,7 +76,8 @@ L.control.zoom({ position: "bottomleft" }).addTo(harita);
 const poiKatman = L.layerGroup().addTo(harita);
 const benimKatman = L.layerGroup().addTo(harita);
 const rotaKatman = L.layerGroup().addTo(harita);
-let rotaCizgi = null, gecilenCizgi = null, hedefIsaret = null, baslangicIsaret = null, araIsaret = null, benIsaret = null, dogrulukDaire = null;
+const durakKatman = L.layerGroup().addTo(harita);
+let rotaCizgi = null, gecilenCizgi = null, hedefIsaret = null, baslangicIsaret = null, benIsaret = null, dogrulukDaire = null;
 
 harita.on("dragstart", () => { durum.takipte = false; });
 
@@ -86,10 +89,20 @@ function poiIkon(tur, benim) {
 function benimIsaretGuncelle() {
   const k = durum.konum; if (!k) return;
   const ll = [k.lat, k.lng];
-  const yon = k.heading != null ? `<div class="yon" style="transform:rotate(${k.heading}deg)"></div>` : "";
-  const ikon = L.divIcon({ className: "", html: `<div class="ben">${yon}<div class="nokta"></div></div>`, iconSize: [26, 26], iconAnchor: [13, 13] });
+  // Gidiş yönüne dönen ok. GPS yön vermezse yolculukta yolun yönü kullanılır.
+  let yon = k.heading;
+  if (yon == null && durum.nav && durum.rota) {
+    const r = durum.rota, i = Math.min(durum.sonIdx, r.coords.length - 2);
+    let j = i + 1; while (j < r.coords.length - 1 && r.cumD[j] - r.cumD[i] < 30) j++;
+    if (i >= 0 && j > i) yon = yonHesap(r.coords[i], r.coords[j]);
+  }
+  const ikon = L.divIcon({
+    className: "", iconSize: [44, 44], iconAnchor: [22, 22],
+    html: `<div class="ben" style="transform:rotate(${yon ?? 0}deg)"><svg viewBox="0 0 44 44" width="44" height="44" aria-hidden="true">` +
+      `<path d="M22 4 L37 38 L22 30 L7 38 Z" class="ben-ok"/></svg></div>`,
+  });
   if (!benIsaret) {
-    dogrulukDaire = L.circle(ll, { radius: k.acc, color: "#0d6efd", weight: 1, fillOpacity: 0.1, interactive: false }).addTo(harita);
+    dogrulukDaire = L.circle(ll, { radius: k.acc, className: "dogruluk", weight: 1, fillOpacity: 0.08, interactive: false }).addTo(harita);
     benIsaret = L.marker(ll, { icon: ikon, zIndexOffset: 1000, interactive: false }).addTo(harita);
   } else {
     benIsaret.setLatLng(ll).setIcon(ikon);
@@ -314,9 +327,12 @@ function vakitBilgisi(p, simdi = new Date()) {
   if (!sonraki) sonraki = "imsak";
   return { bugun, simdiki: simdiki || "yatsi", sonraki, sonrakiZaman };
 }
-// Akşamdan güneş doğana kadar koyu tema (ayardan sabitlenebilir)
+// Tema: varsayılan telefonun açık/koyu ayarı; istenirse akşamdan sonra koyu ya da sabit
+const sistemKoyu = window.matchMedia("(prefers-color-scheme: dark)");
+sistemKoyu.addEventListener?.("change", () => vakitBarGuncelle());
 function temaUygula(v, p) {
   let koyu = ayar.tema === "koyu";
+  if (ayar.tema === "sistem") koyu = sistemKoyu.matches;
   if (ayar.tema === "oto") {
     const simdi = new Date();
     koyu = simdi >= v.bugun.aksam || simdi < v.bugun.gunes;
@@ -393,19 +409,20 @@ const buyuk = (s) => s.charAt(0).toLocaleUpperCase("tr") + s.slice(1);
 
 function talimat(s, sonAyak) {
   const m = s.maneuver, y = YON[m.modifier] || "";
+  const taraf = /left/.test(m.modifier || "") ? "sol" : /right/.test(m.modifier || "") ? "sağ" : "";
   const yol = [s.name, s.ref].filter(Boolean).join(" ");
   let t, ok = OK[m.modifier] || "⬆";
   switch (m.type) {
     case "depart": t = "Yola çıkın"; ok = "⬆"; break;
-    case "arrive": t = sonAyak ? "Varış noktasına ulaştınız" : "Uğrayacağınız yere ulaştınız"; ok = "🏁"; break;
+    case "arrive": t = sonAyak ? "Varış noktası" : "Durak"; ok = "🏁"; break;
     case "turn": case "end of road":
       t = m.modifier === "uturn" ? "Geri dönün" : m.modifier === "straight" ? "Düz devam edin" : `${buyuk(y)} dönün`;
       if (m.type === "end of road") t = "Yolun sonunda " + t.charAt(0).toLocaleLowerCase("tr") + t.slice(1);
       break;
     case "merge": t = "Yola katılın"; break;
     case "on ramp": t = y && y !== "düz" ? `${buyuk(y)} bağlantı yoluna girin` : "Bağlantı yoluna girin"; break;
-    case "off ramp": t = y && y !== "düz" ? `${buyuk(y.replace("hafif ", ""))} taraftaki çıkışı alın` : "Çıkışı alın"; break;
-    case "fork": t = `Yol ayrımında ${y ? y.replace("hafif ", "").replace("keskin ", "") : "düz"} taraftan devam edin`; break;
+    case "off ramp": t = taraf ? `${buyuk(taraf)}daki çıkışı alın` : "Çıkışı alın"; break;
+    case "fork": t = taraf ? `Yol ayrımında ${taraf}dan devam edin` : "Yol ayrımında düz devam edin"; break;
     case "roundabout": case "rotary": case "roundabout turn":
       t = m.exit ? `Döner kavşaktan ${m.exit}. çıkıştan çıkın` : "Döner kavşağa girin"; ok = "⟳"; break;
     case "exit roundabout": case "exit rotary": t = "Döner kavşaktan çıkın"; break;
@@ -415,9 +432,9 @@ function talimat(s, sonAyak) {
   return { metin: t, yol: m.type === "arrive" ? "" : yol, ok, onemli };
 }
 
-async function osrm(noktalar) {
+async function osrm(noktalar, ucretsiz) {
   const koord = noktalar.map((p) => `${p.lng.toFixed(6)},${p.lat.toFixed(6)}`).join(";");
-  const u = `https://router.project-osrm.org/route/v1/driving/${koord}?overview=false&steps=true&geometries=geojson`;
+  const u = `https://router.project-osrm.org/route/v1/driving/${koord}?overview=false&steps=true&geometries=geojson` + (ucretsiz ? "&exclude=toll" : "");
   const r = await fetch(u);
   if (!r.ok) throw new Error("Rota servisi yanıt vermedi (" + r.status + ")");
   const j = await r.json();
@@ -493,12 +510,32 @@ function rotaCiz() {
 function isaretleriCiz() {
   if (baslangicIsaret) harita.removeLayer(baslangicIsaret);
   if (hedefIsaret) harita.removeLayer(hedefIsaret);
-  if (araIsaret) harita.removeLayer(araIsaret);
-  baslangicIsaret = hedefIsaret = araIsaret = null;
+  durakKatman.clearLayers();
+  baslangicIsaret = hedefIsaret = null;
   if (durum.baslangic && !durum.baslangic.konumum) baslangicIsaret = L.marker([durum.baslangic.lat, durum.baslangic.lng], { icon: pinIkon("bas"), title: "Başlangıç" }).addTo(harita);
   if (durum.hedef) hedefIsaret = L.marker([durum.hedef.lat, durum.hedef.lng], { icon: pinIkon("hedef"), title: "Varış: " + (durum.hedef.ad || ""), zIndexOffset: 900 })
     .bindPopup(`<b>Varış</b><br>${esc(durum.hedef.ad || "")}`).addTo(harita);
-  if (durum.ara) araIsaret = L.marker([durum.ara.lat, durum.ara.lng], { icon: pinIkon("ara"), title: "Uğranacak: " + durum.ara.ad }).addTo(harita);
+  durum.duraklar.forEach((d, i) => L.marker([d.lat, d.lng], {
+    title: "Durak: " + d.ad, zIndexOffset: 850,
+    icon: L.divIcon({ className: "", html: `<div class="durak-pin">${i + 1}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] }),
+  }).bindPopup(`<b>${i + 1}. durak</b><br>${esc(d.ad)}<button class="btn" data-durak-sil="${i}">Durağı kaldır</button>`).addTo(durakKatman));
+  durakListesiCiz();
+}
+function durakListesiCiz() {
+  const el = $("durakListe"); if (!el) return;
+  el.innerHTML = durum.duraklar.map((d, i) => `<div class="durak-satir"><span class="durak-no">${i + 1}</span>
+    <span class="durak-ad">${esc(d.ad)}</span><button class="btn" data-durak-sil="${i}" aria-label="Durağı kaldır">✕</button></div>`).join("");
+}
+// Durak, yol üzerindeki sırasına göre yerleştirilir (rota varsa); yoksa sona eklenir
+function durakEkle(p) {
+  const d = { lat: p.lat, lng: p.lng, ad: p.ad || "Durak", id: p.id };
+  if (durum.rota) {
+    const sira = (x) => enYakin(durum.rota, x).idx;
+    const di = sira(d);
+    const yer = durum.duraklar.findIndex((x) => sira(x) > di);
+    if (yer < 0) durum.duraklar.push(d); else durum.duraklar.splice(yer, 0, d);
+  } else durum.duraklar.push(d);
+  isaretleriCiz();
 }
 
 async function rotaHesapla({ sessiz = false } = {}) {
@@ -509,10 +546,15 @@ async function rotaHesapla({ sessiz = false } = {}) {
   durum.rotaHesaplaniyor = true;
   if (!sessiz) { $("btnRota").disabled = true; $("rotaOzet").textContent = "Rota hesaplanıyor…"; }
   try {
-    const noktalar = [bas];
-    if (durum.ara) noktalar.push(durum.ara);
-    noktalar.push(durum.hedef);
-    durum.rota = await osrm(noktalar);
+    const noktalar = [bas, ...durum.duraklar, durum.hedef];
+    const ucretsiz = ayar.ucretli === "kullanma";
+    try { durum.rota = await osrm(noktalar, ucretsiz); durum.rota.ucretsiz = ucretsiz; }
+    catch (e) {
+      if (!ucretsiz) throw e;
+      // Ücretli yol olmadan yol bulunamazsa ücretliyle hesapla ve söyle
+      durum.rota = await osrm(noktalar, false); durum.rota.ucretsiz = false;
+      mesaj(seslen("ücretli yol kullanmadan bir yol bulunamadı, ücretli yollar dahil hesapladım."));
+    }
     namazPlaniCiz.siteDenendi = false;
     durum.sonIdx = 0;
     durum.soylenen = new Set();
@@ -523,6 +565,7 @@ async function rotaHesapla({ sessiz = false } = {}) {
     if (!durum.nav) harita.fitBounds(rotaCizgi.getBounds(), { padding: [30, 30] });
     rotaOzetYaz();
     $("btnBasla").hidden = durum.nav;
+    if (!durum.nav) requestAnimationFrame(() => $("btnBasla").scrollIntoView({ block: "end", behavior: "smooth" }));
     poileriRotaylaEslestir();
     namazPlaniCiz();
     // Yerleri sadece ilk hesaplamada ya da uzun yeniden yönlendirmede çek
@@ -540,7 +583,8 @@ function rotaOzetYaz() {
   const sayi = (t) => durum.poiler.filter((p) => p.tur === t).length;
   $("rotaOzet").innerHTML = `<div class="kart"><div class="baslik">${km(r.toplamD)} · ${sure(r.toplamT * faktor())}</div>
     <div class="alt">Tahmini varış: ${varis.toLocaleString("tr-TR", { weekday: "long", hour: "2-digit", minute: "2-digit" })}</div>
-    ${durum.ara ? `<div class="alt">Uğranacak: ${esc(durum.ara.ad)}</div>` : ""}
+    ${durum.duraklar.length ? `<div class="alt">Duraklar: ${durum.duraklar.map((d) => esc(d.ad)).join(" → ")}</div>` : ""}
+    <div class="alt">${r.ucretsiz ? "Ücretli yollar (otoyol, köprü) kullanılmadan" : "Ücretli yollar dahil"}</div>
     ${durum.poiler.length ? `<div class="alt">Yol üstünde ${sayi("cami")} cami, ${sayi("mescit")} mescit, ${sayi("tesis")} tesis${sayi("yakit") ? ", " + sayi("yakit") + " istasyon" : ""}</div>` : ""}</div>`;
 }
 
@@ -552,10 +596,10 @@ const OVERPASS_UA = "YolcuNamaz/1.0 (Android; mosques and rest areas along a dri
 class YerHatasi extends Error {}
 async function overpass(q) {
   const hatalar = [];
-  for (let tur = 0; tur < 2; tur++) {
+  for (let tur = 0; tur < 3; tur++) {
     for (const u of [...OVERPASS]) {
       const kontrol = new AbortController();
-      const zaman = setTimeout(() => kontrol.abort(), 45000);
+      const zaman = setTimeout(() => kontrol.abort(), 35000);
       try {
         const r = await fetch(u, {
           method: "POST", body: "data=" + encodeURIComponent(q), signal: kontrol.signal,
@@ -573,7 +617,7 @@ async function overpass(q) {
         hatalar.push(new URL(u).host + ": " + (e.name === "AbortError" ? "yanıt gelmedi" : "bağlanılamadı"));
       } finally { clearTimeout(zaman); }
     }
-    if (tur === 0) await uyku(4000); // hepsi meşgulse biraz bekleyip bir kez daha dene
+    if (tur < 2) await uyku(tur === 0 ? 5000 : 15000); // hepsi meşgulse (504/429) bekleyip yeniden dene
   }
   const e = new YerHatasi("Cami ve tesis bilgisi sunucularına şu an ulaşılamadı");
   e.ayrinti = hatalar.join(", ");
@@ -593,13 +637,17 @@ function onbellekOku(key) {
   return o.p.map(([id, lat, lng, tur, ad]) => ({ id, lat, lng, tur, ad, tags: {} }));
 }
 function kategoriler() { return { cami: $("kCami").checked, tesis: $("kTesis").checked, yakit: $("kYakit").checked }; }
+// Sadece nokta ve alan (node/way) sorulur; ilişki (relation) aramak sunucuyu çok yoruyordu
 function sorguParca(alan, r, k) {
   let s = "";
-  if (k.cami) s += `nwr["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${alan});`;
-  if (k.tesis) s += `nwr["highway"~"^(services|rest_area)$"](around:${Math.min(r, 1000)},${alan});`;
-  if (k.yakit) s += `nwr["amenity"="fuel"](around:${Math.min(r, 300)},${alan});`;
+  const iki = (filtre, yc) => `node${filtre}(around:${yc},${alan});way${filtre}(around:${yc},${alan});`;
+  if (k.cami) s += iki(`["amenity"="place_of_worship"]["religion"="muslim"]`, r);
+  if (k.tesis) s += iki(`["highway"~"^(services|rest_area)$"]`, Math.min(r, 1000));
+  if (k.yakit) s += `node["amenity"="fuel"](around:${Math.min(r, 300)},${alan});`;
   return s;
 }
+// Kısa zaman aşımı ve küçük bellek sınırı bildirilen sorgular, yoğun sunucuda öncelik alır
+const SORGU_BAS = "[out:json][timeout:25][maxsize:33554432];";
 function poiDonustur(e) {
   const t = e.tags || {};
   const lat = e.lat ?? e.center?.lat, lng = e.lon ?? e.center?.lon;
@@ -631,9 +679,11 @@ async function rotaYerleriGetir() {
   ornek.push(r.coords[r.coords.length - 1]);
   // ~60 km'lik küçük parçalar: sunucuyu yormaz, biri alınamazsa diğerleri yine gelir
   const parcalar = [];
-  for (let i = 0; i < ornek.length - 1; i += 40) parcalar.push(ornek.slice(i, i + 41));
+  for (let i = 0; i < ornek.length - 1; i += 25) parcalar.push(ornek.slice(i, i + 26));
+  durum.eksikParcalar = [];
   const hepsi = new Map();
   const no = ++yerSorguNo;
+  durum.yerDurum = "yukleniyor"; yerListesiCiz();
   let basarisiz = 0, sonHata = null;
   for (let i = 0; i < parcalar.length; i++) {
     if (no !== yerSorguNo) return; // yeni rota istendi
@@ -643,10 +693,14 @@ async function rotaYerleriGetir() {
     let liste = onbellekOku(key);
     if (!liste) {
       try {
-        const els = await overpass(`[out:json][timeout:60];(${sorguParca(alan, yaricap, k)});out center tags qt;`);
+        const els = await overpass(`${SORGU_BAS}(${sorguParca(alan, yaricap, k)});out center tags qt;`);
         liste = els.map(poiDonustur).filter(Boolean);
         onbellekYaz(key, liste);
-      } catch (e) { basarisiz++; sonHata = e; continue; }
+      } catch (e) {
+        basarisiz++; sonHata = e;
+        durum.eksikParcalar.push({ noktalar: parcalar[i], alan, key, yaricap, k, deneme: 0, son: Date.now() });
+        continue;
+      }
     }
     for (const p of liste) hepsi.set(p.id, p);
     // Buldukça göster
@@ -658,14 +712,39 @@ async function rotaYerleriGetir() {
   poileriRotaylaEslestir();
   namazPlaniCiz();
   rotaOzetYaz();
+  durum.yerDurum = !basarisiz ? "tamam" : basarisiz === parcalar.length && !hepsi.size ? "hata" : "kismi";
+  yerListesiCiz();
   if (!basarisiz) durumYaz("");
   else {
     durumYaz(basarisiz === parcalar.length
       ? `Cami ve tesis bilgisi şu an alınamadı (sunucular meşgul ya da internet zayıf). Eklediğin yerler yine görünür; yolda giderken yakındaki camiler ayrıca aranır.`
-      : `Yolun bir kısmındaki yerler alınamadı (${basarisiz}/${parcalar.length} bölüm). Yolda giderken yakındaki camiler ayrıca aranır.`, true, sonHata?.ayrinti);
+      : `Yolun bir kısmındaki yerler alınamadı (${basarisiz}/${parcalar.length} bölüm). Yolda giderken bu bölümler tekrar denenecek.`, true, sonHata?.ayrinti);
   }
 }
 let yerSorguNo = 0;
+/* Alınamayan bölümler yolculuk sırasında, sıra yaklaştıkça (önümüzdeki 100 km) sessizce tekrar denenir. */
+async function eksikleriTamamla() {
+  const r = durum.rota;
+  if (!r || !durum.eksikParcalar?.length || durum.eksikDeneniyor) return;
+  const simdi = Date.now();
+  const parca = durum.eksikParcalar.find((x) => simdi - x.son > Math.min(10, 2 + x.deneme * 2) * 60000 &&
+    r.cumD[enYakin(r, x.noktalar.at(-1)).idx] > r.cumD[durum.sonIdx] && r.cumD[enYakin(r, x.noktalar[0]).idx] - r.cumD[durum.sonIdx] < 100000);
+  if (!parca) return;
+  durum.eksikDeneniyor = true; parca.son = simdi; parca.deneme++;
+  try {
+    const els = await overpass(`${SORGU_BAS}(${sorguParca(parca.alan, parca.yaricap, parca.k)});out center tags qt;`);
+    const liste = els.map(poiDonustur).filter(Boolean);
+    onbellekYaz(parca.key, liste);
+    durum.eksikParcalar = durum.eksikParcalar.filter((x) => x !== parca);
+    const var_ = new Set((durum.hamPoiler || []).map((p) => p.id));
+    durum.hamPoiler = [...(durum.hamPoiler || []), ...liste.filter((p) => !var_.has(p.id))];
+    poileriRotaylaEslestir(); namazPlaniCiz(); rotaOzetYaz();
+    if (!durum.eksikParcalar.length) { durumYaz(""); durum.yerDurum = "tamam"; }
+    else if (durum.yerDurum === "hata") durum.yerDurum = "kismi";
+    yerListesiCiz();
+  } catch { /* sonra yine denenecek */ }
+  finally { durum.eksikDeneniyor = false; }
+}
 function durumYaz(t, tekrar, ayrinti) {
   let el = $("durumSatir");
   if (!el) { el = document.createElement("div"); el.id = "durumSatir"; el.className = "ipucu"; $("rotaOzet").after(el); }
@@ -725,8 +804,8 @@ function poiBul(id) {
 async function poiyeUgra(p) {
   harita.closePopup();
   if (durum.rota && durum.hedef) {
-    durum.ara = { lat: p.lat, lng: p.lng, ad: p.ad, id: p.id };
-    mesaj(`${p.ad} rotaya eklendi. Önce oraya, sonra varış noktasına gideceksiniz.`);
+    durakEkle(p);
+    mesaj(`${p.ad} durak olarak eklendi. Önce oraya uğrayıp sonra yola devam edeceğiz.`);
   } else {
     durum.hedef = { lat: p.lat, lng: p.lng, ad: p.ad };
     $("nereye").value = p.ad;
@@ -766,7 +845,16 @@ function yerListesiCiz() {
     const k = durum.konum;
     html += `<h3>Yakınımda</h3>` + durum.yakinPoiler.slice(0, 30).map((p) => yerSatiri(p, `${TUR[p.tur].ad} · ${k ? km(mesafe(k, p)) + " uzakta" : ""}`)).join("");
   }
-  el.innerHTML = html || `<p class="ipucu">Henüz yer yok. Rota oluşturun ya da yukarıdaki düğmeye basın.</p>`;
+  if (!html) {
+    const yd = durum.yerDurum;
+    html = !durum.rota ? `<p class="ipucu">Henüz rota yok. “Yol” sekmesinden gidilecek yeri seç ya da yukarıdaki düğmeyle yakınındaki camileri gör.</p>`
+      : yd === "yukleniyor" ? `<p class="ipucu">Yol üstündeki camiler ve tesisler aranıyor…</p>`
+      : yd === "hata" ? `<p class="ipucu">Cami ve tesis bilgisi sunucudan alınamadı (sunucu meşgul ya da internet zayıf). Yolda giderken tekrar denenecek.</p><button class="btn" id="btnYerTekrar2">Tekrar dene</button>`
+      : `<p class="ipucu">Bu yolun yakınında kayıtlı cami ya da tesis bulunamadı. “Yol” sekmesindeki seçeneklerden yoldan uzaklığı artırabilirsin.</p>`;
+  } else if (durum.rota && durum.yerDurum === "yukleniyor") html = `<p class="ipucu">Aranıyor, bulundukça ekleniyor…</p>` + html;
+  else if (durum.rota && durum.yerDurum === "kismi") html = `<p class="ipucu">Yolun bir kısmındaki yerler alınamadı, yolda tekrar denenecek.</p>` + html;
+  el.innerHTML = html;
+  $("btnYerTekrar2")?.addEventListener("click", () => rotaYerleriGetir());
 }
 
 // ---------- Namaz planı ----------
@@ -1033,6 +1121,8 @@ async function navBaslat() {
   await bildirimIzniIste();
   durum.nav = true;
   durum.takipte = true;
+  $("durakYuva").append($("durakBolum"));
+  $("namazYuva").append($("namazPlan"));
   document.body.classList.add("nav");
   document.body.classList.remove("panelAcik");
   $("navOzet").hidden = false;
@@ -1050,6 +1140,10 @@ async function navBaslat() {
 }
 function navBitir() {
   durum.nav = false;
+  $("durakYer").append($("durakBolum"));
+  $("s-namaz").append($("namazPlan"));
+  $("btnYolculugaDon").hidden = true;
+  sekmeAc("rota");
   document.body.classList.remove("nav", "panelAcik");
   $("navOzet").hidden = true;
   $("navKutu").hidden = true;
@@ -1086,7 +1180,11 @@ function navGuncelle() {
   durum.cizelge = { idx, zaman: Date.now() };
 
   // Uğranacak yer geçildiyse unut
-  if (durum.ara && mesafe(k, durum.ara) < 60) { durum.ara = null; isaretleriCiz(); }
+  if (durum.duraklar.length && mesafe(k, durum.duraklar[0]) < 60) {
+    const d = durum.duraklar.shift();
+    isaretleriCiz();
+    soyle(seslen(`${d.ad} durağına geldik.` + (durum.duraklar.length ? "" : " Sonra varış noktasına devam edeceğiz.")));
+  }
 
   if (Date.now() - sonCizim > 3000) {
     sonCizim = Date.now();
@@ -1105,7 +1203,7 @@ function navGuncelle() {
     const key = adim.idx + "|" + esik;
     if (!durum.soylenen.has(key)) { durum.soylenen.add(key); soyle(onEk + sesli); }
   };
-  if (adim.tip === "arrive" && kalan < 40 && !durum.ara) {
+  if (adim.tip === "arrive" && kalan < 40 && !durum.duraklar.length) {
     if (!durum.soylenen.has("vardik")) { durum.soylenen.add("vardik"); soyle(seslen("Vardık. Hayırlı olsun.")); }
     $("navMetin").textContent = "Varış noktasına ulaştınız";
     setTimeout(navBitir, 4000);
@@ -1126,9 +1224,10 @@ function navGuncelle() {
     namazMetin = `<span class="namaz">${Vakit.SHORT[siradaki.ad]} ${siradaki.girdi || siradaki.vakit <= Date.now() ? "vakti içindeyiz" : saat(siradaki.vakit)}` +
       (o ? ` · <b>${esc(o.ad)}</b>, ${km(r.cumD[o.idx] - r.cumD[idx])} sonra` : "") + `</span>`;
   }
-  $("navOzetMetin").innerHTML = `<span class="buyuk">${km(kalanD)}</span> kaldı · varış <span class="buyuk">${saat(varis)}</span>${namazMetin}`;
-  document.documentElement.style.setProperty("--ozetYukseklik", $("panel").offsetHeight + "px");
+  $("navOzetMetin").innerHTML = `<span class="buyuk">${km(kalanD)}</span> · varış <span class="buyuk">${saat(varis)}</span>${namazMetin}`;
   vakitKontrol();
+  eksikleriTamamla();
+  if (yolculukSayfasiAcik() && Date.now() - (durum.sonSayfaCizim || 0) > 5000) { durum.sonSayfaCizim = Date.now(); yolculukSayfasiCiz(); }
   // Vakit içindeyken ve henüz kılınmadıysa: önümüzdeki 2,5 km'de cami/mescit varsa haber ver
   const icinde = plan.find((p) => p.vakit <= Date.now() && Date.now() < p.bitis - 10 * 60000);
   if (icinde && !kilindi(gunKey(icinde.vakit) + "|" + icinde.ad)) yakinCamiAra(icinde, idx);
@@ -1260,11 +1359,30 @@ async function iceAktar(ev) {
 
 // ---------- Arayüz ----------
 function sekmeAc(ad) {
+  // Yolculukta yer girme ekranı yerine yolculuk sayfası
+  if (durum.nav && (ad === "rota" || ad === "namaz" || ad === "yerler")) ad = "yolculuk";
   document.querySelectorAll("#sekmeler button").forEach((b) => b.classList.toggle("aktif", b.dataset.sekme === ad));
   document.querySelectorAll(".sekme").forEach((s) => { s.hidden = s.id !== "s-" + ad; });
-  if (durum.nav) document.body.classList.add("panelAcik");
+  $("btnYolculugaDon").hidden = !(durum.nav && ad !== "yolculuk");
+  if (ad === "yolculuk") yolculukSayfasiCiz();
+  if (durum.nav) panelAc();
   $("panel").scrollTop = 0;
 }
+/* Yolculuk sayfası: kalan yol, sıradaki dönüşler, duraklar, namaz planı, ilerideki yerler */
+function yolculukSayfasiCiz() {
+  const r = durum.rota; if (!r || !durum.nav) return;
+  const idx = durum.sonIdx;
+  const donusler = r.adimlar.filter((a) => a.idx > idx && a.onemli).slice(0, 3);
+  $("yolDetay").innerHTML = `<div class="kart"><div class="baslik">${km(r.toplamD - r.cumD[idx])} kaldı · varış ${saat(zamanAt(r.coords.length - 1))}</div>
+    <div class="alt">${r.ucretsiz ? "Ücretli yollar kullanılmadan" : "Ücretli yollar dahil"}</div>
+    ${donusler.map((a) => `<div class="donus"><span class="donus-ok">${a.ok}</span><span>${esc(a.metin)}${a.yol ? " — " + esc(a.yol) : ""}</span><span class="donus-km">${km(r.cumD[a.idx] - r.cumD[idx])}</span></div>`).join("")}</div>`;
+  const ileride = durum.poiler.filter((p) => p.idx > idx).slice(0, 10);
+  $("yolculukYerler").innerHTML = ileride.length ? ileride.map((p) => `<div class="yer"><div class="rozet ${p.benim ? "r-benim" : TUR[p.tur].sinif}"></div>
+    <div class="bilgi"><div class="ad">${esc(p.ad)}</div><div class="ipucu">${esc(poiBilgi(p))}</div></div>
+    <button class="btn" data-ugra="${esc(p.id)}">Uğra</button></div>`).join("")
+    : `<p class="ipucu">İleride kayıtlı yer görünmüyor.</p>`;
+}
+const yolculukSayfasiAcik = () => durum.nav && document.body.classList.contains("panelAcik") && !$("s-yolculuk").hidden;
 document.querySelectorAll("#sekmeler button").forEach((b) => b.addEventListener("click", () => sekmeAc(b.dataset.sekme)));
 
 async function aramaYap(alan) {
@@ -1279,8 +1397,14 @@ async function aramaYap(alan) {
     kutu.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
       const s = sonuc[+b.dataset.i];
       const p = { lat: +s.lat, lng: +s.lon, ad: s.display_name.split(",").slice(0, 2).join(",") };
-      $(alan).value = p.ad;
       kutu.innerHTML = "";
+      if (alan === "durak") {
+        $("durak").value = ""; $("durakKutu").hidden = true;
+        durakEkle(p);
+        if (durum.rota && durum.hedef) rotaHesapla({ sessiz: durum.nav });
+        return;
+      }
+      $(alan).value = p.ad;
       if (alan === "nereden") durum.baslangic = p; else durum.hedef = p;
       isaretleriCiz();
       harita.setView([p.lat, p.lng], 11);
@@ -1295,13 +1419,58 @@ $("nereden").addEventListener("input", () => { if (!$("nereden").value.trim()) {
 
 $("btnRota").addEventListener("click", async () => {
   if (!durum.hedef && $("nereye").value.trim()) { await aramaYap("nereye"); return; }
-  durum.ara = null;
   await rotaHesapla();
 });
+// Durak ekleme kutusu
+$("btnDurakEkle").addEventListener("click", () => { $("durakKutu").hidden = false; $("durak").focus(); });
+$("btnDurakAra").addEventListener("click", () => aramaYap("durak"));
+$("durak").addEventListener("keydown", (e) => { if (e.key === "Enter") aramaYap("durak"); });
+// Ücretli yol seçimi
+document.querySelectorAll('input[name="ucretli"]').forEach((x) => {
+  x.checked = x.value === ayar.ucretli;
+  x.addEventListener("change", () => { ayar.ucretli = x.value; LS.set("yn_ayar", ayar); if (durum.rota && durum.hedef) rotaHesapla({ sessiz: durum.nav }); });
+});
 $("btnBasla").addEventListener("click", navBaslat);
-$("btnBitir").addEventListener("click", navBitir);
-$("btnPanelAc").addEventListener("click", () => { sekmeAc("namaz"); document.body.classList.add("panelAcik"); });
-$("btnPanelKapat").addEventListener("click", () => document.body.classList.remove("panelAcik"));
+// Yanlışlıkla dokunmaya karşı onay sorulur
+const bitirSor = () => { if (confirm("Yolculuk bitirilsin mi?")) { panelKapat(); navBitir(); } };
+$("btnBitir").addEventListener("click", bitirSor);
+$("btnBitir2").addEventListener("click", bitirSor);
+$("tutamak").addEventListener("click", () => { document.body.classList.toggle("panelBuyuk"); setTimeout(() => harita.invalidateSize(), 50); });
+// Alt panelin yüksekliği değiştikçe harita düğmeleri ve uyarı kartı onun hemen üstünde dursun
+if ("ResizeObserver" in window) new ResizeObserver(() => {
+  if (document.body.classList.contains("panelAcik")) return;
+  document.documentElement.style.setProperty("--altYukseklik", $("panel").offsetHeight + "px");
+  harita.invalidateSize();
+}).observe($("panel"));
+/* Yolculukta "Ayrıntılar" sayfası: Kapat düğmesi, haritanın açık kalan kısmına dokunma ya da telefonun geri tuşu kapatır */
+function panelAc() {
+  if (document.body.classList.contains("panelAcik")) return;
+  document.body.classList.add("panelAcik");
+  if (!NATIVE) try { history.pushState({ panel: 1 }, ""); } catch { /* */ }
+}
+function panelKapat() { document.body.classList.remove("panelAcik"); }
+$("btnPanelAc").addEventListener("click", () => sekmeAc("yolculuk"));
+$("btnYolculugaDon").addEventListener("click", () => sekmeAc("yolculuk"));
+$("btnYolculukAyar").addEventListener("click", () => sekmeAc("ayar"));
+$("btnPanelKapat").addEventListener("click", panelKapat);
+$("perde").addEventListener("click", panelKapat);
+window.addEventListener("popstate", panelKapat);
+// Android geri tuşu: önce açık sayfayı/pencereyi kapat, yoksa uygulamayı arka plana al
+if (NATIVE && EKLENTI.App) {
+  EKLENTI.App.addListener("backButton", () => {
+    if (document.body.classList.contains("panelAcik")) return panelKapat();
+    if (!$("uyari").hidden) { $("uyari").hidden = true; return; }
+    if (harita._popup && harita.hasLayer(harita._popup)) return harita.closePopup();
+    EKLENTI.App.minimizeApp();
+  });
+}
+$("btnCikis").addEventListener("click", async () => {
+  const soru = durum.nav ? "Yolculuk devam ediyor. Uygulamadan çıkılsın mı? (Kurulu namaz bildirimleri yine gelir.)" : "Uygulamadan çıkılsın mı?";
+  if (!confirm(soru)) return;
+  if (durum.nav) navBitir();
+  if (NATIVE && EKLENTI.App) EKLENTI.App.exitApp();
+  else { mesaj("Tarayıcıda çalışırken sekmeyi kapatarak çıkabilirsin."); }
+});
 $("btnOrtala").addEventListener("click", () => {
   durum.takipte = true;
   if (durum.konum) harita.setView([durum.konum.lat, durum.konum.lng], Math.max(harita.getZoom(), durum.nav ? 16 : 14));
@@ -1309,7 +1478,6 @@ $("btnOrtala").addEventListener("click", () => {
 $("btnEkleFab").addEventListener("click", () => {
   ekleNoktasiniAyarla(durum.konum ? { lat: durum.konum.lat, lng: durum.konum.lng } : null, "Bulunduğunuz konum");
   sekmeAc("ekle");
-  if (durum.nav) document.body.classList.add("panelAcik");
 });
 $("btnYakin").addEventListener("click", () => yakindakileriGetir(false));
 $("btnEklediklerim").addEventListener("click", () => sekmeAc("ekle"));
@@ -1361,14 +1529,20 @@ $("btnBildirimIzin").addEventListener("click", async () => {
 
 // Liste ve açılır pencerelerdeki düğmeler
 document.addEventListener("click", (e) => {
-  const t = e.target.closest("[data-goster],[data-ugra],[data-sil],[data-osm],[data-harita]");
+  const t = e.target.closest("[data-goster],[data-ugra],[data-sil],[data-osm],[data-harita],[data-durak-sil]");
   if (!t) return;
+  if (t.dataset.durakSil != null) {
+    durum.duraklar.splice(+t.dataset.durakSil, 1);
+    harita.closePopup(); isaretleriCiz();
+    if (durum.rota && durum.hedef) rotaHesapla({ sessiz: durum.nav });
+    return;
+  }
   if (t.dataset.goster) {
     const p = poiBul(t.dataset.goster); if (!p) return;
     durum.takipte = false;
     harita.setView([p.lat, p.lng], 16);
     L.popup(popupAyar()).setLatLng([p.lat, p.lng]).setContent(poiPopup(p)).openOn(harita);
-    if (durum.nav) document.body.classList.remove("panelAcik");
+    if (durum.nav) panelKapat();
   } else if (t.dataset.ugra) {
     const p = poiBul(t.dataset.ugra); if (p) poiyeUgra(p);
   } else if (t.dataset.sil) {
@@ -1386,7 +1560,8 @@ document.addEventListener("click", (e) => {
     const [lat, lng] = t.dataset.koord.split(",").map(Number);
     harita.closePopup();
     const p = { lat, lng, ad: `${lat.toFixed(4)}, ${lng.toFixed(4)}` };
-    if (t.dataset.harita === "git") { durum.hedef = p; $("nereye").value = "Haritadan seçilen yer"; durum.ara = null; isaretleriCiz(); if (!durum.nav) sekmeAc("rota"); rotaHesapla({ sessiz: durum.nav }); }
+    if (t.dataset.harita === "git") { durum.hedef = p; $("nereye").value = "Haritadan seçilen yer"; durum.duraklar = []; isaretleriCiz(); if (!durum.nav) sekmeAc("rota"); rotaHesapla({ sessiz: durum.nav }); }
+    else if (t.dataset.harita === "durak") { p.ad = "Haritadan seçilen durak"; durakEkle(p); if (durum.rota && durum.hedef) rotaHesapla({ sessiz: durum.nav }); }
     else if (t.dataset.harita === "bas") { durum.baslangic = p; $("nereden").value = "Haritadan seçilen yer"; isaretleriCiz(); sekmeAc("rota"); }
     else if (t.dataset.harita === "ekle") { ekleNoktasiniAyarla(p, "Haritada seçtiğin yer"); sekmeAc("ekle"); }
   }
@@ -1395,9 +1570,10 @@ const popupAyar = () => ({ autoPanPaddingTopLeft: L.point(10, durum.nav ? 190 : 
 harita.on("click", (e) => {
   const k = `${e.latlng.lat},${e.latlng.lng}`;
   L.popup(popupAyar()).setLatLng(e.latlng).setContent(
-    `<button class="btn btn-ana" data-harita="git" data-koord="${k}">🏁 Buraya git</button>` +
-    (durum.nav ? "" : `<button class="btn" data-harita="bas" data-koord="${k}">🟢 Buradan başla</button>`) +
-    `<button class="btn" data-harita="ekle" data-koord="${k}">＋ Burada cami/mescit var</button>`).openOn(harita);
+    `<button class="btn btn-ana" data-harita="git" data-koord="${k}">Buraya git</button>` +
+    (durum.hedef ? `<button class="btn" data-harita="durak" data-koord="${k}">Durak olarak ekle</button>` : "") +
+    (durum.nav ? "" : `<button class="btn" data-harita="bas" data-koord="${k}">Buradan başla</button>`) +
+    `<button class="btn" data-harita="ekle" data-koord="${k}">Burada cami/mescit var</button>`).openOn(harita);
 });
 
 // Başlangıç

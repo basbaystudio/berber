@@ -1,6 +1,6 @@
 {
   "name": "yolcu-namaz",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "Yolculukta güzergâh üzerindeki cami, mescit ve dinlenme tesisleri; namaz vakti uyarıları; sesli yol tarifi.",
   "type": "commonjs",
@@ -14,6 +14,7 @@
     "@capacitor-community/keep-awake": "8.0.1",
     "@capacitor-community/text-to-speech": "8.0.2",
     "@capacitor/android": "8.6.2",
+    "@capacitor/app": "8.1.2",
     "@capacitor/core": "8.6.2",
     "@capacitor/local-notifications": "8.3.1",
     "leaflet": "1.9.4"
