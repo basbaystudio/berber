@@ -9,7 +9,7 @@ import { submitApplicationAction } from "./actions";
 
 export const metadata: Metadata = {
   title: "İşletmeni ekle — Berberler için online randevu",
-  description: "Berber dükkanınızı Dijital Berber'e ekleyin: online randevu, takvim ve yeni müşteri. İlk işletmelere ücretsiz kullanım, komisyon yok.",
+  description: "Berber dükkanınızı Dijital Berber'e ekleyin: online randevu, takvim ve yeni müşteri. İlk ay ücretsiz, komisyon yok.",
   alternates: { canonical: "/basvuru" },
 };
 
@@ -50,9 +50,12 @@ export default async function ApplicationPage({ searchParams }: { searchParams: 
             </ul>
           </>
         ) : (
-          <p className="text-lg font-semibold text-stone-900">
-            Yeni katılan işletmelere <span className="text-accent-600">{offer.defaultTrialMonths} ay ücretsiz</span> kullanım.
-          </p>
+          <>
+            <p className="text-lg font-semibold text-stone-900">
+              Herkese <span className="text-accent-600">ilk {offer.defaultTrialMonths} ay ücretsiz</span>: deneyin, sonra karar verin.
+            </p>
+            <p className="text-sm text-stone-600">Randevu başına komisyon yok. Ücretsiz süre bitmeden ödeme alınmaz.</p>
+          </>
         )}
       </section>
 

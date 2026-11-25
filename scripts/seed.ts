@@ -113,8 +113,8 @@ await db.transaction(async (tx) => {
   // Aboneliği olmayan eski işletmelere oluşturulma sırasıyla abonelik ata (kampanya kuralı korunur)
   await tx.execute(sql`
     WITH cfg AS (
-      SELECT coalesce((SELECT (value->>'limit')::int FROM platform_settings WHERE key = 'billing.earlyAdopter'), 20) AS lim,
-             coalesce((SELECT (value->>'trialMonths')::int FROM platform_settings WHERE key = 'billing.earlyAdopter'), 3) AS early_m,
+      SELECT coalesce((SELECT (value->>'limit')::int FROM platform_settings WHERE key = 'billing.earlyAdopter'), 0) AS lim,
+             coalesce((SELECT (value->>'trialMonths')::int FROM platform_settings WHERE key = 'billing.earlyAdopter'), 1) AS early_m,
              coalesce((SELECT value::text::int FROM platform_settings WHERE key = 'billing.defaultTrialMonths'), 1) AS def_m,
              (SELECT count(*) FROM business_subscriptions WHERE is_early_adopter) AS used
     ), todo AS (

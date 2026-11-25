@@ -9,7 +9,7 @@ import { cn } from "@/lib/cn";
 
 export const metadata: Metadata = {
   title: "Fiyatlandırma — Berberler için online randevu",
-  description: "Dijital Berber fiyatları: aylık, yıllık ya da tek seferlik ödeme. İlk işletmelere ücretsiz kullanım, randevu başına komisyon yok.",
+  description: "Dijital Berber fiyatları: aylık, yıllık ya da tek seferlik ödeme. İlk ay ücretsiz, randevu başına komisyon yok.",
   alternates: { canonical: "/fiyatlandirma" },
 };
 

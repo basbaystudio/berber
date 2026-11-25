@@ -18,8 +18,8 @@ export const DEFAULT_PLATFORM_SETTINGS = {
    * Açıldığı gün (liveSince) mevcut işletmelerin ücretsiz deneme süresi başlar.
    */
   "billing.status": { enabled: false, liveSince: null as string | null },
-  /** İlk N işletmeye uzun ücretsiz deneme (kampanya). */
-  "billing.earlyAdopter": { limit: 20, trialMonths: 3 },
+  /** İlk N işletmeye uzun ücretsiz deneme (kampanya). Şu an kapalı (0): herkese ilk ay ücretsiz. Admin → Abonelikler'den açılabilir. */
+  "billing.earlyAdopter": { limit: 0, trialMonths: 1 },
   /** Kampanya dışındaki işletmelerin ücretsiz deneme süresi (ay). */
   "billing.defaultTrialMonths": 1,
   /** Ödeme gecikmesinin kaçıncı gününde işletme otomatik askıya alınır. */
